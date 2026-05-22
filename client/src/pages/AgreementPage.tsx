@@ -1,69 +1,145 @@
 // ── WHIP MEMBER AGREEMENT APP ────────────────────────────────────────────────
-// Design: Precision Legal — white canvas, navy (#171b31) authority, orange (#ff6221) action
-// URL params pre-fill member data from Drive+/Smartsheets
-// Steps: Welcome → Info → TOS → Agreement → Sign → Addons (state-specific) → Complete
+// UI Design: Progressive/Enterprise app feel
+// System font, white cards, navy header, orange CTAs, large form fields
+// Print layer is completely isolated — PIP/GA/FL/PA forms unchanged
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import {
   STATE_DATA, STATE_OPTIONS, TOS_TEXT, ACK_ITEMS,
   URL_PARAM_MAP, type StateData
 } from '@/lib/agreementData';
 import { buildPrintHTML } from '@/lib/printBuilder';
-import {
-  ChevronRight, ChevronLeft, FileText, PenLine, CheckCircle2,
-  Lock, Unlock, Moon, Sun, Printer, RotateCcw, Info, Shield,
-  AlertCircle
-} from 'lucide-react';
+
+// ── ICONS (inline SVG — no extra deps) ──────────────────────────────────────
+const ChevronRight = ({ size = 20, style }: { size?: number; style?: React.CSSProperties }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={style}><path d="M9 18l6-6-6-6"/></svg>
+);
+const ChevronLeft = ({ size = 20, style }: { size?: number; style?: React.CSSProperties }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={style}><path d="M15 18l-6-6 6-6"/></svg>
+);
+const ChevronDown = ({ size = 16, style }: { size?: number; style?: React.CSSProperties }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={style}><path d="M6 9l6 6 6-6"/></svg>
+);
+const Check = ({ size = 14 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+);
+const CheckCircle = ({ size = 20, color = '#16a34a' }: { size?: number; color?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 15.01 9 12.01"/></svg>
+);
+const FileText = ({ size = 20 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+);
+const Printer = ({ size = 20 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+);
+const Sun = ({ size = 18 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+);
+const Moon = ({ size = 18 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+);
+const RotateCcw = ({ size = 16 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+);
+const Info = ({ size = 16, style }: { size?: number; style?: React.CSSProperties }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+);
+const Lock = ({ size = 14 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+);
 
 // ── TYPES ────────────────────────────────────────────────────────────────────
 interface MemberFields {
-  memberName: string;
-  dob: string;
-  phone: string;
-  email: string;
-  dlNumber: string;
-  licenseState: string;
-  address: string;
-  cityStateZip: string;
-  customerId: string;
-  reservationId: string;
-  vehicle: string;
-  vin: string;
-  weeklyFee: string;
-  deposit: string;
-  startDate: string;
-  endDate: string;
-  agreementState: string;
-  printedName: string;
-  dateSigned: string;
+  memberName: string; dob: string; phone: string; email: string;
+  dlNumber: string; licenseState: string; address: string; cityStateZip: string;
+  customerId: string; reservationId: string; vehicle: string; vin: string;
+  weeklyFee: string; deposit: string; startDate: string; endDate: string;
+  agreementState: string; printedName: string; dateSigned: string;
 }
-
 type PipElection = 'full' | 'waive' | null;
 
 const STEPS = [
-  { id: 'welcome',   label: 'Welcome',    icon: FileText },
-  { id: 'info',      label: 'Your Info',  icon: Info },
-  { id: 'tos',       label: 'Terms',      icon: Shield },
-  { id: 'agreement', label: 'Agreement',  icon: FileText },
-  { id: 'sign',      label: 'Sign',       icon: PenLine },
-  { id: 'addons',    label: 'Addons',     icon: AlertCircle },
-  { id: 'complete',  label: 'Complete',   icon: CheckCircle2 },
+  { id: 'welcome',   label: 'Start' },
+  { id: 'info',      label: 'Your Info' },
+  { id: 'tos',       label: 'Terms' },
+  { id: 'agreement', label: 'Agreement' },
+  { id: 'sign',      label: 'Sign' },
+  { id: 'addons',    label: 'State Forms' },
+  { id: 'complete',  label: 'Complete' },
 ];
 
 const LOGO_URL = '/manus-storage/whip_logo_db5e4f39.png';
 
-// ── COMPONENT ────────────────────────────────────────────────────────────────
+// ── SECTION DATA ─────────────────────────────────────────────────────────────
+const AGREEMENT_SECTIONS = [
+  {
+    id: 'protection',
+    title: 'Physical Damage Protection',
+    badge: 'Covered',
+    badgeType: 'covered',
+    body: `Your weekly lease payment includes the Protection Plan. Metrocars Leasing Corp. maintains physical damage coverage (comprehensive and collision) on the vehicle as the registered owner.`,
+    hint: {
+      label: 'Your Responsibility',
+      text: 'You are responsible for a Damage Fee of the lesser of actual repair cost or $1,000 per occurrence. Example: If repairs cost $750, your fee is $750. If repairs cost $3,200, your fee is $1,000.',
+    },
+    subItems: [
+      { q: "What's Covered?", a: "Physical damage to the vehicle — comprehensive (theft, weather, vandalism) and collision." },
+      { q: "What's Not Covered?", a: "Intentional damage, unauthorized driver operation, personal property, or violations of this Agreement." },
+    ],
+  },
+  {
+    id: 'liability',
+    title: 'Liability Benefit',
+    badge: 'State Minimum',
+    badgeType: 'required',
+    body: `Whip's liability benefit applies at the statutory minimum limits required by your state when your rideshare app is off (Period 0). It does not apply while you are active on a TNC platform.`,
+    hint: {
+      label: 'TNC Periods Explained',
+      text: 'Period 0: App off — Whip liability applies. Period 1: App on, no ride — TNC platform coverage applies. Periods 2/3: Ride accepted/in progress — TNC platform coverage applies.',
+    },
+    subItems: [],
+  },
+  {
+    id: 'operators',
+    title: 'Authorized Operators',
+    badge: 'Required',
+    badgeType: 'required',
+    body: `Only you — the Member identified in this Agreement — may operate the vehicle. Operation by any unauthorized person is a material breach and may result in immediate vehicle recovery without notice.`,
+    hint: null,
+    subItems: [],
+  },
+  {
+    id: 'accident',
+    title: 'Accident Reporting',
+    badge: 'Required',
+    badgeType: 'required',
+    body: `You must report any accident, collision, theft, or vehicle damage to Whip within 24 hours of the incident.`,
+    hint: {
+      label: 'How to Report',
+      text: 'Call: 855-861-9401\nEmail: claims@drivewhip.com\nFailure to report within 24 hours may result in you bearing full financial responsibility.',
+    },
+    subItems: [],
+  },
+  {
+    id: 'dispute',
+    title: 'Dispute Resolution',
+    badge: 'Binding Arbitration',
+    badgeType: 'required',
+    body: `All disputes arising out of or relating to this Agreement shall be resolved by binding arbitration on an individual basis. You waive your right to a jury trial and to participate in any class action.`,
+    hint: {
+      label: 'What This Means',
+      text: 'Instead of going to court, disputes are resolved by a neutral arbitrator. This is faster and less expensive than litigation. You cannot join a class action lawsuit against Whip.',
+    },
+    subItems: [],
+  },
+];
+
+// ── MAIN COMPONENT ───────────────────────────────────────────────────────────
 export default function AgreementPage() {
   const { theme, toggleTheme } = useTheme();
 
-  // Parse URL params for pre-fill
   const [prefilled, setPrefilled] = useState<Set<string>>(new Set());
   const [fields, setFields] = useState<MemberFields>({
     memberName: '', dob: '', phone: '', email: '',
@@ -75,55 +151,45 @@ export default function AgreementPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const newFields = { ...fields };
-    const prefilledKeys = new Set<string>();
+    const next = { ...fields };
+    const pf = new Set<string>();
     params.forEach((val, key) => {
       const mapped = URL_PARAM_MAP[key];
       if (mapped && val) {
-        (newFields as Record<string, string>)[mapped] = val;
-        prefilledKeys.add(mapped);
+        (next as Record<string, string>)[mapped] = val;
+        pf.add(mapped);
       }
     });
-    setFields(newFields);
-    setPrefilled(prefilledKeys);
+    setFields(next);
+    setPrefilled(pf);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Step state
   const [stepIdx, setStepIdx] = useState(0);
-  const [animDir, setAnimDir] = useState<'enter' | 'exit'>('enter');
   const [animKey, setAnimKey] = useState(0);
 
-  // TOS state
   const [tosRead, setTosRead] = useState(false);
   const [tosAgreed, setTosAgreed] = useState(false);
-  const tosRef = useRef<HTMLDivElement>(null);
+  const tosRef = useRef<HTMLDivElement | null>(null);
 
-  // Agreement acks
   const [acksChecked, setAcksChecked] = useState<boolean[]>(Array(ACK_ITEMS.length).fill(false));
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['protection']));
+  const [expandedSubItems, setExpandedSubItems] = useState<Set<string>>(new Set());
 
-  // Signature
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isSigning, setIsSigning] = useState(false);
   const [hasSig, setHasSig] = useState(false);
   const lastPoint = useRef<{ x: number; y: number } | null>(null);
   const [sigDataURL, setSigDataURL] = useState<string | null>(null);
 
-  // PIP election (MD)
   const [pipElection, setPipElection] = useState<PipElection>(null);
 
-  // State data
   const stateData: StateData = STATE_DATA[fields.agreementState] || STATE_DATA['OTHER'];
   const hasAddons = stateData.addons.length > 0;
-
-  // Effective steps (skip addons if no addons for state)
   const effectiveSteps = STEPS.filter(s => s.id !== 'addons' || hasAddons);
-
   const currentStep = effectiveSteps[stepIdx];
 
-  // ── NAVIGATION ──────────────────────────────────────────────────────────────
   const goTo = useCallback((idx: number) => {
-    setAnimDir('enter');
     setAnimKey(k => k + 1);
     setStepIdx(idx);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -137,58 +203,42 @@ export default function AgreementPage() {
     if (stepIdx > 0) goTo(stepIdx - 1);
   }, [stepIdx, goTo]);
 
-  // ── FIELD UPDATE ────────────────────────────────────────────────────────────
-  const setField = (key: keyof MemberFields, val: string) => {
+  const setField = (key: keyof MemberFields, val: string) =>
     setFields(f => ({ ...f, [key]: val }));
-  };
 
-  // ── TOS SCROLL ──────────────────────────────────────────────────────────────
   const handleTosScroll = () => {
     const el = tosRef.current;
     if (!el) return;
-    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 20) {
-      setTosRead(true);
-    }
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 20) setTosRead(true);
   };
 
-  // ── SIGNATURE CANVAS ────────────────────────────────────────────────────────
+  // Canvas drawing
   const getPos = (e: React.MouseEvent | React.TouchEvent, canvas: HTMLCanvasElement) => {
     const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
+    const sx = canvas.width / rect.width;
+    const sy = canvas.height / rect.height;
     if ('touches' in e) {
-      return {
-        x: (e.touches[0].clientX - rect.left) * scaleX,
-        y: (e.touches[0].clientY - rect.top) * scaleY,
-      };
+      return { x: (e.touches[0].clientX - rect.left) * sx, y: (e.touches[0].clientY - rect.top) * sy };
     }
-    return {
-      x: (e.clientX - rect.left) * scaleX,
-      y: (e.clientY - rect.top) * scaleY,
-    };
+    return { x: (e.clientX - rect.left) * sx, y: (e.clientY - rect.top) * sy };
   };
-
   const startDraw = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const c = canvasRef.current; if (!c) return;
     setIsSigning(true);
-    lastPoint.current = getPos(e, canvas);
+    lastPoint.current = getPos(e, c);
   };
-
   const draw = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
     if (!isSigning) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    const pos = getPos(e, canvas);
+    const c = canvasRef.current; if (!c) return;
+    const ctx = c.getContext('2d'); if (!ctx) return;
+    const pos = getPos(e, c);
     if (lastPoint.current) {
       ctx.beginPath();
       ctx.moveTo(lastPoint.current.x, lastPoint.current.y);
       ctx.lineTo(pos.x, pos.y);
-      ctx.strokeStyle = theme === 'dark' ? '#ffffff' : '#171b31';
+      ctx.strokeStyle = theme === 'dark' ? '#e2e8f0' : '#171b31';
       ctx.lineWidth = 2.5;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
@@ -197,233 +247,142 @@ export default function AgreementPage() {
     lastPoint.current = pos;
     setHasSig(true);
   };
-
   const endDraw = () => {
     setIsSigning(false);
     lastPoint.current = null;
-    if (hasSig && canvasRef.current) {
-      setSigDataURL(canvasRef.current.toDataURL('image/png'));
-    }
+    if (hasSig && canvasRef.current) setSigDataURL(canvasRef.current.toDataURL('image/png'));
   };
-
   const clearSig = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const c = canvasRef.current; if (!c) return;
+    c.getContext('2d')?.clearRect(0, 0, c.width, c.height);
     setHasSig(false);
     setSigDataURL(null);
   };
 
-  // ── PRINT ───────────────────────────────────────────────────────────────────
   const handlePrint = () => {
-    const printHTML = buildPrintHTML(fields, stateData, sigDataURL, pipElection);
-    // Inject into DOM and trigger print
-    let printDiv = document.getElementById('print-output');
-    if (printDiv) printDiv.remove();
-    const wrapper = document.createElement('div');
-    wrapper.innerHTML = printHTML;
-    const newPrintDiv = wrapper.querySelector('#print-output') as HTMLElement;
-    if (newPrintDiv) {
-      newPrintDiv.style.display = 'none';
-      document.body.appendChild(newPrintDiv);
-    }
+    const html = buildPrintHTML(fields, stateData, sigDataURL, pipElection);
+    let el = document.getElementById('print-output');
+    if (el) el.remove();
+    const wrap = document.createElement('div');
+    wrap.innerHTML = html;
+    const newEl = wrap.querySelector('#print-output') as HTMLElement;
+    if (newEl) { newEl.style.display = 'none'; document.body.appendChild(newEl); }
     window.print();
   };
-
-  // ── VALIDATION ──────────────────────────────────────────────────────────────
-  const canProceedInfo = fields.memberName && fields.agreementState;
-  const canProceedTos = tosRead && tosAgreed;
-  const canProceedAgreement = acksChecked.every(Boolean);
-  const canProceedSign = hasSig && fields.printedName;
-  const canProceedAddons = !hasAddons || (
-    stateData.addons.includes('md-pip') ? pipElection !== null : true
-  );
 
   const canProceed = () => {
     switch (currentStep?.id) {
       case 'welcome': return true;
-      case 'info': return !!canProceedInfo;
-      case 'tos': return canProceedTos;
-      case 'agreement': return canProceedAgreement;
-      case 'sign': return !!canProceedSign;
-      case 'addons': return canProceedAddons;
+      case 'info': return !!(fields.memberName && fields.agreementState);
+      case 'tos': return tosRead && tosAgreed;
+      case 'agreement': return acksChecked.every(Boolean);
+      case 'sign': return hasSig && !!fields.printedName;
+      case 'addons': return stateData.addons.includes('md-pip') ? pipElection !== null : true;
       default: return true;
     }
   };
 
-  // ── RENDER ──────────────────────────────────────────────────────────────────
   const progressPct = effectiveSteps.length > 1
-    ? (stepIdx / (effectiveSteps.length - 1)) * 100
-    : 0;
+    ? (stepIdx / (effectiveSteps.length - 1)) * 100 : 0;
+
+  const isFirstStep = stepIdx === 0;
+  const isLastStep = stepIdx === effectiveSteps.length - 1;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* ── TOP BAR ── */}
-      <header className="sticky top-0 z-50 whip-navy shadow-md">
-        <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
-          <img
-            src={LOGO_URL}
-            alt="Whip"
-            className="h-8 w-auto object-contain"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = 'none';
-            }}
-          />
-          <div className="flex items-center gap-3">
-            <span className="text-white/70 text-xs font-medium uppercase tracking-widest hidden sm:block">
-              {currentStep?.label}
-            </span>
-            <button
-              onClick={toggleTheme}
-              className="text-white/60 hover:text-white transition-colors p-1.5 rounded"
-              aria-label="Toggle theme"
-            >
-              {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-            </button>
-          </div>
-        </div>
-
-        {/* Progress bar */}
-        <div className="h-1 bg-white/10">
-          <div
-            className="h-full transition-all duration-500 ease-out"
-            style={{ width: `${progressPct}%`, backgroundColor: '#ff6221' }}
-          />
+    <div className="app-shell">
+      {/* TOP BAR */}
+      <header className="top-bar">
+        <img src={LOGO_URL} alt="Whip" className="top-bar-logo"
+          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+        <div className="top-bar-right">
+          {!isFirstStep && !isLastStep && (
+            <span className="top-bar-step">{stepIdx} of {effectiveSteps.length - 1}</span>
+          )}
+          <button className="top-bar-theme-btn" onClick={toggleTheme} aria-label="Toggle theme">
+            {theme === 'dark' ? <Sun /> : <Moon />}
+          </button>
         </div>
       </header>
 
-      {/* ── STEP INDICATORS ── */}
-      <div className="border-b border-border bg-background/95 backdrop-blur-sm sticky top-[57px] z-40">
-        <div className="max-w-3xl mx-auto px-4">
-          <div className="flex items-center gap-0 overflow-x-auto scrollbar-none py-2">
-            {effectiveSteps.map((step, idx) => {
-              const Icon = step.icon;
-              const isActive = idx === stepIdx;
-              const isDone = idx < stepIdx;
+      {/* PROGRESS BAR */}
+      <div className="progress-bar-track">
+        <div className="progress-bar-fill" style={{ width: `${progressPct}%` }} />
+      </div>
+
+      {/* STEP TABS */}
+      {!isFirstStep && !isLastStep && (
+        <nav className="step-tabs">
+          <div className="step-tabs-inner">
+            {effectiveSteps.filter(s => s.id !== 'welcome' && s.id !== 'complete').map((step, i) => {
+              const realIdx = effectiveSteps.findIndex(s => s.id === step.id);
+              const isActive = realIdx === stepIdx;
+              const isDone = realIdx < stepIdx;
               return (
-                <div key={step.id} className="flex items-center shrink-0">
-                  <button
-                    onClick={() => idx < stepIdx && goTo(idx)}
-                    disabled={idx > stepIdx}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-all ${
-                      isActive
-                        ? 'text-whip-orange border-b-2 border-whip-orange'
-                        : isDone
-                        ? 'text-muted-foreground hover:text-foreground cursor-pointer'
-                        : 'text-muted-foreground/40 cursor-not-allowed'
-                    }`}
-                    style={isActive ? { color: '#ff6221', borderBottomColor: '#ff6221' } : {}}
-                  >
-                    <Icon size={12} />
-                    <span className="hidden sm:inline">{step.label}</span>
-                    <span className="sm:hidden">{idx + 1}</span>
-                  </button>
-                  {idx < effectiveSteps.length - 1 && (
-                    <ChevronRight size={12} className="text-border mx-0.5 shrink-0" />
-                  )}
-                </div>
+                <button
+                  key={step.id}
+                  className={`step-tab ${isActive ? 'active' : isDone ? 'done' : 'locked'}`}
+                  onClick={() => isDone ? goTo(realIdx) : undefined}
+                  disabled={!isDone && !isActive}
+                >
+                  {isDone && <CheckCircle size={12} color="#16a34a" />}
+                  {step.label}
+                </button>
               );
             })}
           </div>
-        </div>
-      </div>
+        </nav>
+      )}
 
-      {/* ── MAIN CONTENT ── */}
-      <main className="flex-1 max-w-3xl mx-auto w-full px-4 py-8">
+      {/* MAIN CONTENT */}
+      <main className="page-content">
         <div key={animKey} className="step-enter">
           {currentStep?.id === 'welcome' && (
-            <WelcomeStep
-              fields={fields}
-              prefilled={prefilled}
-              onNext={goNext}
-            />
+            <WelcomeStep fields={fields} prefilled={prefilled} onNext={goNext} setField={setField} />
           )}
           {currentStep?.id === 'info' && (
-            <InfoStep
-              fields={fields}
-              prefilled={prefilled}
-              setField={setField}
-              onNext={goNext}
-              onBack={goBack}
-              canProceed={!!canProceedInfo}
-            />
+            <InfoStep fields={fields} prefilled={prefilled} setField={setField} />
           )}
           {currentStep?.id === 'tos' && (
             <TosStep
-              tosRef={tosRef}
-              tosRead={tosRead}
-              tosAgreed={tosAgreed}
-              setTosAgreed={setTosAgreed}
-              onScroll={handleTosScroll}
-              onNext={goNext}
-              onBack={goBack}
+              tosRef={tosRef} tosRead={tosRead} tosAgreed={tosAgreed}
+              setTosAgreed={setTosAgreed} onScroll={handleTosScroll}
             />
           )}
           {currentStep?.id === 'agreement' && (
             <AgreementStep
-              fields={fields}
-              stateData={stateData}
-              acksChecked={acksChecked}
-              setAcksChecked={setAcksChecked}
-              onNext={goNext}
-              onBack={goBack}
-              canProceed={canProceedAgreement}
+              fields={fields} stateData={stateData}
+              acksChecked={acksChecked} setAcksChecked={setAcksChecked}
+              expandedSections={expandedSections} setExpandedSections={setExpandedSections}
+              expandedSubItems={expandedSubItems} setExpandedSubItems={setExpandedSubItems}
             />
           )}
           {currentStep?.id === 'sign' && (
             <SignStep
-              fields={fields}
-              setField={setField}
-              canvasRef={canvasRef}
-              hasSig={hasSig}
-              startDraw={startDraw}
-              draw={draw}
-              endDraw={endDraw}
-              clearSig={clearSig}
-              onNext={goNext}
-              onBack={goBack}
-              canProceed={!!canProceedSign}
+              fields={fields} setField={setField}
+              canvasRef={canvasRef} hasSig={hasSig}
+              startDraw={startDraw} draw={draw} endDraw={endDraw} clearSig={clearSig}
             />
           )}
           {currentStep?.id === 'addons' && (
-            <AddonsStep
-              stateData={stateData}
-              pipElection={pipElection}
-              setPipElection={setPipElection}
-              onNext={goNext}
-              onBack={goBack}
-              canProceed={canProceedAddons}
-            />
+            <AddonsStep stateData={stateData} pipElection={pipElection} setPipElection={setPipElection} />
           )}
           {currentStep?.id === 'complete' && (
-            <CompleteStep
-              fields={fields}
-              stateData={stateData}
-              onPrint={handlePrint}
-              onBack={goBack}
-            />
+            <CompleteStep fields={fields} stateData={stateData} onPrint={handlePrint} onBack={goBack} />
           )}
         </div>
       </main>
 
-      {/* ── BOTTOM NAV (mobile) ── */}
-      {currentStep?.id !== 'welcome' && currentStep?.id !== 'complete' && (
-        <div className="sticky bottom-0 border-t border-border bg-background/95 backdrop-blur-sm py-3 px-4">
-          <div className="max-w-3xl mx-auto flex justify-between items-center">
-            <Button variant="ghost" onClick={goBack} className="gap-2 text-sm">
+      {/* BOTTOM NAV */}
+      {!isFirstStep && !isLastStep && (
+        <div className="bottom-nav">
+          <div className="bottom-nav-inner">
+            <button className="btn-primary" onClick={goNext} disabled={!canProceed()}>
+              {currentStep?.id === 'sign' ? 'Sign & Continue' : 'Continue'}
+              <ChevronRight size={18} />
+            </button>
+            <button className="btn-back" onClick={goBack}>
               <ChevronLeft size={16} /> Back
-            </Button>
-            <Button
-              onClick={goNext}
-              disabled={!canProceed()}
-              className="gap-2 text-sm text-white"
-              style={{ backgroundColor: canProceed() ? '#ff6221' : undefined }}
-            >
-              {currentStep?.id === 'sign' ? 'Submit & Continue' : 'Continue'}
-              <ChevronRight size={16} />
-            </Button>
+            </button>
           </div>
         </div>
       )}
@@ -431,335 +390,367 @@ export default function AgreementPage() {
   );
 }
 
-// ── WELCOME STEP ─────────────────────────────────────────────────────────────
-function WelcomeStep({ fields, prefilled, onNext }: {
-  fields: MemberFields;
-  prefilled: Set<string>;
-  onNext: () => void;
+// ── WELCOME ──────────────────────────────────────────────────────────────────
+function WelcomeStep({ fields, prefilled, onNext, setField }: {
+  fields: MemberFields; prefilled: Set<string>; onNext: () => void;
+  setField: (k: keyof MemberFields, v: string) => void;
 }) {
   const hasPrefill = prefilled.size > 0;
+  const firstName = fields.memberName ? fields.memberName.split(' ')[0] : null;
+
   return (
-    <div className="flex flex-col items-center text-center py-8 gap-6">
-      <div
-        className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg"
-        style={{ backgroundColor: '#171b31' }}
-      >
-        <FileText className="text-white" size={28} />
-      </div>
-      <div>
-        <h1 className="text-3xl font-bold text-foreground mb-2">
-          {hasPrefill && fields.memberName
-            ? `Welcome, ${fields.memberName.split(' ')[0]}`
-            : 'Member Lease Agreement'}
-        </h1>
-        <p className="text-muted-foreground text-base max-w-md mx-auto leading-relaxed">
-          {hasPrefill
-            ? 'Your information has been pre-filled. Review each section, read the Terms of Service, and sign your agreement.'
-            : 'Complete your Whip membership agreement. This takes about 5 minutes. You\'ll need your driver\'s license and vehicle information.'}
-        </p>
-      </div>
-
-      {hasPrefill && (
-        <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg px-5 py-3 text-sm text-blue-800 dark:text-blue-300 max-w-sm">
-          <span className="font-semibold">Pre-filled by Whip:</span> Some fields have been filled in from your reservation. You can review and update any field before signing.
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      {/* Hero card */}
+      <div className="screen-card" style={{ overflow: 'hidden' }}>
+        <div style={{ background: '#171b31', padding: '32px 24px 28px' }}>
+          <img src={LOGO_URL} alt="Whip" style={{ height: 32, marginBottom: 20 }}
+            onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+          <h1 style={{ fontSize: 28, fontWeight: 700, color: 'white', lineHeight: 1.2, margin: '0 0 10px' }}>
+            {firstName ? `Welcome,\n${firstName}.` : 'Welcome to Your\nMember Agreement.'}
+          </h1>
+          <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.65)', margin: 0, lineHeight: 1.5 }}>
+            {hasPrefill
+              ? "Your information has been pre-filled. Review each section and sign to complete your agreement."
+              : "Let's get your agreement set up. It only takes a few minutes."}
+          </p>
         </div>
-      )}
-
-      <div className="grid grid-cols-3 gap-4 w-full max-w-sm text-center mt-2">
-        {[
-          { icon: Shield, label: 'Secure', sub: 'Encrypted session' },
-          { icon: FileText, label: '5 min', sub: 'Quick process' },
-          { icon: PenLine, label: 'Legal', sub: 'Binding agreement' },
-        ].map(({ icon: Icon, label, sub }) => (
-          <div key={label} className="flex flex-col items-center gap-1">
-            <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
-              <Icon size={18} className="text-muted-foreground" />
+        <div className="screen-card-body" style={{ paddingTop: 20 }}>
+          {hasPrefill && (
+            <div className="prefill-banner" style={{ marginBottom: 16 }}>
+              <Info size={16} style={{ flexShrink: 0, marginTop: 1 }} />
+              <span>Some fields have been pre-filled from your reservation. You can update any field before signing.</span>
             </div>
-            <span className="text-xs font-semibold text-foreground">{label}</span>
-            <span className="text-xs text-muted-foreground">{sub}</span>
+          )}
+
+          {/* State selector */}
+          <div className="field-group">
+            <label className="field-label">Select Your Garaging State <span style={{ color: '#ef4444' }}>*</span></label>
+            <select
+              className={`field-input field-input-select ${prefilled.has('agreementState') ? 'prefilled' : ''}`}
+              value={fields.agreementState}
+              onChange={e => setField('agreementState', e.target.value)}
+            >
+              <option value="">Select state…</option>
+              {STATE_OPTIONS.map(s => (
+                <option key={s.value} value={s.value}>{s.label}</option>
+              ))}
+            </select>
+            <p style={{ fontSize: 12, color: 'var(--muted-foreground)', margin: '4px 0 0' }}>
+              This determines which state-specific forms are required.
+            </p>
+          </div>
+
+          <button className="btn-primary" onClick={onNext} style={{ marginTop: 8 }}>
+            Start Agreement <ChevronRight size={18} />
+          </button>
+          <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--muted-foreground)', marginTop: 12 }}>
+            Need help? <a href="mailto:info@drivewhip.com" style={{ color: '#ff6221' }}>Contact Support</a>
+          </p>
+        </div>
+      </div>
+
+      {/* Steps preview */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        {[
+          { n: 1, label: 'Personal Information', desc: 'Enter your details' },
+          { n: 2, label: 'Terms of Service', desc: 'Read and agree to Whip\'s terms' },
+          { n: 3, label: 'Agreement Sections', desc: 'Review each section in plain language' },
+          { n: 4, label: 'Electronic Signature', desc: 'Sign to complete your agreement' },
+        ].map(({ n, label, desc }) => (
+          <div key={n} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 4px', borderBottom: '1px solid var(--border)' }}>
+            <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#171b31', color: 'white', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{n}</div>
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--foreground)' }}>{label}</div>
+              <div style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>{desc}</div>
+            </div>
           </div>
         ))}
       </div>
-
-      <Button
-        onClick={onNext}
-        size="lg"
-        className="mt-4 px-10 text-white font-semibold gap-2"
-        style={{ backgroundColor: '#ff6221' }}
-      >
-        Get Started <ChevronRight size={18} />
-      </Button>
     </div>
   );
 }
 
-// ── INFO STEP ────────────────────────────────────────────────────────────────
-function InfoStep({ fields, prefilled, setField, onNext, onBack, canProceed }: {
-  fields: MemberFields;
-  prefilled: Set<string>;
+// ── INFO ─────────────────────────────────────────────────────────────────────
+function InfoStep({ fields, prefilled, setField }: {
+  fields: MemberFields; prefilled: Set<string>;
   setField: (k: keyof MemberFields, v: string) => void;
-  onNext: () => void;
-  onBack: () => void;
-  canProceed: boolean;
 }) {
-  const pf = (key: string) => prefilled.has(key) ? 'field-prefilled' : '';
+  const pf = (k: string) => prefilled.has(k) ? 'prefilled' : '';
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">Your Information</h2>
-        <p className="text-muted-foreground text-sm mt-1">
-          Review and complete your member details. Fields highlighted in blue were pre-filled from your reservation.
-        </p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+      <h2 className="page-title">Personal Information</h2>
+      <p className="page-subtitle">Please enter your details below.</p>
+
+      <div className="screen-card">
+        <div className="screen-card-body" style={{ paddingTop: 20 }}>
+          <FI label="Full Legal Name *" className={pf('memberName')}>
+            <input className={`field-input ${pf('memberName')}`} value={fields.memberName}
+              onChange={e => setField('memberName', e.target.value)} placeholder="John D. Smith" />
+          </FI>
+          <FI label="Date of Birth" className={pf('dob')}>
+            <input type="date" className={`field-input ${pf('dob')}`} value={fields.dob}
+              onChange={e => setField('dob', e.target.value)} />
+          </FI>
+          <FI label="Driver's License Number" className={pf('dlNumber')}>
+            <input className={`field-input ${pf('dlNumber')}`} value={fields.dlNumber}
+              onChange={e => setField('dlNumber', e.target.value)} placeholder="S123-456-789-012"
+              style={{ fontFamily: 'monospace' }} />
+          </FI>
+          <FI label="State of License" className={pf('licenseState')}>
+            <select className={`field-input field-input-select ${pf('licenseState')}`}
+              value={fields.licenseState} onChange={e => setField('licenseState', e.target.value)}>
+              <option value="">Select…</option>
+              {STATE_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+            </select>
+          </FI>
+          <FI label="Email Address" className={pf('email')}>
+            <input type="email" className={`field-input ${pf('email')}`} value={fields.email}
+              onChange={e => setField('email', e.target.value)} placeholder="john.smith@gmail.com" />
+          </FI>
+          <FI label="Phone Number" className={pf('phone')}>
+            <input type="tel" className={`field-input ${pf('phone')}`} value={fields.phone}
+              onChange={e => setField('phone', e.target.value)} placeholder="(404) 555-0123" />
+          </FI>
+          <FI label="Street Address" className={pf('address')}>
+            <input className={`field-input ${pf('address')}`} value={fields.address}
+              onChange={e => setField('address', e.target.value)} placeholder="123 Main Street" />
+          </FI>
+          <FI label="City, State, ZIP" className={pf('cityStateZip')}>
+            <input className={`field-input ${pf('cityStateZip')}`} value={fields.cityStateZip}
+              onChange={e => setField('cityStateZip', e.target.value)} placeholder="Atlanta, GA 30301" />
+          </FI>
+        </div>
       </div>
 
-      {/* State selector — most important */}
-      <div className="p-4 rounded-xl border-2 border-whip-orange bg-orange-50/50 dark:bg-orange-950/20">
-        <Label className="text-xs font-semibold uppercase tracking-wider text-foreground mb-2 block">
-          Agreement State <span className="text-red-500">*</span>
-        </Label>
-        <Select value={fields.agreementState} onValueChange={v => setField('agreementState', v)}>
-          <SelectTrigger className={`bg-background ${pf('agreementState')}`}>
-            <SelectValue placeholder="Select state where vehicle is registered…" />
-          </SelectTrigger>
-          <SelectContent>
-            {STATE_OPTIONS.map(s => (
-              <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <p className="text-xs text-muted-foreground mt-1.5">
-          This determines which state-specific forms are required.
-        </p>
+      <div style={{ height: 20 }} />
+
+      <h2 className="page-title">Reservation Details</h2>
+      <p className="page-subtitle" style={{ marginBottom: 0 }}>Pre-filled from your reservation.</p>
+
+      <div className="screen-card" style={{ marginTop: 16 }}>
+        <div className="screen-card-body" style={{ paddingTop: 20 }}>
+          <FI label="Member / Customer ID" className={pf('customerId')}>
+            <input className={`field-input ${pf('customerId')}`} value={fields.customerId}
+              onChange={e => setField('customerId', e.target.value)}
+              style={{ fontFamily: 'monospace' }} />
+          </FI>
+          <FI label="Reservation ID" className={pf('reservationId')}>
+            <input className={`field-input ${pf('reservationId')}`} value={fields.reservationId}
+              onChange={e => setField('reservationId', e.target.value)}
+              style={{ fontFamily: 'monospace' }} />
+          </FI>
+          <FI label="Vehicle (Year Make Model)" className={pf('vehicle')}>
+            <input className={`field-input ${pf('vehicle')}`} value={fields.vehicle}
+              onChange={e => setField('vehicle', e.target.value)} placeholder="2022 Toyota Camry" />
+          </FI>
+          <FI label="VIN" className={pf('vin')}>
+            <input className={`field-input ${pf('vin')}`} value={fields.vin}
+              onChange={e => setField('vin', e.target.value.toUpperCase())} placeholder="17-character VIN"
+              maxLength={17} style={{ fontFamily: 'monospace', textTransform: 'uppercase' }} />
+          </FI>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <FI label="Weekly Fee ($)" className={pf('weeklyFee')}>
+              <input type="number" className={`field-input ${pf('weeklyFee')}`} value={fields.weeklyFee}
+                onChange={e => setField('weeklyFee', e.target.value)} placeholder="0.00" />
+            </FI>
+            <FI label="Deposit ($)" className={pf('deposit')}>
+              <input type="number" className={`field-input ${pf('deposit')}`} value={fields.deposit}
+                onChange={e => setField('deposit', e.target.value)} placeholder="0.00" />
+            </FI>
+            <FI label="Start Date" className={pf('startDate')}>
+              <input type="date" className={`field-input ${pf('startDate')}`} value={fields.startDate}
+                onChange={e => setField('startDate', e.target.value)} />
+            </FI>
+            <FI label="End Date" className={pf('endDate')}>
+              <input type="date" className={`field-input ${pf('endDate')}`} value={fields.endDate}
+                onChange={e => setField('endDate', e.target.value)} />
+            </FI>
+          </div>
+        </div>
       </div>
-
-      {/* Personal info */}
-      <SectionCard title="Personal Information">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Full Legal Name *" className={pf('memberName')}>
-            <Input value={fields.memberName} onChange={e => setField('memberName', e.target.value)} placeholder="First Middle Last" className={pf('memberName')} />
-          </Field>
-          <Field label="Date of Birth" className={pf('dob')}>
-            <Input type="date" value={fields.dob} onChange={e => setField('dob', e.target.value)} className={pf('dob')} />
-          </Field>
-          <Field label="Phone" className={pf('phone')}>
-            <Input type="tel" value={fields.phone} onChange={e => setField('phone', e.target.value)} placeholder="(555) 000-0000" className={pf('phone')} />
-          </Field>
-          <Field label="Email" className={pf('email')}>
-            <Input type="email" value={fields.email} onChange={e => setField('email', e.target.value)} placeholder="you@example.com" className={pf('email')} />
-          </Field>
-          <Field label="Driver's License Number" className={pf('dlNumber')}>
-            <Input value={fields.dlNumber} onChange={e => setField('dlNumber', e.target.value)} placeholder="DL Number" className={`font-mono ${pf('dlNumber')}`} />
-          </Field>
-          <Field label="License State" className={pf('licenseState')}>
-            <Input value={fields.licenseState} onChange={e => setField('licenseState', e.target.value)} placeholder="MD" maxLength={2} className={`uppercase ${pf('licenseState')}`} />
-          </Field>
-          <Field label="Street Address" className={`sm:col-span-2 ${pf('address')}`}>
-            <Input value={fields.address} onChange={e => setField('address', e.target.value)} placeholder="123 Main St" className={pf('address')} />
-          </Field>
-          <Field label="City, State, ZIP" className={`sm:col-span-2 ${pf('cityStateZip')}`}>
-            <Input value={fields.cityStateZip} onChange={e => setField('cityStateZip', e.target.value)} placeholder="Baltimore, MD 21201" className={pf('cityStateZip')} />
-          </Field>
-        </div>
-      </SectionCard>
-
-      {/* Reservation info */}
-      <SectionCard title="Reservation Details">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Customer / Member ID" className={pf('customerId')}>
-            <Input value={fields.customerId} onChange={e => setField('customerId', e.target.value)} className={`font-mono ${pf('customerId')}`} />
-          </Field>
-          <Field label="Reservation ID" className={pf('reservationId')}>
-            <Input value={fields.reservationId} onChange={e => setField('reservationId', e.target.value)} className={`font-mono ${pf('reservationId')}`} />
-          </Field>
-          <Field label="Vehicle (Year Make Model)" className={`sm:col-span-2 ${pf('vehicle')}`}>
-            <Input value={fields.vehicle} onChange={e => setField('vehicle', e.target.value)} placeholder="2022 Toyota Camry" className={pf('vehicle')} />
-          </Field>
-          <Field label="VIN" className={`sm:col-span-2 ${pf('vin')}`}>
-            <Input value={fields.vin} onChange={e => setField('vin', e.target.value)} placeholder="17-character VIN" maxLength={17} className={`font-mono uppercase ${pf('vin')}`} />
-          </Field>
-          <Field label="Weekly Membership Fee ($)" className={pf('weeklyFee')}>
-            <Input type="number" value={fields.weeklyFee} onChange={e => setField('weeklyFee', e.target.value)} placeholder="0.00" className={pf('weeklyFee')} />
-          </Field>
-          <Field label="Initial Deposit ($)" className={pf('deposit')}>
-            <Input type="number" value={fields.deposit} onChange={e => setField('deposit', e.target.value)} placeholder="0.00" className={pf('deposit')} />
-          </Field>
-          <Field label="Start Date" className={pf('startDate')}>
-            <Input type="date" value={fields.startDate} onChange={e => setField('startDate', e.target.value)} className={pf('startDate')} />
-          </Field>
-          <Field label="End Date" className={pf('endDate')}>
-            <Input type="date" value={fields.endDate} onChange={e => setField('endDate', e.target.value)} className={pf('endDate')} />
-          </Field>
-        </div>
-      </SectionCard>
     </div>
   );
 }
 
-// ── TOS STEP ─────────────────────────────────────────────────────────────────
-function TosStep({ tosRef, tosRead, tosAgreed, setTosAgreed, onScroll, onNext, onBack }: {
-  tosRef: React.RefObject<HTMLDivElement | null>;
-  tosRead: boolean;
-  tosAgreed: boolean;
-  setTosAgreed: (v: boolean) => void;
-  onScroll: () => void;
-  onNext: () => void;
-  onBack: () => void;
+// ── TOS ──────────────────────────────────────────────────────────────────────
+function TosStep({ tosRef, tosRead, tosAgreed, setTosAgreed, onScroll }: {
+  tosRef: React.RefObject<HTMLDivElement | null>; tosRead: boolean; tosAgreed: boolean;
+  setTosAgreed: (v: boolean) => void; onScroll: () => void;
 }) {
   return (
-    <div className="space-y-5">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">Terms of Service</h2>
-        <p className="text-muted-foreground text-sm mt-1">
-          Read the full Terms of Service before agreeing. Scroll to the bottom to unlock the agreement checkbox.
-        </p>
-      </div>
+    <div>
+      <h2 className="page-title">Terms of Service</h2>
+      <p className="page-subtitle">Please read the full Terms of Service. Scroll to the bottom to continue.</p>
 
-      <div className="relative">
+      <div style={{ position: 'relative', marginBottom: 16 }}>
         {!tosRead && (
-          <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-400 text-xs px-2.5 py-1.5 rounded-full font-medium">
-            <Lock size={11} /> Scroll to read
+          <div style={{
+            position: 'absolute', top: 10, right: 10, zIndex: 10,
+            display: 'flex', alignItems: 'center', gap: 5,
+            background: '#fef3c7', border: '1px solid #fcd34d',
+            color: '#92400e', fontSize: 11, fontWeight: 600,
+            padding: '4px 10px', borderRadius: 20
+          }}>
+            <Lock size={11} /> Scroll to unlock
           </div>
         )}
         {tosRead && (
-          <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 bg-green-50 dark:bg-green-950/50 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-400 text-xs px-2.5 py-1.5 rounded-full font-medium">
-            <Unlock size={11} /> Read complete
+          <div style={{
+            position: 'absolute', top: 10, right: 10, zIndex: 10,
+            display: 'flex', alignItems: 'center', gap: 5,
+            background: '#dcfce7', border: '1px solid #86efac',
+            color: '#15803d', fontSize: 11, fontWeight: 600,
+            padding: '4px 10px', borderRadius: 20
+          }}>
+            <CheckCircle size={12} color="#15803d" /> Read
           </div>
         )}
-        <div
-          ref={tosRef}
-          onScroll={onScroll}
-          className="tos-scroll legal-text"
-        >
-          {TOS_TEXT.split('\n').map((line, i) => (
-            line.trim() === ''
-              ? <br key={i} />
-              : <p key={i} className="mb-2">{line}</p>
-          ))}
+        <div ref={tosRef} className="tos-scroll-area" onScroll={onScroll}>
+          {TOS_TEXT.split('\n').map((line, i) =>
+            line.trim() === '' ? <br key={i} /> : <p key={i} style={{ margin: '0 0 6px' }}>{line}</p>
+          )}
         </div>
       </div>
 
-      <div className={`flex items-start gap-3 p-4 rounded-xl border-2 transition-all ${
-        tosRead
-          ? 'border-green-300 bg-green-50 dark:bg-green-950/20 dark:border-green-700'
-          : 'border-border bg-muted/30 opacity-50 pointer-events-none'
-      }`}>
-        <Checkbox
-          id="tos-agree"
-          checked={tosAgreed}
-          onCheckedChange={v => setTosAgreed(!!v)}
-          disabled={!tosRead}
-        />
-        <label htmlFor="tos-agree" className="text-sm leading-relaxed cursor-pointer">
-          I have read and agree to the Whip <strong>Terms of Service</strong> in their entirety. I understand these terms are legally binding.
-        </label>
+      <div
+        onClick={() => tosRead && setTosAgreed(!tosAgreed)}
+        style={{
+          display: 'flex', alignItems: 'flex-start', gap: 14,
+          padding: '16px', borderRadius: 10,
+          border: `2px solid ${tosAgreed ? '#16a34a' : tosRead ? 'var(--border)' : 'var(--border)'}`,
+          background: tosAgreed ? '#f0fdf4' : 'var(--card)',
+          cursor: tosRead ? 'pointer' : 'not-allowed',
+          opacity: tosRead ? 1 : 0.5,
+          transition: 'all 0.15s',
+        }}
+      >
+        <div style={{
+          width: 22, height: 22, borderRadius: 6, flexShrink: 0, marginTop: 1,
+          border: `2px solid ${tosAgreed ? '#16a34a' : 'var(--border)'}`,
+          background: tosAgreed ? '#16a34a' : 'var(--input)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          transition: 'all 0.15s',
+        }}>
+          {tosAgreed && <Check size={13} />}
+        </div>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--foreground)', marginBottom: 2 }}>
+            I have read and agree to the Terms of Service
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--muted-foreground)', lineHeight: 1.45 }}>
+            I understand these terms are legally binding and govern my use of Whip services.
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-// ── AGREEMENT STEP ───────────────────────────────────────────────────────────
-function AgreementStep({ fields, stateData, acksChecked, setAcksChecked, onNext, onBack, canProceed }: {
-  fields: MemberFields;
-  stateData: StateData;
-  acksChecked: boolean[];
-  setAcksChecked: (v: boolean[]) => void;
-  onNext: () => void;
-  onBack: () => void;
-  canProceed: boolean;
+// ── AGREEMENT ────────────────────────────────────────────────────────────────
+function AgreementStep({ fields, stateData, acksChecked, setAcksChecked, expandedSections, setExpandedSections, expandedSubItems, setExpandedSubItems }: {
+  fields: MemberFields; stateData: StateData;
+  acksChecked: boolean[]; setAcksChecked: (v: boolean[]) => void;
+  expandedSections: Set<string>; setExpandedSections: (v: Set<string>) => void;
+  expandedSubItems: Set<string>; setExpandedSubItems: (v: Set<string>) => void;
 }) {
-  const toggleAck = (i: number) => {
-    const next = [...acksChecked];
-    next[i] = !next[i];
-    setAcksChecked(next);
+  const toggleSection = (id: string) => {
+    const next = new Set(expandedSections);
+    next.has(id) ? next.delete(id) : next.add(id);
+    setExpandedSections(next);
   };
-
+  const toggleSub = (id: string) => {
+    const next = new Set(expandedSubItems);
+    next.has(id) ? next.delete(id) : next.add(id);
+    setExpandedSubItems(next);
+  };
+  const toggleAck = (i: number) => {
+    const next = [...acksChecked]; next[i] = !next[i]; setAcksChecked(next);
+  };
   const allChecked = acksChecked.every(Boolean);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">Member Lease Agreement</h2>
-        <p className="text-muted-foreground text-sm mt-1">
-          Review the key terms of your agreement, then check each acknowledgment below.
-        </p>
-      </div>
+    <div>
+      <h2 className="page-title">Agreement Sections</h2>
+      <p className="page-subtitle">Review each section. Tap to expand for details and explanations.</p>
 
-      {/* Key terms summary */}
-      <div className="space-y-3">
-        {[
-          {
-            title: 'Protection Plan',
-            body: `Your weekly fee includes physical damage coverage (comprehensive & collision). You are responsible for a Damage Fee of the lesser of actual repair cost or $1,000 per occurrence.`,
-          },
-          {
-            title: 'Liability Benefit',
-            body: stateData.liabilityNote,
-          },
-          {
-            title: 'Authorized Operators',
-            body: 'Only you may operate the vehicle. Unauthorized operation is a material breach and may result in immediate vehicle recovery.',
-          },
-          {
-            title: 'Accident Reporting',
-            body: 'You must report any accident, collision, theft, or damage within 24 hours by calling 855-861-9401 or emailing claims@drivewhip.com.',
-          },
-          {
-            title: 'Dispute Resolution',
-            body: 'All disputes are resolved by binding arbitration. You waive the right to a jury trial and class action participation.',
-          },
-        ].map(({ title, body }) => (
-          <div key={title} className="rounded-xl border border-border p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-1 h-4 rounded-full" style={{ backgroundColor: '#ff6221' }} />
-              <span className="text-xs font-bold uppercase tracking-wider text-foreground">{title}</span>
+      {/* Section cards */}
+      {AGREEMENT_SECTIONS.map(sec => {
+        const isOpen = expandedSections.has(sec.id);
+        // Override liability body with state-specific text
+        const body = sec.id === 'liability' ? stateData.liabilityNote : sec.body;
+        return (
+          <div key={sec.id} className="section-card">
+            <div className="section-card-header" onClick={() => toggleSection(sec.id)}>
+              <span className="section-card-title">{sec.title}</span>
+              <span className={`section-card-badge ${sec.badgeType === 'covered' ? 'badge-covered' : 'badge-required'}`}>
+                {sec.badge}
+              </span>
+              <ChevronDown size={16} style={{ flexShrink: 0, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', color: 'var(--muted-foreground)' }} />
             </div>
-            <p className="text-sm legal-text">{body}</p>
+            {isOpen && (
+              <div className="section-card-body">
+                <p>{body}</p>
+                {sec.hint && (
+                  <div className="hint-box">
+                    <div className="hint-box-label">{sec.hint.label}</div>
+                    <p style={{ whiteSpace: 'pre-line' }}>{sec.hint.text}</p>
+                  </div>
+                )}
+                {sec.subItems.map(sub => {
+                  const subId = `${sec.id}-${sub.q}`;
+                  const subOpen = expandedSubItems.has(subId);
+                  return (
+                    <div key={sub.q} style={{ marginTop: 8, borderTop: '1px solid var(--border)', paddingTop: 8 }}>
+                      <button
+                        onClick={() => toggleSub(subId)}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', background: 'none', border: 'none', padding: 0, textAlign: 'left', cursor: 'pointer' }}
+                      >
+                        <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--foreground)' }}>{sub.q}</span>
+                        <ChevronDown size={14} style={{ flexShrink: 0, transform: subOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                      </button>
+                      {subOpen && <p style={{ fontSize: 13, color: 'var(--muted-foreground)', marginTop: 6, lineHeight: 1.5 }}>{sub.a}</p>}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        ))}
-        {stateData.statDisclosure && (
-          <div className="rounded-xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/20 p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <AlertCircle size={14} className="text-amber-600" />
-              <span className="text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">State Disclosure</span>
-            </div>
-            <p className="text-sm legal-text">{stateData.statDisclosure}</p>
+        );
+      })}
+
+      {stateData.statDisclosure && (
+        <div style={{ background: '#fffbeb', border: '1.5px solid #fcd34d', borderRadius: 10, padding: '14px 16px', marginBottom: 12 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#92400e', marginBottom: 4 }}>
+            {stateData.name} State Disclosure
           </div>
-        )}
-      </div>
+          <p style={{ fontSize: 13, color: '#78350f', lineHeight: 1.55, margin: 0 }}>{stateData.statDisclosure}</p>
+        </div>
+      )}
 
       {/* Acknowledgments */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">
-            Member Acknowledgments
-          </h3>
-          <span className="text-xs text-muted-foreground">
-            {acksChecked.filter(Boolean).length} / {ACK_ITEMS.length}
+      <div style={{ marginTop: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--foreground)', margin: 0 }}>Important Acknowledgments</h3>
+          <span style={{ fontSize: 12, color: 'var(--muted-foreground)', fontWeight: 500 }}>
+            {acksChecked.filter(Boolean).length}/{ACK_ITEMS.length}
           </span>
         </div>
-        <div className="space-y-2">
+        <p style={{ fontSize: 13, color: 'var(--muted-foreground)', marginBottom: 12 }}>
+          Please review and acknowledge the following terms.
+        </p>
+        <div className="screen-card">
           {ACK_ITEMS.map((item, i) => (
-            <div
-              key={i}
-              onClick={() => toggleAck(i)}
-              className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
-                acksChecked[i]
-                  ? 'border-green-300 bg-green-50 dark:bg-green-950/20 dark:border-green-700'
-                  : 'border-border hover:border-muted-foreground/40'
-              }`}
-            >
-              <Checkbox
-                checked={acksChecked[i]}
-                onCheckedChange={() => toggleAck(i)}
-                className="mt-0.5 shrink-0"
-              />
-              <span className="text-sm legal-text leading-snug">{item}</span>
+            <div key={i} className={`ack-item ${acksChecked[i] ? 'checked' : ''}`} onClick={() => toggleAck(i)}>
+              <div className={`ack-checkbox ${acksChecked[i] ? 'checked' : ''}`}>
+                {acksChecked[i] && <Check size={12} />}
+              </div>
+              <span className="ack-item-text">{item}</span>
             </div>
           ))}
         </div>
         {!allChecked && (
-          <p className="text-xs text-muted-foreground mt-2 text-center">
+          <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--muted-foreground)', marginTop: 10 }}>
             Check all {ACK_ITEMS.length} acknowledgments to continue.
           </p>
         )}
@@ -768,323 +759,252 @@ function AgreementStep({ fields, stateData, acksChecked, setAcksChecked, onNext,
   );
 }
 
-// ── SIGN STEP ────────────────────────────────────────────────────────────────
-function SignStep({ fields, setField, canvasRef, hasSig, startDraw, draw, endDraw, clearSig, onNext, onBack, canProceed }: {
-  fields: MemberFields;
-  setField: (k: keyof MemberFields, v: string) => void;
-  canvasRef: React.RefObject<HTMLCanvasElement | null>;
-  hasSig: boolean;
+// ── SIGN ─────────────────────────────────────────────────────────────────────
+function SignStep({ fields, setField, canvasRef, hasSig, startDraw, draw, endDraw, clearSig }: {
+  fields: MemberFields; setField: (k: keyof MemberFields, v: string) => void;
+  canvasRef: React.RefObject<HTMLCanvasElement | null>; hasSig: boolean;
   startDraw: (e: React.MouseEvent | React.TouchEvent) => void;
   draw: (e: React.MouseEvent | React.TouchEvent) => void;
-  endDraw: () => void;
-  clearSig: () => void;
-  onNext: () => void;
-  onBack: () => void;
-  canProceed: boolean;
+  endDraw: () => void; clearSig: () => void;
 }) {
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">Sign Your Agreement</h2>
-        <p className="text-muted-foreground text-sm mt-1">
-          Draw your signature in the box below, then type your full name to confirm.
-        </p>
-      </div>
+    <div>
+      <h2 className="page-title">Electronic Signature</h2>
+      <p className="page-subtitle">Please review and sign your agreement.</p>
 
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <Label className="text-xs font-semibold uppercase tracking-wider">
-            Signature <span className="text-red-500">*</span>
-          </Label>
+      <div className="screen-card">
+        <div className="screen-card-body" style={{ paddingTop: 20 }}>
+          {/* Sig tabs */}
+          <div className="sig-tab-bar">
+            <button className="sig-tab active">Draw Signature</button>
+          </div>
+
+          {/* Canvas */}
+          <div style={{ position: 'relative', marginTop: 12 }}>
+            <div className="sig-canvas-wrap">
+              <canvas
+                ref={canvasRef} width={560} height={150}
+                style={{ width: '100%', height: 150, display: 'block' }}
+                onMouseDown={startDraw} onMouseMove={draw} onMouseUp={endDraw} onMouseLeave={endDraw}
+                onTouchStart={startDraw} onTouchMove={draw} onTouchEnd={endDraw}
+              />
+            </div>
+            {!hasSig && (
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                <span style={{ fontSize: 14, color: 'var(--muted-foreground)', fontStyle: 'italic' }}>Sign here</span>
+              </div>
+            )}
+          </div>
+
           {hasSig && (
-            <button
-              onClick={clearSig}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <RotateCcw size={12} /> Clear
+            <button onClick={clearSig} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--muted-foreground)', background: 'none', border: 'none', padding: '6px 0', marginTop: 4 }}>
+              <RotateCcw size={13} /> Clear signature
             </button>
           )}
-        </div>
-        <div className="sig-canvas-wrap">
-          <canvas
-            ref={canvasRef}
-            width={600}
-            height={160}
-            className="w-full h-40 block"
-            onMouseDown={startDraw}
-            onMouseMove={draw}
-            onMouseUp={endDraw}
-            onMouseLeave={endDraw}
-            onTouchStart={startDraw}
-            onTouchMove={draw}
-            onTouchEnd={endDraw}
-          />
-        </div>
-        {!hasSig && (
-          <p className="text-xs text-muted-foreground mt-1.5 text-center">
-            Draw your signature above using mouse or touch
-          </p>
-        )}
-      </div>
 
-      <Field label="Printed Full Name *">
-        <Input
-          value={fields.printedName}
-          onChange={e => setField('printedName', e.target.value)}
-          placeholder="Type your full legal name"
-          className="text-base"
-        />
-      </Field>
+          <div style={{ height: 16 }} />
 
-      <div className="rounded-xl border border-border bg-muted/30 p-4 text-sm legal-text">
-        By signing above and typing my name, I certify that I have read this Member Lease Agreement and the Whip Terms of Service in their entirety, that I understand and agree to all terms and conditions, and that this agreement is legally binding upon my execution.
+          <FI label="Type Your Full Name *">
+            <input className="field-input" value={fields.printedName}
+              onChange={e => setField('printedName', e.target.value)}
+              placeholder="Type your full legal name" style={{ fontSize: 16 }} />
+          </FI>
+
+          <div style={{ background: 'var(--muted)', borderRadius: 8, padding: '12px 14px', marginTop: 4, fontSize: 13, color: 'var(--muted-foreground)', lineHeight: 1.55 }}>
+            By signing above and typing my name, I agree to the terms of this agreement and the{' '}
+            <span style={{ color: '#ff6221', fontWeight: 600 }}>Terms of Service</span>.
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-// ── ADDONS STEP ──────────────────────────────────────────────────────────────
-function AddonsStep({ stateData, pipElection, setPipElection, onNext, onBack, canProceed }: {
-  stateData: StateData;
-  pipElection: PipElection;
-  setPipElection: (v: PipElection) => void;
-  onNext: () => void;
-  onBack: () => void;
-  canProceed: boolean;
+// ── ADDONS ───────────────────────────────────────────────────────────────────
+function AddonsStep({ stateData, pipElection, setPipElection }: {
+  stateData: StateData; pipElection: PipElection; setPipElection: (v: PipElection) => void;
 }) {
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-foreground">{stateData.name} Required Forms</h2>
-        <p className="text-muted-foreground text-sm mt-1">
-          {stateData.name} law requires the following elections before your agreement is complete.
-        </p>
-      </div>
+    <div>
+      <h2 className="page-title">{stateData.name} Required Forms</h2>
+      <p className="page-subtitle">{stateData.name} law requires the following elections before your agreement is complete.</p>
 
       {stateData.addons.includes('md-pip') && (
-        <MdPipAddon pipElection={pipElection} setPipElection={setPipElection} />
-      )}
-      {stateData.addons.includes('ga-um') && (
-        <GaUmAddon />
-      )}
-      {stateData.addons.includes('fl-um') && (
-        <FlUmAddon />
-      )}
-      {stateData.addons.includes('pa-pip') && (
-        <PaPipAddon />
-      )}
-    </div>
-  );
-}
-
-function MdPipAddon({ pipElection, setPipElection }: {
-  pipElection: PipElection;
-  setPipElection: (v: PipElection) => void;
-}) {
-  return (
-    <div className="space-y-4">
-      <div className="rounded-xl border-2 border-border p-5">
-        <h3 className="text-sm font-bold uppercase tracking-wider mb-1">Maryland PIP Election</h3>
-        <p className="text-sm text-muted-foreground mb-4">
-          Personal Injury Protection (PIP) pays medical expenses and lost wages regardless of fault. You must elect or waive this coverage.
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <button
-            onClick={() => setPipElection('full')}
-            className={`p-4 rounded-xl border-2 text-left transition-all ${
-              pipElection === 'full'
-                ? 'border-green-400 bg-green-50 dark:bg-green-950/30'
-                : 'border-border hover:border-muted-foreground/40'
-            }`}
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${pipElection === 'full' ? 'border-green-500' : 'border-muted-foreground'}`}>
-                {pipElection === 'full' && <div className="w-2 h-2 rounded-full bg-green-500" />}
-              </div>
-              <span className="font-semibold text-sm">Elect PIP Coverage</span>
-            </div>
-            <p className="text-xs text-muted-foreground">$2,500 per person per accident for medical expenses and lost wages, regardless of fault.</p>
-          </button>
-          <button
-            onClick={() => setPipElection('waive')}
-            className={`p-4 rounded-xl border-2 text-left transition-all ${
-              pipElection === 'waive'
-                ? 'border-amber-400 bg-amber-50 dark:bg-amber-950/30'
-                : 'border-border hover:border-muted-foreground/40'
-            }`}
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${pipElection === 'waive' ? 'border-amber-500' : 'border-muted-foreground'}`}>
-                {pipElection === 'waive' && <div className="w-2 h-2 rounded-full bg-amber-500" />}
-              </div>
-              <span className="font-semibold text-sm">Waive PIP Coverage</span>
-            </div>
-            <p className="text-xs text-muted-foreground">I understand I will have no PIP benefits. I waive this coverage affirmatively.</p>
-          </button>
-        </div>
-        {pipElection === 'waive' && (
-          <div className="mt-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-700 text-xs text-amber-800 dark:text-amber-300">
-            <strong>Waiver Notice:</strong> By waiving PIP, you and your passengers will have no PIP benefits. A separate waiver form will be included in your printed agreement.
+        <div className="screen-card">
+          <div className="screen-card-header">
+            <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 4px' }}>PIP Coverage Election</h3>
+            <p style={{ fontSize: 13, color: 'var(--muted-foreground)', margin: 0 }}>Required by Maryland Law</p>
           </div>
-        )}
-      </div>
+          <div className="screen-card-body" style={{ paddingTop: 16 }}>
+            <p style={{ fontSize: 14, color: 'var(--foreground)', marginBottom: 16, lineHeight: 1.55 }}>
+              Personal Injury Protection (PIP) pays medical expenses and lost wages regardless of fault. Select your coverage option:
+            </p>
+            <div
+              className={`radio-option ${pipElection === 'full' ? 'selected' : ''}`}
+              onClick={() => setPipElection('full')}
+            >
+              <div className="radio-dot">
+                <div className="radio-dot-inner" />
+              </div>
+              <div>
+                <div className="radio-option-label">Request Full PIP Coverage</div>
+                <div className="radio-option-desc">$2,400/year — $50/week. Covers medical expenses and lost wages for you and passengers.</div>
+              </div>
+            </div>
+            <div
+              className={`radio-option ${pipElection === 'waive' ? 'selected' : ''}`}
+              onClick={() => setPipElection('waive')}
+            >
+              <div className="radio-dot">
+                <div className="radio-dot-inner" />
+              </div>
+              <div>
+                <div className="radio-option-label">Waive PIP Coverage</div>
+                <div className="radio-option-desc">I affirmatively waive PIP benefits. I understand I will have no PIP coverage.</div>
+              </div>
+            </div>
+            {pipElection === 'waive' && (
+              <div style={{ background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#92400e', lineHeight: 1.5 }}>
+                <strong>Notice:</strong> By waiving PIP, you and your passengers will have no PIP benefits. A signed waiver will be included in your printed agreement.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {stateData.addons.includes('ga-um') && (
+        <div className="screen-card">
+          <div className="screen-card-header">
+            <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 4px' }}>UM Coverage Selection</h3>
+            <p style={{ fontSize: 13, color: 'var(--muted-foreground)', margin: 0 }}>Required by Georgia Law (O.C.G.A. § 33-7-11)</p>
+          </div>
+          <div className="screen-card-body" style={{ paddingTop: 16 }}>
+            <p style={{ fontSize: 14, color: 'var(--foreground)', marginBottom: 12, lineHeight: 1.55 }}>
+              Per your lease terms, Uninsured Motorist (UM) coverage is being rejected for this vehicle. A signed rejection form will be included in your agreement.
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8 }}>
+              <CheckCircle size={18} color="#16a34a" />
+              <span style={{ fontSize: 14, color: '#15803d', fontWeight: 500 }}>UM Rejection form will be included in your package</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {stateData.addons.includes('fl-um') && (
+        <div className="screen-card">
+          <div className="screen-card-header">
+            <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 4px' }}>UM/UIM Coverage Selection</h3>
+            <p style={{ fontSize: 13, color: 'var(--muted-foreground)', margin: 0 }}>Required by Florida Law (§ 627.727)</p>
+          </div>
+          <div className="screen-card-body" style={{ paddingTop: 16 }}>
+            <p style={{ fontSize: 14, color: 'var(--foreground)', marginBottom: 12, lineHeight: 1.55 }}>
+              Per your lease terms, Uninsured/Underinsured Motorist (UM/UIM) coverage is being rejected for this vehicle.
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8 }}>
+              <CheckCircle size={18} color="#16a34a" />
+              <span style={{ fontSize: 14, color: '#15803d', fontWeight: 500 }}>UM/UIM Rejection form will be included in your package</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {stateData.addons.includes('pa-pip') && (
+        <div className="screen-card">
+          <div className="screen-card-header">
+            <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 4px' }}>First Party Benefits Election</h3>
+            <p style={{ fontSize: 13, color: 'var(--muted-foreground)', margin: 0 }}>Required by Pennsylvania Law</p>
+          </div>
+          <div className="screen-card-body" style={{ paddingTop: 16 }}>
+            <p style={{ fontSize: 14, color: 'var(--foreground)', marginBottom: 12, lineHeight: 1.55 }}>
+              Pennsylvania requires elections for First Party Medical Benefits and UM/UIM coverage. Both are being rejected per your lease terms.
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8 }}>
+              <CheckCircle size={18} color="#16a34a" />
+              <span style={{ fontSize: 14, color: '#15803d', fontWeight: 500 }}>PA coverage election form will be included in your package</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function GaUmAddon() {
-  return (
-    <div className="rounded-xl border-2 border-border p-5">
-      <h3 className="text-sm font-bold uppercase tracking-wider mb-1">Georgia UM Coverage</h3>
-      <p className="text-sm text-muted-foreground mb-3">
-        Per O.C.G.A. § 33-7-11, you are rejecting Uninsured Motorist coverage for this lease vehicle. A signed rejection form will be included in your printed agreement.
-      </p>
-      <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-700 text-sm text-blue-800 dark:text-blue-300">
-        <CheckCircle2 size={16} className="shrink-0" />
-        UM Rejection form will be included in your printed agreement.
-      </div>
-    </div>
-  );
-}
-
-function FlUmAddon() {
-  return (
-    <div className="rounded-xl border-2 border-border p-5">
-      <h3 className="text-sm font-bold uppercase tracking-wider mb-1">Florida UM/UIM Coverage</h3>
-      <p className="text-sm text-muted-foreground mb-3">
-        Per Florida Statutes § 627.727, you are rejecting Uninsured/Underinsured Motorist coverage for this lease vehicle. A signed rejection form will be included in your printed agreement.
-      </p>
-      <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-700 text-sm text-blue-800 dark:text-blue-300">
-        <CheckCircle2 size={16} className="shrink-0" />
-        UM/UIM Rejection form will be included in your printed agreement.
-      </div>
-    </div>
-  );
-}
-
-function PaPipAddon() {
-  return (
-    <div className="rounded-xl border-2 border-border p-5">
-      <h3 className="text-sm font-bold uppercase tracking-wider mb-1">Pennsylvania Coverage Elections</h3>
-      <p className="text-sm text-muted-foreground mb-3">
-        Pennsylvania requires elections for First Party Medical Benefits and UM/UIM coverage. Both are being rejected per your lease terms. A signed election form will be included in your printed agreement.
-      </p>
-      <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-700 text-sm text-blue-800 dark:text-blue-300">
-        <CheckCircle2 size={16} className="shrink-0" />
-        PA coverage election form will be included in your printed agreement.
-      </div>
-    </div>
-  );
-}
-
-// ── COMPLETE STEP ────────────────────────────────────────────────────────────
+// ── COMPLETE ─────────────────────────────────────────────────────────────────
 function CompleteStep({ fields, stateData, onPrint, onBack }: {
-  fields: MemberFields;
-  stateData: StateData;
-  onPrint: () => void;
-  onBack: () => void;
+  fields: MemberFields; stateData: StateData; onPrint: () => void; onBack: () => void;
 }) {
-  return (
-    <div className="flex flex-col items-center text-center py-8 gap-6">
-      <div
-        className="w-20 h-20 rounded-full flex items-center justify-center shadow-xl"
-        style={{ backgroundColor: '#171b31' }}
-      >
-        <CheckCircle2 className="text-white" size={36} />
-      </div>
-      <div>
-        <h1 className="text-3xl font-bold text-foreground mb-2">Agreement Complete</h1>
-        <p className="text-muted-foreground text-base max-w-md mx-auto leading-relaxed">
-          {fields.memberName
-            ? `Thank you, ${fields.memberName.split(' ')[0]}. Your Whip Member Lease Agreement for ${stateData.name} is ready.`
-            : `Your Whip Member Lease Agreement for ${stateData.name} is ready.`}
-        </p>
-      </div>
+  const firstName = fields.memberName ? fields.memberName.split(' ')[0] : null;
+  const docs = [
+    { label: 'Member Agreement', sub: 'Signed ' + new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) },
+    ...(stateData.addons.includes('md-pip') ? [{ label: 'Maryland PIP Waiver', sub: 'Signed' }] : []),
+    ...(stateData.addons.includes('ga-um') ? [{ label: 'Georgia UM Rejection', sub: 'Signed' }] : []),
+    ...(stateData.addons.includes('fl-um') ? [{ label: 'Florida UM/UIM Rejection', sub: 'Signed' }] : []),
+    ...(stateData.addons.includes('pa-pip') ? [{ label: 'Pennsylvania Coverage Election', sub: 'Signed' }] : []),
+  ];
 
-      <div className="w-full max-w-sm space-y-3">
-        <div className="rounded-xl border border-border p-4 text-left">
-          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Included in your package</div>
-          <ul className="space-y-1.5">
-            <li className="flex items-center gap-2 text-sm">
-              <CheckCircle2 size={14} className="text-green-500 shrink-0" />
-              Member Lease Agreement (3 pages)
-            </li>
-            {stateData.addons.includes('md-pip') && (
-              <>
-                <li className="flex items-center gap-2 text-sm">
-                  <CheckCircle2 size={14} className="text-green-500 shrink-0" />
-                  Maryland PIP Notice
-                </li>
-                <li className="flex items-center gap-2 text-sm">
-                  <CheckCircle2 size={14} className="text-green-500 shrink-0" />
-                  Maryland PIP Waiver (if applicable)
-                </li>
-              </>
-            )}
-            {stateData.addons.includes('ga-um') && (
-              <li className="flex items-center gap-2 text-sm">
-                <CheckCircle2 size={14} className="text-green-500 shrink-0" />
-                Georgia UM Rejection Form
-              </li>
-            )}
-            {stateData.addons.includes('fl-um') && (
-              <li className="flex items-center gap-2 text-sm">
-                <CheckCircle2 size={14} className="text-green-500 shrink-0" />
-                Florida UM/UIM Rejection Form
-              </li>
-            )}
-            {stateData.addons.includes('pa-pip') && (
-              <li className="flex items-center gap-2 text-sm">
-                <CheckCircle2 size={14} className="text-green-500 shrink-0" />
-                Pennsylvania Coverage Election Form
-              </li>
-            )}
-          </ul>
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {/* Success hero */}
+      <div className="screen-card">
+        <div style={{ background: '#171b31', padding: '32px 24px', textAlign: 'center' }}>
+          <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+            <CheckCircle size={36} color="#4ade80" />
+          </div>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: 'white', margin: '0 0 8px' }}>You're All Set!</h1>
+          <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.65)', margin: 0, lineHeight: 1.5 }}>
+            {firstName
+              ? `${firstName}, your agreement has been successfully completed and signed.`
+              : 'Your agreement has been successfully completed and signed.'}
+          </p>
+        </div>
+        <div className="screen-card-body" style={{ paddingTop: 20 }}>
+          {[
+            { label: 'Agreement PDF Generated', done: true },
+            { label: 'Saved to Your Profile', done: true },
+          ].map(({ label, done }) => (
+            <div key={label} className="status-item">
+              <CheckCircle size={20} color="#16a34a" />
+              <span className="status-label">{label}</span>
+            </div>
+          ))}
         </div>
       </div>
 
-      <Button
-        onClick={onPrint}
-        size="lg"
-        className="px-10 text-white font-semibold gap-2"
-        style={{ backgroundColor: '#171b31' }}
-      >
-        <Printer size={18} /> Print / Save PDF
-      </Button>
+      {/* Documents */}
+      <div>
+        <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--foreground)', marginBottom: 12 }}>My Documents</h3>
+        <div className="screen-card">
+          {docs.map(({ label, sub }) => (
+            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
+              <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <FileText size={18} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--foreground)' }}>{label}</div>
+                <div style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>{sub}</div>
+              </div>
+              <button onClick={onPrint} style={{ fontSize: 13, color: '#ff6221', fontWeight: 600, background: 'none', border: 'none', padding: '4px 8px' }}>View</button>
+            </div>
+          ))}
+        </div>
+      </div>
 
-      <p className="text-xs text-muted-foreground max-w-xs">
-        Use your browser's print dialog to save as PDF. All pages including state-specific forms will be included.
+      <button className="btn-primary" onClick={onPrint} style={{ marginTop: 4 }}>
+        <Printer size={18} /> Download Agreement PDF
+      </button>
+      <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--muted-foreground)', marginTop: -8 }}>
+        Use your browser's print dialog to save as PDF.
       </p>
     </div>
   );
 }
 
-// ── SHARED UI HELPERS ────────────────────────────────────────────────────────
-function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
+// ── FIELD HELPER ─────────────────────────────────────────────────────────────
+function FI({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
   return (
-    <div className="rounded-xl border border-border p-5">
-      <div className="flex items-center gap-2 mb-4">
-        <div className="w-1 h-5 rounded-full" style={{ backgroundColor: '#ff6221' }} />
-        <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">{title}</h3>
-      </div>
+    <div className={`field-group ${className || ''}`}>
+      <label className="field-label">{label}</label>
       {children}
     </div>
   );
 }
-
-function Field({ label, children, className }: {
-  label: string;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div className={`space-y-1.5 ${className || ''}`}>
-      <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-        {label}
-      </Label>
-      {children}
-    </div>
-  );
-}
-
-
