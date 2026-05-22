@@ -398,32 +398,104 @@ function WelcomeStep({ fields, prefilled, onNext, setField }: {
   const hasPrefill = prefilled.size > 0;
   const firstName = fields.memberName ? fields.memberName.split(' ')[0] : null;
 
+  const WELCOME_STEPS = [
+    { id: 'welcome', label: 'Welcome' },
+    { id: 'info',    label: 'Info' },
+    { id: 'tos',     label: 'Terms' },
+    { id: 'docs',    label: 'Documents' },
+    { id: 'review',  label: 'Review' },
+    { id: 'sign',    label: 'Sign' },
+  ];
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      {/* Hero card */}
-      <div className="screen-card" style={{ overflow: 'hidden' }}>
-        <div style={{ background: '#171b31', padding: '32px 24px 28px' }}>
-          <img src={LOGO_URL} alt="Whip" style={{ height: 32, marginBottom: 20 }}
-            onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-          <h1 style={{ fontSize: 28, fontWeight: 700, color: 'white', lineHeight: 1.2, margin: '0 0 10px' }}>
-            {firstName ? `Welcome,\n${firstName}.` : 'Welcome to Your\nMember Agreement.'}
-          </h1>
-          <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.65)', margin: 0, lineHeight: 1.5 }}>
-            {hasPrefill
-              ? "Your information has been pre-filled. Review each section and sign to complete your agreement."
-              : "Let's get your agreement set up. It only takes a few minutes."}
-          </p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+      {/* Step pill row */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0, marginBottom: 20, overflowX: 'auto', paddingBottom: 2 }}>
+        {WELCOME_STEPS.map((s, i) => (
+          <div key={s.id} style={{ display: 'flex', alignItems: 'center' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+              <div style={{
+                width: 28, height: 28, borderRadius: '50%',
+                background: i === 0 ? '#ff6221' : 'var(--muted)',
+                border: i === 0 ? 'none' : '1.5px solid var(--border)',
+                color: i === 0 ? 'white' : 'var(--muted-foreground)',
+                fontSize: 12, fontWeight: 700,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0,
+              }}>{i + 1}</div>
+              <span style={{ fontSize: 10, fontWeight: i === 0 ? 700 : 400, color: i === 0 ? '#ff6221' : 'var(--muted-foreground)', whiteSpace: 'nowrap' }}>{s.label}</span>
+            </div>
+            {i < WELCOME_STEPS.length - 1 && (
+              <div style={{ width: 20, height: 1.5, background: 'var(--border)', margin: '0 2px', marginBottom: 16, flexShrink: 0 }} />
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Hero image + title card */}
+      <div className="screen-card" style={{ overflow: 'hidden', marginBottom: 16 }}>
+        {/* Car image hero */}
+        <div style={{ position: 'relative', height: 160, overflow: 'hidden', background: '#171b31' }}>
+          <img
+            src="https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=800&q=80"
+            alt=""
+            style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.55 }}
+          />
+          {/* Gradient overlay */}
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 30%, #171b31 100%)' }} />
+          {/* Logo on image */}
+          <div style={{ position: 'absolute', top: 14, left: 16 }}>
+            <img src={LOGO_URL} alt="Whip" style={{ height: 24 }}
+              onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+          </div>
+          {/* Floating icon */}
+          <div style={{ position: 'absolute', bottom: -20, left: '50%', transform: 'translateX(-50%)', width: 48, height: 48, borderRadius: '50%', background: '#171b31', border: '3px solid var(--card)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <FileText size={22} />
+          </div>
         </div>
-        <div className="screen-card-body" style={{ paddingTop: 20 }}>
+
+        <div style={{ padding: '32px 20px 20px', textAlign: 'center' }}>
+          <h1 style={{ fontSize: 24, fontWeight: 800, color: 'var(--foreground)', lineHeight: 1.2, margin: '0 0 6px', letterSpacing: '-0.02em' }}>
+            Member Lease Agreement
+          </h1>
+          <div style={{ width: 36, height: 3, background: '#ff6221', borderRadius: 2, margin: '10px auto 14px' }} />
+          <p style={{ fontSize: 14, color: 'var(--muted-foreground)', margin: '0 0 16px', lineHeight: 1.55 }}>
+            {hasPrefill
+              ? `${firstName ? `Hi ${firstName} — your` : 'Your'} information has been pre-filled. Review and sign to complete.`
+              : "Let's get your membership agreement set up. It only takes about 5 minutes."}
+          </p>
+
+          {/* Security badge */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--muted)', borderRadius: 10, marginBottom: 20, textAlign: 'left' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff6221" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+            <span style={{ fontSize: 13, color: 'var(--foreground)', fontWeight: 500, lineHeight: 1.4 }}>Your information is secure and encrypted. This is a binding legal agreement.</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted-foreground)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginLeft: 'auto' }}><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+
+          {/* Trust trio */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 20 }}>
+            {[
+              { icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff6221" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>, label: 'Secure & Private', desc: 'Encrypted session' },
+              { icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff6221" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>, label: '5 Minute Process', desc: 'Quick & easy' },
+              { icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff6221" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>, label: 'Legally Binding', desc: 'For your protection' },
+            ].map(({ icon, label, desc }) => (
+              <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--foreground)', textAlign: 'center', lineHeight: 1.3 }}>{label}</div>
+                <div style={{ fontSize: 10, color: 'var(--muted-foreground)', textAlign: 'center', lineHeight: 1.3 }}>{desc}</div>
+              </div>
+            ))}
+          </div>
+
           {hasPrefill && (
-            <div className="prefill-banner" style={{ marginBottom: 16 }}>
+            <div className="prefill-banner" style={{ marginBottom: 16, textAlign: 'left' }}>
               <Info size={16} style={{ flexShrink: 0, marginTop: 1 }} />
               <span>Some fields have been pre-filled from your reservation. You can update any field before signing.</span>
             </div>
           )}
 
           {/* State selector */}
-          <div className="field-group">
+          <div className="field-group" style={{ textAlign: 'left' }}>
             <label className="field-label">Select Your Garaging State <span style={{ color: '#ef4444' }}>*</span></label>
             <select
               className={`field-input field-input-select ${prefilled.has('agreementState') ? 'prefilled' : ''}`}
@@ -440,32 +512,20 @@ function WelcomeStep({ fields, prefilled, onNext, setField }: {
             </p>
           </div>
 
-          <button className="btn-primary" onClick={onNext} style={{ marginTop: 8 }}>
-            Start Agreement <ChevronRight size={18} />
+          <button className="btn-primary" onClick={onNext} disabled={!fields.agreementState} style={{ marginTop: 8 }}>
+            Get Started <ChevronRight size={18} />
           </button>
-          <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--muted-foreground)', marginTop: 12 }}>
-            Need help? <a href="mailto:info@drivewhip.com" style={{ color: '#ff6221' }}>Contact Support</a>
+          <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--muted-foreground)', marginTop: 10 }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle' }}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Backed by Whip Protection Plan
           </p>
         </div>
       </div>
 
-      {/* Steps preview */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-        {[
-          { n: 1, label: 'Personal Information', desc: 'Enter your details' },
-          { n: 2, label: 'Terms of Service', desc: 'Read and agree to Whip\'s terms' },
-          { n: 3, label: 'Agreement Sections', desc: 'Review each section in plain language' },
-          { n: 4, label: 'Electronic Signature', desc: 'Sign to complete your agreement' },
-        ].map(({ n, label, desc }) => (
-          <div key={n} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 4px', borderBottom: '1px solid var(--border)' }}>
-            <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#171b31', color: 'white', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{n}</div>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--foreground)' }}>{label}</div>
-              <div style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>{desc}</div>
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* Help link */}
+      <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--muted-foreground)', marginTop: 4 }}>
+        Need help? <a href="mailto:info@drivewhip.com" style={{ color: '#ff6221', fontWeight: 600 }}>Contact Support</a>
+      </p>
     </div>
   );
 }
@@ -930,24 +990,32 @@ function AddonsStep({ stateData, pipElection, setPipElection }: {
 }
 
 // ── COMPLETE ─────────────────────────────────────────────────────────────────
-function CompleteStep({ fields, stateData, onPrint, onBack }: {
+function CompleteStep({ fields, stateData, onPrint }: {
   fields: MemberFields; stateData: StateData; onPrint: () => void; onBack: () => void;
 }) {
   const firstName = fields.memberName ? fields.memberName.split(' ')[0] : null;
+  const signedDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   const docs = [
-    { label: 'Member Agreement', sub: 'Signed ' + new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) },
-    ...(stateData.addons.includes('md-pip') ? [{ label: 'Maryland PIP Waiver', sub: 'Signed' }] : []),
-    ...(stateData.addons.includes('ga-um') ? [{ label: 'Georgia UM Rejection', sub: 'Signed' }] : []),
-    ...(stateData.addons.includes('fl-um') ? [{ label: 'Florida UM/UIM Rejection', sub: 'Signed' }] : []),
-    ...(stateData.addons.includes('pa-pip') ? [{ label: 'Pennsylvania Coverage Election', sub: 'Signed' }] : []),
+    { label: 'Member Agreement', sub: 'Signed ' + signedDate },
+    ...(stateData.addons.includes('md-pip') ? [{ label: 'Maryland PIP Waiver', sub: 'Signed ' + signedDate }] : []),
+    ...(stateData.addons.includes('ga-um') ? [{ label: 'Georgia UM Rejection', sub: 'Signed ' + signedDate }] : []),
+    ...(stateData.addons.includes('fl-um') ? [{ label: 'Florida UM/UIM Rejection', sub: 'Signed ' + signedDate }] : []),
+    ...(stateData.addons.includes('pa-pip') ? [{ label: 'Pennsylvania Coverage Election', sub: 'Signed ' + signedDate }] : []),
+  ];
+
+  const bottomTabs = [
+    { label: 'Dashboard', icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> },
+    { label: 'Vehicles', icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="3" width="15" height="13" rx="2"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> },
+    { label: 'Support', icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> },
+    { label: 'Profile', icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> },
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, paddingBottom: 80 }}>
       {/* Success hero */}
       <div className="screen-card">
         <div style={{ background: '#171b31', padding: '32px 24px', textAlign: 'center' }}>
-          <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+          <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(74,222,128,0.15)', border: '2px solid rgba(74,222,128,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
             <CheckCircle size={36} color="#4ade80" />
           </div>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: 'white', margin: '0 0 8px' }}>You're All Set!</h1>
@@ -959,9 +1027,9 @@ function CompleteStep({ fields, stateData, onPrint, onBack }: {
         </div>
         <div className="screen-card-body" style={{ paddingTop: 20 }}>
           {[
-            { label: 'Agreement PDF Generated', done: true },
-            { label: 'Saved to Your Profile', done: true },
-          ].map(({ label, done }) => (
+            { label: 'Agreement PDF Generated' },
+            { label: 'Saved to Your Profile' },
+          ].map(({ label }) => (
             <div key={label} className="status-item">
               <CheckCircle size={20} color="#16a34a" />
               <span className="status-label">{label}</span>
@@ -974,27 +1042,52 @@ function CompleteStep({ fields, stateData, onPrint, onBack }: {
       <div>
         <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--foreground)', marginBottom: 12 }}>My Documents</h3>
         <div className="screen-card">
-          {docs.map(({ label, sub }) => (
-            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
-              <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          {docs.map(({ label, sub }, i) => (
+            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', borderBottom: i < docs.length - 1 ? '1px solid var(--border)' : 'none' }}>
+              <div style={{ width: 36, height: 36, borderRadius: 8, background: '#fff7f4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <FileText size={18} />
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--foreground)' }}>{label}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--foreground)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</div>
                 <div style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>{sub}</div>
               </div>
-              <button onClick={onPrint} style={{ fontSize: 13, color: '#ff6221', fontWeight: 600, background: 'none', border: 'none', padding: '4px 8px' }}>View</button>
+              <button onClick={onPrint} style={{ fontSize: 13, color: '#ff6221', fontWeight: 700, background: 'none', border: 'none', padding: '4px 8px', flexShrink: 0 }}>View</button>
             </div>
           ))}
         </div>
       </div>
 
-      <button className="btn-primary" onClick={onPrint} style={{ marginTop: 4 }}>
+      <button className="btn-primary" onClick={onPrint}>
         <Printer size={18} /> Download Agreement PDF
       </button>
       <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--muted-foreground)', marginTop: -8 }}>
         Use your browser's print dialog to save as PDF.
       </p>
+
+      {/* Bottom tab bar (display-only) */}
+      <div style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0,
+        background: 'var(--card)', borderTop: '1px solid var(--border)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-around',
+        padding: '8px 0', paddingBottom: 'max(8px, env(safe-area-inset-bottom))',
+        zIndex: 90, boxShadow: '0 -4px 20px rgba(0,0,0,0.06)'
+      }}>
+        {bottomTabs.map(({ label, icon }, i) => (
+          <button
+            key={label}
+            onClick={() => toast(`${label} — coming soon`, { description: 'This feature will be available in the full Whip app.' })}
+            style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+              background: 'none', border: 'none', padding: '4px 12px',
+              color: i === 2 ? '#ff6221' : 'var(--muted-foreground)',
+              fontSize: 10, fontWeight: i === 2 ? 700 : 400,
+            }}
+          >
+            <span style={{ color: i === 2 ? '#ff6221' : 'var(--muted-foreground)' }}>{icon}</span>
+            {label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
