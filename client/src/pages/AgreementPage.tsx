@@ -549,39 +549,43 @@ function InfoStep({ fields, prefilled, setField }: {
         <div className="screen-card-body" style={{ paddingTop: 20 }}>
           <FI label="Full Legal Name *" className={pf('memberName')}>
             <input className={`field-input ${pf('memberName')}`} value={fields.memberName}
-              onChange={e => setField('memberName', e.target.value)} placeholder="John D. Smith" />
+              onChange={e => setField('memberName', e.target.value)} placeholder="John D. Smith"
+              readOnly={prefilled.has('memberName')} />
           </FI>
           <FI label="Date of Birth" className={pf('dob')}>
             <input type="date" className={`field-input ${pf('dob')}`} value={fields.dob}
-              onChange={e => setField('dob', e.target.value)} />
+              onChange={e => setField('dob', e.target.value)}
+              readOnly={prefilled.has('dob')} />
           </FI>
-          <FI label="Driver's License Number" className={pf('dlNumber')}>
-            <input className={`field-input ${pf('dlNumber')}`} value={fields.dlNumber}
+          <FI label="Driver's License Number">
+            <input className="field-input" value={fields.dlNumber}
               onChange={e => setField('dlNumber', e.target.value)} placeholder="S123-456-789-012"
               style={{ fontFamily: 'monospace' }} />
           </FI>
-          <FI label="State of License" className={pf('licenseState')}>
-            <select className={`field-input field-input-select ${pf('licenseState')}`}
+          <FI label="State of License">
+            <select className="field-input field-input-select"
               value={fields.licenseState} onChange={e => setField('licenseState', e.target.value)}>
               <option value="">Select…</option>
               {STATE_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
           </FI>
-          <FI label="Email Address" className={pf('email')}>
-            <input type="email" className={`field-input ${pf('email')}`} value={fields.email}
+          <FI label="Email Address">
+            <input type="email" className="field-input" value={fields.email}
               onChange={e => setField('email', e.target.value)} placeholder="john.smith@gmail.com" />
           </FI>
-          <FI label="Phone Number" className={pf('phone')}>
-            <input type="tel" className={`field-input ${pf('phone')}`} value={fields.phone}
+          <FI label="Phone Number">
+            <input type="tel" className="field-input" value={fields.phone}
               onChange={e => setField('phone', e.target.value)} placeholder="(404) 555-0123" />
           </FI>
           <FI label="Street Address" className={pf('address')}>
             <input className={`field-input ${pf('address')}`} value={fields.address}
-              onChange={e => setField('address', e.target.value)} placeholder="123 Main Street" />
+              onChange={e => setField('address', e.target.value)} placeholder="123 Main Street"
+              readOnly={prefilled.has('address')} />
           </FI>
           <FI label="City, State, ZIP" className={pf('cityStateZip')}>
             <input className={`field-input ${pf('cityStateZip')}`} value={fields.cityStateZip}
-              onChange={e => setField('cityStateZip', e.target.value)} placeholder="Atlanta, GA 30301" />
+              onChange={e => setField('cityStateZip', e.target.value)} placeholder="Atlanta, GA 30301"
+              readOnly={prefilled.has('cityStateZip')} />
           </FI>
         </div>
       </div>
@@ -596,38 +600,44 @@ function InfoStep({ fields, prefilled, setField }: {
           <FI label="Member / Customer ID" className={pf('customerId')}>
             <input className={`field-input ${pf('customerId')}`} value={fields.customerId}
               onChange={e => setField('customerId', e.target.value)}
-              style={{ fontFamily: 'monospace' }} />
+              readOnly={prefilled.has('customerId')} style={{ fontFamily: 'monospace' }} />
           </FI>
           <FI label="Reservation ID" className={pf('reservationId')}>
             <input className={`field-input ${pf('reservationId')}`} value={fields.reservationId}
               onChange={e => setField('reservationId', e.target.value)}
-              style={{ fontFamily: 'monospace' }} />
+              readOnly={prefilled.has('reservationId')} style={{ fontFamily: 'monospace' }} />
           </FI>
           <FI label="Vehicle (Year Make Model)" className={pf('vehicle')}>
             <input className={`field-input ${pf('vehicle')}`} value={fields.vehicle}
-              onChange={e => setField('vehicle', e.target.value)} placeholder="2022 Toyota Camry" />
+              onChange={e => setField('vehicle', e.target.value)} placeholder="2022 Toyota Camry"
+              readOnly={prefilled.has('vehicle')} />
           </FI>
           <FI label="VIN" className={pf('vin')}>
             <input className={`field-input ${pf('vin')}`} value={fields.vin}
               onChange={e => setField('vin', e.target.value.toUpperCase())} placeholder="17-character VIN"
-              maxLength={17} style={{ fontFamily: 'monospace', textTransform: 'uppercase' }} />
+              maxLength={17} readOnly={prefilled.has('vin')}
+              style={{ fontFamily: 'monospace', textTransform: 'uppercase' }} />
           </FI>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <FI label="Weekly Fee ($)" className={pf('weeklyFee')}>
               <input type="number" className={`field-input ${pf('weeklyFee')}`} value={fields.weeklyFee}
-                onChange={e => setField('weeklyFee', e.target.value)} placeholder="0.00" />
+                onChange={e => setField('weeklyFee', e.target.value)} placeholder="0.00"
+                readOnly={prefilled.has('weeklyFee')} />
             </FI>
             <FI label="Deposit ($)" className={pf('deposit')}>
               <input type="number" className={`field-input ${pf('deposit')}`} value={fields.deposit}
-                onChange={e => setField('deposit', e.target.value)} placeholder="0.00" />
+                onChange={e => setField('deposit', e.target.value)} placeholder="0.00"
+                readOnly={prefilled.has('deposit')} />
             </FI>
             <FI label="Start Date" className={pf('startDate')}>
               <input type="date" className={`field-input ${pf('startDate')}`} value={fields.startDate}
-                onChange={e => setField('startDate', e.target.value)} />
+                onChange={e => setField('startDate', e.target.value)}
+                readOnly={prefilled.has('startDate')} />
             </FI>
             <FI label="End Date" className={pf('endDate')}>
               <input type="date" className={`field-input ${pf('endDate')}`} value={fields.endDate}
-                onChange={e => setField('endDate', e.target.value)} />
+                onChange={e => setField('endDate', e.target.value)}
+                readOnly={prefilled.has('endDate')} />
             </FI>
           </div>
         </div>

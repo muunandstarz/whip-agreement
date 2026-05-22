@@ -308,15 +308,20 @@
   border-color: rgba(255,255,255,0.4);
   box-shadow: 0 0 0 3px rgba(255,255,255,0.08);
 }
-.field-input.prefilled {
-  border-color: #3b82f6;
-  background: #eff6ff;
-  color: #1e40af;
+.field-input.prefilled,
+.field-input[readonly] {
+  background: #f4f6fa;
+  border-color: #d1d5db;
+  color: #374151;
+  cursor: default;
+  pointer-events: none;
+  user-select: none;
 }
-.dark .field-input.prefilled {
-  background: rgba(59, 130, 246, 0.12);
-  color: #93c5fd;
-  border-color: rgba(59, 130, 246, 0.4);
+.dark .field-input.prefilled,
+.dark .field-input[readonly] {
+  background: rgba(255,255,255,0.05);
+  color: #9ca3af;
+  border-color: rgba(255,255,255,0.1);
 }
 .field-input-select {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
