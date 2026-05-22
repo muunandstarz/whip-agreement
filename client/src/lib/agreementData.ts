@@ -1,0 +1,224 @@
+// ── WHIP AGREEMENT DATA ──────────────────────────────────────────────────────
+// Design: Precision Legal — white canvas, navy authority, orange action
+// All legal text is verbatim from approved Whip agreement documents
+
+export interface StateData {
+  code: string;
+  name: string;
+  govLaw: string;
+  liabilityNote: string;
+  stateNote?: string;
+  statDisclosure?: string;
+  addons: AddonKey[];
+}
+
+export type AddonKey = 'md-pip' | 'ga-um' | 'fl-um' | 'pa-pip';
+
+export const STATE_DATA: Record<string, StateData> = {
+  MD: {
+    code: 'MD',
+    name: 'Maryland',
+    govLaw: 'Maryland',
+    liabilityNote: "Whip's liability benefit applies at the statutory minimum limits required by Maryland when the Member's rideshare application is off (Period 0). Whip's liability benefit does not apply during any period in which the Member is active on a TNC platform.",
+    stateNote: "Maryland — PIP and Uninsured/Underinsured Motorist coverage elections are governed by separate forms provided at enrollment.",
+    statDisclosure: "Maryland — Md. Criminal Law § 7-205: A person who leases a motor vehicle and willfully fails to return it may be guilty of a misdemeanor, punishable by up to one year imprisonment or a fine up to $500, or both. A written demand must be mailed at least 5 days before prosecution may begin.",
+    addons: ['md-pip'],
+  },
+  GA: {
+    code: 'GA',
+    name: 'Georgia',
+    govLaw: 'Georgia',
+    liabilityNote: "Whip's liability benefit applies at the statutory minimum limits required by Georgia when the Member's rideshare application is off (Period 0). Whip's liability benefit does not apply during any period in which the Member is active on a TNC platform.",
+    addons: ['ga-um'],
+  },
+  FL: {
+    code: 'FL',
+    name: 'Florida',
+    govLaw: 'Florida',
+    liabilityNote: "Whip's liability benefit applies at the statutory minimum limits required by Florida when the Member's rideshare application is off (Period 0). Whip's liability benefit does not apply during any period in which the Member is active on a TNC platform.",
+    addons: ['fl-um'],
+  },
+  PA: {
+    code: 'PA',
+    name: 'Pennsylvania',
+    govLaw: 'Pennsylvania',
+    liabilityNote: "Whip's liability benefit applies at the statutory minimum limits required by Pennsylvania when the Member's rideshare application is off (Period 0). Whip's liability benefit does not apply during any period in which the Member is active on a TNC platform.",
+    addons: ['pa-pip'],
+  },
+  IL: {
+    code: 'IL',
+    name: 'Illinois',
+    govLaw: 'Illinois',
+    liabilityNote: "Whip's liability benefit applies at the statutory minimum limits required by Illinois when the Member's rideshare application is off (Period 0). Whip's liability benefit does not apply during any period in which the Member is active on a TNC platform.",
+    addons: [],
+  },
+  TX: {
+    code: 'TX',
+    name: 'Texas',
+    govLaw: 'Texas',
+    liabilityNote: "Whip's liability benefit applies at the statutory minimum limits required by Texas when the Member's rideshare application is off (Period 0). Whip's liability benefit does not apply during any period in which the Member is active on a TNC platform.",
+    addons: [],
+  },
+  VA: {
+    code: 'VA',
+    name: 'Virginia',
+    govLaw: 'Virginia',
+    liabilityNote: "Whip's liability benefit applies at the statutory minimum limits required by Virginia when the Member's rideshare application is off (Period 0). Whip's liability benefit does not apply during any period in which the Member is active on a TNC platform.",
+    addons: [],
+  },
+  MA: {
+    code: 'MA',
+    name: 'Massachusetts',
+    govLaw: 'Massachusetts',
+    liabilityNote: "Whip's liability benefit applies at the statutory minimum limits required by Massachusetts when the Member's rideshare application is off (Period 0). Whip's liability benefit does not apply during any period in which the Member is active on a TNC platform.",
+    addons: [],
+  },
+  OTHER: {
+    code: 'OTHER',
+    name: 'Other State',
+    govLaw: 'the state in which the vehicle is registered',
+    liabilityNote: "Whip's liability benefit applies at the statutory minimum limits required by applicable state law when the Member's rideshare application is off (Period 0). Whip's liability benefit does not apply during any period in which the Member is active on a TNC platform.",
+    addons: [],
+  },
+};
+
+export const STATE_OPTIONS = [
+  { value: 'MD', label: 'Maryland' },
+  { value: 'GA', label: 'Georgia' },
+  { value: 'FL', label: 'Florida' },
+  { value: 'PA', label: 'Pennsylvania' },
+  { value: 'IL', label: 'Illinois' },
+  { value: 'TX', label: 'Texas' },
+  { value: 'VA', label: 'Virginia' },
+  { value: 'MA', label: 'Massachusetts' },
+  { value: 'OTHER', label: 'Other State' },
+];
+
+export const TOS_TEXT = `
+WHIP TERMS OF SERVICE
+Metrocars Leasing Corp. d/b/a Whip
+
+Last Updated: January 1, 2025
+
+PLEASE READ THESE TERMS OF SERVICE CAREFULLY. BY ACCESSING OR USING THE WHIP PLATFORM, SIGNING A MEMBER LEASE AGREEMENT, OR TAKING POSSESSION OF A VEHICLE, YOU AGREE TO BE BOUND BY THESE TERMS.
+
+1. ACCEPTANCE OF TERMS
+
+These Terms of Service ("Terms") constitute a legally binding agreement between you ("Member") and Metrocars Leasing Corp. d/b/a Whip ("Whip," "we," "us," or "our"), a Maryland corporation with its principal place of business at 14670 Southlawn Lane, Rockville, MD 20850. By using any Whip service, platform, or vehicle, you accept these Terms in full.
+
+2. SERVICES DESCRIPTION
+
+Whip provides vehicle leasing services to licensed Transportation Network Company (TNC) drivers operating on platforms including but not limited to Uber, Lyft, DoorDash, Amazon Flex, and similar gig economy platforms. Whip leases vehicles exclusively for commercial rideshare and delivery operations. Personal use of leased vehicles is not permitted without prior written authorization from Whip.
+
+3. ELIGIBILITY REQUIREMENTS
+
+To be eligible for Whip membership, you must: (a) be at least 21 years of age; (b) hold a valid, unsuspended, and unrevoked driver's license; (c) maintain active approval status on at least one TNC platform; (d) pass Whip's background screening process; (e) provide valid payment information; and (f) comply with all applicable laws and regulations. Whip reserves the right to deny or revoke membership at any time for any lawful reason.
+
+4. VEHICLE USE AND RESTRICTIONS
+
+Members may only operate leased vehicles for lawful TNC rideshare and delivery activities. The following are strictly prohibited: (a) use of the vehicle for personal travel beyond 150 miles from the original pickup location without prior written approval; (b) operation by any person other than the Member identified in the Member Lease Agreement; (c) use of the vehicle for any illegal purpose; (d) smoking, vaping, or use of controlled substances in the vehicle; (e) transporting animals without prior written approval; (f) any modification to the vehicle; (g) towing or hauling with the vehicle; (h) operation of the vehicle outside the United States.
+
+5. PAYMENT TERMS
+
+Weekly membership fees are due and payable in advance. Whip will charge the payment method on file on the agreed billing date. In the event of a failed payment, Whip may: (a) assess a returned payment fee of up to $35; (b) suspend vehicle access; (c) terminate the membership; and/or (d) recover the vehicle without notice. All fees, including damage fees, fines, tolls, and other charges, are due within 24 hours of invoice. Member authorizes Whip to charge the payment method on file for all amounts owed under this Agreement.
+
+6. PROTECTION PLAN
+
+The Protection Plan included in the weekly membership fee provides physical damage coverage (comprehensive and collision) on the vehicle as maintained by Metrocars Leasing Corp. as the registered owner. The Member is responsible for a Damage Fee of the lesser of actual repair cost or $1,000.00 per occurrence. The Protection Plan does not cover: (a) damage resulting from intentional or reckless conduct; (b) damage occurring while the vehicle is operated by an unauthorized driver; (c) damage occurring while the Member is in violation of these Terms or applicable law; (d) personal property inside the vehicle; or (e) consequential or incidental damages.
+
+7. ACCIDENT AND INCIDENT REPORTING
+
+Members must report any accident, collision, theft, or vehicle damage to Whip within 24 hours of the incident by calling 855-861-9401 or emailing claims@drivewhip.com. Failure to timely report may result in the Member bearing full financial responsibility for resulting damages. Members must cooperate fully with Whip's claims investigation, including providing recorded statements, submitting to examination under oath, and executing all necessary documents.
+
+8. VEHICLE RETURN
+
+Upon termination of membership for any reason, the Member must immediately return the vehicle to Whip in the same condition as received, ordinary wear and tear excepted. Failure to return the vehicle within 24 hours of termination notice may constitute theft and may result in criminal prosecution. Whip reserves the right to recover the vehicle without notice in the event of abandonment, material breach, or nonpayment.
+
+9. SUBROGATION
+
+To the extent Whip makes any payment arising from a loss caused by a third party, the Member hereby assigns to Whip all rights of recovery against such third party. The Member agrees to cooperate with Whip's pursuit of any subrogation claim and shall take no action that would impair Whip's subrogation rights.
+
+10. DISPUTE RESOLUTION AND ARBITRATION
+
+ALL DISPUTES ARISING OUT OF OR RELATING TO THESE TERMS OR ANY WHIP SERVICE SHALL BE RESOLVED BY BINDING ARBITRATION ON AN INDIVIDUAL BASIS. YOU WAIVE YOUR RIGHT TO A JURY TRIAL AND TO PARTICIPATE IN ANY CLASS ACTION OR REPRESENTATIVE PROCEEDING. Arbitration shall be conducted by the American Arbitration Association under its Consumer Arbitration Rules. This arbitration provision is governed by the Federal Arbitration Act. Notwithstanding the foregoing, either party may seek injunctive or other equitable relief in a court of competent jurisdiction to prevent irreparable harm.
+
+11. LIMITATION OF LIABILITY
+
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, WHIP SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING LOST PROFITS, ARISING OUT OF OR RELATED TO THESE TERMS OR ANY WHIP SERVICE, EVEN IF WHIP HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES. WHIP'S TOTAL LIABILITY TO YOU FOR ANY CLAIM ARISING OUT OF OR RELATED TO THESE TERMS SHALL NOT EXCEED THE TOTAL FEES PAID BY YOU TO WHIP IN THE THREE (3) MONTHS PRECEDING THE CLAIM.
+
+12. INDEMNIFICATION
+
+You agree to indemnify, defend, and hold harmless Whip and its officers, directors, employees, agents, and successors from and against any claims, damages, losses, liabilities, costs, and expenses (including reasonable attorneys' fees) arising out of or related to: (a) your use of any Whip vehicle or service; (b) your violation of these Terms; (c) your violation of any applicable law or regulation; or (d) any accident, injury, or property damage caused by you.
+
+13. PRIVACY AND DATA
+
+Whip collects and uses vehicle telematics, location data, and usage information to manage the fleet, enforce these Terms, and improve services. By accepting these Terms, you consent to such collection and use. Whip will not sell your personal information to third parties. Whip may share information with TNC platforms, law enforcement, and insurance carriers as required by law or contract.
+
+14. MODIFICATIONS
+
+Whip reserves the right to modify these Terms at any time. Notice of material changes will be provided via email or in-app notification. Continued use of Whip services after notice constitutes acceptance of the modified Terms.
+
+15. GOVERNING LAW
+
+These Terms shall be governed by and construed in accordance with the laws of the state in which your Member Lease Agreement is executed, without regard to conflict of law principles.
+
+16. ENTIRE AGREEMENT
+
+These Terms, together with the Member Lease Agreement and any applicable state-specific addenda, constitute the entire agreement between you and Whip with respect to the subject matter hereof and supersede all prior agreements and understandings.
+
+By signing the Member Lease Agreement, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service in their entirety.
+
+Metrocars Leasing Corp. d/b/a Whip
+14670 Southlawn Lane, Rockville MD 20850
+855-861-9401 | drivewhip.com | info@drivewhip.com
+`;
+
+export const ACK_ITEMS = [
+  "To arrive punctually for all scheduled service appointments and to notify Whip in advance of any delay or need to reschedule.",
+  "To report any and all vehicle damage or accidents to Whip within 24 hours of occurrence.",
+  "To cooperate fully with Whip's claims investigation process, including providing a recorded statement, submitting to examination under oath if requested, and executing any documents necessary to protect Whip's rights.",
+  "To remain current on all recurring membership payments and to pay any additional invoices within 24 hours of receipt.",
+  "Not to operate or transport the vehicle beyond a 150-mile radius from the original pickup location without prior written authorization from Whip.",
+  "That Whip may charge the payment method on file for all amounts owed under this Agreement and may re-initiate any payment charge that is dishonored or rejected.",
+  "That the driver's license presented is currently valid and will remain valid, unsuspended, unexpired, and unrevoked until the vehicle is returned to Whip.",
+  "To allow Whip to collect vehicle usage and location data as set forth in the Terms of Service.",
+  "That disputes shall be resolved through binding arbitration as set forth in the Terms of Service, and that I waive my right to a jury trial and class action participation.",
+];
+
+// URL parameter field mapping for Drive+/Smartsheets pre-fill
+export const URL_PARAM_MAP: Record<string, string> = {
+  name: 'memberName',
+  member_name: 'memberName',
+  memberName: 'memberName',
+  id: 'customerId',
+  customer_id: 'customerId',
+  customerId: 'customerId',
+  res_id: 'reservationId',
+  reservation_id: 'reservationId',
+  reservationId: 'reservationId',
+  vehicle: 'vehicle',
+  ymm: 'vehicle',
+  vin: 'vin',
+  state: 'licenseState',
+  license_state: 'licenseState',
+  licenseState: 'licenseState',
+  phone: 'phone',
+  email: 'email',
+  dob: 'dob',
+  date_of_birth: 'dob',
+  dl: 'dlNumber',
+  dl_number: 'dlNumber',
+  dlNumber: 'dlNumber',
+  address: 'address',
+  city_state_zip: 'cityStateZip',
+  cityStateZip: 'cityStateZip',
+  weekly_fee: 'weeklyFee',
+  weeklyFee: 'weeklyFee',
+  deposit: 'deposit',
+  start_date: 'startDate',
+  startDate: 'startDate',
+  end_date: 'endDate',
+  endDate: 'endDate',
+  agreement_state: 'agreementState',
+  agreementState: 'agreementState',
+};
