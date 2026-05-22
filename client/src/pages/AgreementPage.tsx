@@ -153,10 +153,18 @@ export default function AgreementPage() {
     const params = new URLSearchParams(window.location.search);
     const next = { ...fields };
     const pf = new Set<string>();
+    // Helper: convert MM/DD/YYYY or M/D/YYYY to YYYY-MM-DD for date inputs
+    const toISODate = (v: string) => {
+      const m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (m) return `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
+      return v;
+    };
+    const DATE_FIELDS = new Set(['startDate','endDate','dob']);
     params.forEach((val, key) => {
       const mapped = URL_PARAM_MAP[key];
       if (mapped && val) {
-        (next as Record<string, string>)[mapped] = val;
+        const coerced = DATE_FIELDS.has(mapped) ? toISODate(val) : val;
+        (next as Record<string, string>)[mapped] = coerced;
         pf.add(mapped);
       }
     });
@@ -437,20 +445,15 @@ function WelcomeStep({ fields, prefilled, onNext, setField }: {
         {/* Car image hero */}
         <div style={{ position: 'relative', height: 160, overflow: 'hidden', background: '#171b31' }}>
           <img
-            src="https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=800&q=80"
+            src="https://www.drivewhip.com/wp-content/uploads/2023/06/ModelY.jpg"
             alt=""
             style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.55 }}
           />
           {/* Gradient overlay */}
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 30%, #171b31 100%)' }} />
-          {/* Logo on image */}
-          <div style={{ position: 'absolute', top: 14, left: 16 }}>
-            <img src={LOGO_URL} alt="Whip" style={{ height: 24 }}
-              onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-          </div>
           {/* Floating icon */}
           <div style={{ position: 'absolute', bottom: -20, left: '50%', transform: 'translateX(-50%)', width: 48, height: 48, borderRadius: '50%', background: '#171b31', border: '3px solid var(--card)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <FileText size={22} />
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff6221" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
           </div>
         </div>
 
