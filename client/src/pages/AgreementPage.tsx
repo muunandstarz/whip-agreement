@@ -195,6 +195,7 @@ export default function AgreementPage() {
 
   const [pipElection, setPipElection] = useState<PipElection>(null);
   const [emailSent, setEmailSent] = useState(false);
+  const [showDoneScreen, setShowDoneScreen] = useState(true); // shown first when step=complete
 
   const sendEmailMutation = trpc.agreement.sendEmail.useMutation({
     onSuccess: (data) => {
@@ -420,7 +421,14 @@ export default function AgreementPage() {
           {currentStep?.id === 'addons' && (
             <AddonsStep stateData={stateData} pipElection={pipElection} setPipElection={setPipElection} />
           )}
-          {currentStep?.id === 'complete' && (
+          {currentStep?.id === 'complete' && showDoneScreen && (
+            <DoneScreen
+              fields={fields}
+              stateData={stateData}
+              onEnterPortal={() => setShowDoneScreen(false)}
+            />
+          )}
+          {currentStep?.id === 'complete' && !showDoneScreen && (
             <MemberPortal
               fields={fields}
               onPrint={handlePrint}
@@ -1164,6 +1172,122 @@ function CompleteStep({ fields, stateData, onPrint, onPrintAddon }: {
           </button>
         ))}
       </div>
+    </div>
+  );
+}
+
+// ── DONE SCREEN ─────────────────────────────────────────────────────────────
+function DoneScreen({ fields, stateData, onEnterPortal }: {
+  fields: MemberFields; stateData: StateData; onEnterPortal: () => void;
+}) {
+  const firstName = fields.memberName ? fields.memberName.split(' ')[0] : null;
+  const signedDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const docs = [
+    'Member Agreement',
+    ...(stateData.addons.includes('md-pip') ? ['Maryland PIP Waiver'] : []),
+    ...(stateData.addons.includes('ga-um') ? ['Georgia UM Rejection'] : []),
+    ...(stateData.addons.includes('fl-um') ? ['Florida UM/UIM Rejection'] : []),
+    ...(stateData.addons.includes('pa-pip') ? ['Pennsylvania Coverage Election'] : []),
+  ];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, paddingBottom: 120 }}>
+      {/* Success hero */}
+      <div style={{ background: '#171b31', borderRadius: 16, overflow: 'hidden' }}>
+        <div style={{ padding: '40px 24px 32px', textAlign: 'center' }}>
+          {/* Animated checkmark */}
+          <div style={{
+            width: 80, height: 80, borderRadius: '50%',
+            background: 'rgba(74,222,128,0.12)', border: '2.5px solid rgba(74,222,128,0.35)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 20px',
+            animation: 'popIn 0.4s cubic-bezier(0.23,1,0.32,1) both',
+          }}>
+            <CheckCircle size={44} color="#4ade80" />
+          </div>
+          <h1 style={{ fontSize: 26, fontWeight: 900, color: 'white', margin: '0 0 10px', letterSpacing: '-0.02em' }}>
+            {firstName ? `You're all set, ${firstName}!` : "You're all set!"}
+          </h1>
+          <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.6)', margin: 0, lineHeight: 1.55 }}>
+            Your agreement has been signed and your documents are ready.
+          </p>
+        </div>
+        {/* Status checklist */}
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {[
+            'Agreement signed & timestamped',
+            'Documents saved to your profile',
+            'Coverage active per reservation terms',
+          ].map((item, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'rgba(74,222,128,0.15)', border: '1.5px solid rgba(74,222,128,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><polyline points="2 6 5 9 10 3" stroke="#4ade80" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </div>
+              <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>{item}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Signed documents */}
+      <div>
+        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Signed Documents</div>
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+          {docs.map((label, i) => (
+            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', borderBottom: i < docs.length - 1 ? '1px solid var(--border)' : 'none' }}>
+              <div style={{ width: 36, height: 36, borderRadius: 8, background: 'rgba(255,98,33,0.08)', border: '1px solid rgba(255,98,33,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#ff6221' }}>
+                <FileText size={16} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--foreground)' }}>{label}</div>
+                <div style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>Signed {signedDate}</div>
+              </div>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Create account prompt */}
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '20px 18px' }}>
+        <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--foreground)', marginBottom: 6 }}>Create your Whip account</div>
+        <p style={{ fontSize: 13, color: 'var(--muted-foreground)', margin: '0 0 14px', lineHeight: 1.5 }}>
+          Set up a password to access your member portal anytime — view documents, track trips, and manage your profile.
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <input
+            type="email"
+            placeholder="Email address"
+            defaultValue={fields.email || ''}
+            style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--foreground)', fontSize: 14, boxSizing: 'border-box' }}
+          />
+          <input
+            type="password"
+            placeholder="Create a password"
+            style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--foreground)', fontSize: 14, boxSizing: 'border-box' }}
+          />
+          <button
+            onClick={() => toast('Account creation coming soon', { description: 'This will be available in the full Whip app.' })}
+            style={{ width: '100%', padding: '12px', borderRadius: 8, background: '#ff6221', color: 'white', fontWeight: 700, fontSize: 15, border: 'none', cursor: 'pointer' }}
+          >
+            Create Account
+          </button>
+        </div>
+      </div>
+
+      {/* Enter portal CTA */}
+      <button
+        onClick={onEnterPortal}
+        style={{
+          width: '100%', padding: '14px', borderRadius: 10,
+          background: '#171b31', color: 'white',
+          fontWeight: 700, fontSize: 15, border: '1.5px solid rgba(255,255,255,0.12)',
+          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+        }}
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Go to My Portal
+      </button>
     </div>
   );
 }

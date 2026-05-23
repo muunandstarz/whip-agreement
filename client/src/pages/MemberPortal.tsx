@@ -126,30 +126,31 @@ function last6(vin: string) {
   return vin ? vin.slice(-6).toUpperCase() : '——————';
 }
 
-function CarSilhouette({ color }: { color: string }) {
+function CarSilhouette({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
+  const dims = size === 'sm' ? { w: 64, h: 28 } : size === 'lg' ? { w: 160, h: 70 } : { w: 120, h: 52 };
   return (
-    <svg viewBox="0 0 120 50" width="120" height="50" xmlns="http://www.w3.org/2000/svg">
-      <rect x="5" y="22" width="110" height="20" rx="6" fill={color} />
-      <path d="M30 22 L42 8 L78 8 L90 22 Z" fill={color} />
-      <path d="M44 20 L50 10 L70 10 L76 20 Z" fill="rgba(255,255,255,0.35)" />
-      <circle cx="28" cy="42" r="8" fill="#1e293b" />
-      <circle cx="28" cy="42" r="4" fill="#94a3b8" />
-      <circle cx="92" cy="42" r="8" fill="#1e293b" />
-      <circle cx="92" cy="42" r="4" fill="#94a3b8" />
+    <svg viewBox="0 0 200 80" width={dims.w} height={dims.h} xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round">
+      {/* Main body */}
+      <path d="M16 52 L16 38 Q16 33 21 33 L52 33 L70 15 L130 15 L148 33 L179 33 Q184 33 184 38 L184 52 Z" />
+      {/* Cabin / roof */}
+      <path d="M72 33 L82 17 L118 17 L128 33" />
+      {/* Center door divider */}
+      <line x1="100" y1="33" x2="100" y2="52" />
+      {/* Front wheel arch */}
+      <path d="M34 52 Q34 65 50 65 Q66 65 66 52" />
+      {/* Rear wheel arch */}
+      <path d="M134 52 Q134 65 150 65 Q166 65 166 52" />
+      {/* Front bumper */}
+      <line x1="16" y1="45" x2="8" y2="45" />
+      {/* Rear bumper */}
+      <line x1="184" y1="45" x2="192" y2="45" />
+      {/* Side mirror */}
+      <path d="M148 33 L155 29 L159 33" />
     </svg>
   );
 }
 
-const MAKE_COLORS: Record<string, string> = {
-  TESLA: '#cc0000', TOYOTA: '#eb0a1e', HONDA: '#e40521', FORD: '#003478',
-  CHEVROLET: '#d4a017', NISSAN: '#c3002f', HYUNDAI: '#002c5f', KIA: '#05141f',
-  BMW: '#0066b1', MERCEDES: '#00adef', AUDI: '#bb0a30', VOLKSWAGEN: '#001e50',
-  DODGE: '#d01f1f', JEEP: '#4a7c59', SUBARU: '#003087', MAZDA: '#910a2d',
-};
-
-function carColor(make: string) {
-  return MAKE_COLORS[make.toUpperCase()] ?? '#ff6221';
-}
+// Outline silhouette — no fill colors needed
 
 // ── POI CARD ─────────────────────────────────────────────────────────────────
 function PoiCard({ fields }: { fields: MemberFields }) {
@@ -232,8 +233,6 @@ function DashboardPage({ fields, addons, onPrint, onPrintAddon }: {
   const market = getMarketForState(fields.agreementState);
   const { year, make, model } = parseVehicle(fields.vehicle);
   const signedDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-  const color = carColor(make);
-
   const docs: { label: string; onView: () => void }[] = [
     { label: 'Member Agreement', onView: onPrint },
     ...(addons.includes('md-pip') ? [{ label: 'Maryland PIP Waiver', onView: () => onPrintAddon('md-pip') }] : []),
@@ -282,8 +281,8 @@ function DashboardPage({ fields, addons, onPrint, onPrintAddon }: {
         <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Vehicle</div>
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{ background: 'var(--muted)', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <CarSilhouette color={color} />
+            <div style={{ background: 'var(--muted)', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ff6221' }}>
+              <CarSilhouette size="md" />
             </div>
             <div>
               <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--foreground)', lineHeight: 1.2 }}>{year} {make}</div>
@@ -339,14 +338,12 @@ function VehiclesPage({ fields, addons, pipElection }: {
   const { year, make, model } = parseVehicle(fields.vehicle);
   const coverage = getCoverageForState(fields.agreementState);
   const [poiOpen, setPoiOpen] = useState(false);
-  const color = carColor(make);
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 20 }}>
       {/* Vehicle hero */}
       <div style={{ background: '#171b31', borderRadius: 12, padding: '24px 20px', textAlign: 'center' }}>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
-          <CarSilhouette color={color} />
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12, color: '#ff6221' }}>
+          <CarSilhouette size="lg" />
         </div>
         <div style={{ fontSize: 22, fontWeight: 800, color: 'white', lineHeight: 1.2 }}>{year} {make}</div>
         <div style={{ fontSize: 16, color: 'rgba(255,255,255,0.65)', marginBottom: 4 }}>{model}</div>
@@ -491,8 +488,6 @@ const TRIP_TYPE_CONFIG = {
 function TripCard({ trip, isActive }: { trip: TripRecord; isActive: boolean }) {
   const { year, make, model } = parseVehicle(trip.vehicle);
   const cfg = TRIP_TYPE_CONFIG[trip.type];
-  const color = carColor(make);
-
   return (
     <div style={{
       background: 'var(--card)', border: `1px solid ${isActive ? '#ff6221' : 'var(--border)'}`,
@@ -502,14 +497,8 @@ function TripCard({ trip, isActive }: { trip: TripRecord; isActive: boolean }) {
       {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
         {/* Car silhouette small */}
-        <div style={{ background: 'var(--muted)', borderRadius: 8, padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <svg viewBox="0 0 120 50" width="60" height="25" xmlns="http://www.w3.org/2000/svg">
-            <rect x="5" y="22" width="110" height="20" rx="6" fill={color} />
-            <path d="M30 22 L42 8 L78 8 L90 22 Z" fill={color} />
-            <path d="M44 20 L50 10 L70 10 L76 20 Z" fill="rgba(255,255,255,0.35)" />
-            <circle cx="28" cy="42" r="8" fill="#1e293b" /><circle cx="28" cy="42" r="4" fill="#94a3b8" />
-            <circle cx="92" cy="42" r="8" fill="#1e293b" /><circle cx="92" cy="42" r="4" fill="#94a3b8" />
-          </svg>
+        <div style={{ background: 'var(--muted)', borderRadius: 8, padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: isActive ? '#ff6221' : 'var(--muted-foreground)' }}>
+          <CarSilhouette size="sm" />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--foreground)', lineHeight: 1.2 }}>{year} {make} {model}</div>
@@ -626,28 +615,6 @@ function InvoicingPage({ fields }: { fields: MemberFields }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 20, position: 'relative' }}>
-      {/* Coming Soon overlay */}
-      <div style={{
-        position: 'fixed', inset: 0, zIndex: 150,
-        background: 'rgba(23,27,49,0.55)',
-        backdropFilter: 'blur(3px)',
-        display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
-        paddingTop: 80,
-        pointerEvents: 'none',
-      }}>
-        <div style={{
-          background: '#171b31', border: '2px solid #ff6221', borderRadius: 16,
-          padding: '16px 28px', display: 'flex', alignItems: 'center', gap: 12,
-          boxShadow: '0 8px 40px rgba(0,0,0,0.4)',
-        }}>
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff6221" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          <div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: 'white' }}>Coming Soon</div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>Live invoicing · Q3 2026</div>
-          </div>
-        </div>
-      </div>
-
       {/* Current Balance Card */}
       <div style={{ background: '#171b31', borderRadius: 12, padding: '24px 20px', textAlign: 'center' }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>Current Balance Due</div>

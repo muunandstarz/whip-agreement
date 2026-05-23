@@ -23,3 +23,7 @@
 - [ ] Gmail email delivery (contracts@drivewhip.com + member email after signing)
 - [x] Trip History tab: vehicle timeline (YMM, last 6 VIN, dates per reservation/swap/loaner)
 - [x] Invoicing tab: current balance breakdown (weekly, tickets, tolls, late fees) + past invoices list
+- [x] Replace cartoon car SVG with clean outline silhouette in MemberPortal (dashboard + vehicles + trip history)
+- [x] Remove Coming Soon blur from Invoicing page — make it fully demo-able
+- [x] Addon forms kept (user confirmed they are required)
+- [x] Add "You're Done" completion screen before the portal tab view
