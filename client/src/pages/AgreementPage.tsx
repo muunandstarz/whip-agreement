@@ -115,10 +115,11 @@ const AGREEMENT_SECTIONS = [
     title: 'Accident Reporting',
     badge: 'Required',
     badgeType: 'required',
-    body: `You must report any accident, collision, theft, or vehicle damage to Whip within 24 hours of the incident.`,
+    body: `You must report any accident, collision, theft, or vehicle damage to Whip within 24 hours of the incident. To file a claim, visit drivewhip.com and click "File a Claim".`,
     hint: {
       label: 'How to Report',
-      text: 'Call: 855-861-9401\nEmail: claims@drivewhip.com\nFailure to report within 24 hours may result in you bearing full financial responsibility.',
+      text: 'Call: 855-861-9401\nEmail: claims@drivewhip.com\nTo file a claim online: go to drivewhip.com and click "File a Claim"\nFailure to report within 24 hours may result in you bearing full financial responsibility.',
+      link: { text: 'File a Claim at drivewhip.com', url: 'https://drivewhip.com' },
     },
     subItems: [],
   },
@@ -768,6 +769,16 @@ function AgreementStep({ fields, stateData, acksChecked, setAcksChecked, expande
                   <div className="hint-box">
                     <div className="hint-box-label">{sec.hint.label}</div>
                     <p style={{ whiteSpace: 'pre-line' }}>{sec.hint.text}</p>
+                    {sec.hint.link && (
+                      <a
+                        href={sec.hint.link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ display: 'inline-block', marginTop: 8, fontSize: 13, fontWeight: 600, color: '#ff6221', textDecoration: 'underline' }}
+                      >
+                        {sec.hint.link.text} →
+                      </a>
+                    )}
                   </div>
                 )}
                 {sec.subItems.map(sub => {

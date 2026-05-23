@@ -288,79 +288,187 @@ export function buildPrintHTML(
       text-transform: uppercase;
     }
 
-    /* ── PIP FORM (PIXEL-PERFECT — DO NOT MODIFY) ── */
-    @media screen {
-      .pip-two-col { display: block; }
+    /* ── PIP FORM (PIXEL-PERFECT — EXACT MATCH TO maryland_pip_waiver(1).html) ── */
+    /* These styles are copied verbatim from the original legal document HTML. DO NOT MODIFY. */
+    .pip-page {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 10pt;
+      line-height: 1.38;
+      color: #000;
+      page-break-after: always;
     }
-    @media print {
-      .pip-page {
-        page-break-after: always;
-        font-family: Arial, sans-serif;
-        font-size: 10pt;
-        line-height: 1.4;
-        color: #000;
-      }
-      .pip-page-last { page-break-after: auto; }
-      .pip-doc-title {
-        font-family: Arial, sans-serif;
-        font-size: 11pt;
-        font-weight: bold;
-        text-align: center !important;
-        margin-bottom: 8pt;
-        display: block;
-      }
-      .pip-two-col {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
-        gap: 16pt !important;
-      }
-      .pip-p2-col {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
-        gap: 12pt !important;
-      }
-      .pip-page p, .pip-page li {
-        font-family: Arial, sans-serif !important;
-        font-size: 10pt !important;
-        line-height: 1.4 !important;
-      }
-      .pip-page h2 {
-        font-family: Arial, sans-serif !important;
-        font-size: 11pt !important;
-        font-weight: bold !important;
-        text-align: center !important;
-      }
-      .pip-sig-line {
-        border-bottom: 1pt solid #000;
-        min-height: 20pt;
-        margin-bottom: 2pt;
-        display: block;
-      }
-      .pip-sig-label {
-        font-family: Arial, sans-serif !important;
-        font-size: 8pt !important;
-        color: #555;
-      }
+    .pip-page-last { page-break-after: auto; }
+    .pip-doc-title {
+      text-align: center;
+      font-size: 13pt;
+      font-weight: bold;
+      line-height: 1.5;
+      margin-bottom: 28pt;
+    }
+    .pip-two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      column-gap: 24pt;
+      align-items: start;
+    }
+    .pip-page p {
+      font-size: 10pt;
+      line-height: 1.38;
+      margin-bottom: 8pt;
+    }
+    .pip-page ol.num {
+      margin: 0 0 8pt 20pt;
+      padding: 0;
+    }
+    .pip-page ol.num > li {
+      font-size: 10pt;
+      line-height: 1.38;
+      margin-bottom: 7pt;
+      padding-left: 3pt;
+    }
+    .pip-page ol.alpha {
+      list-style-type: lower-alpha;
+      margin: 5pt 0 0 18pt;
+      padding: 0;
+    }
+    .pip-page ol.alpha > li {
+      font-size: 10pt;
+      line-height: 1.38;
+      margin-bottom: 5pt;
+      padding-left: 3pt;
+    }
+    .pip-page p.dash {
+      margin-bottom: 6pt;
+      padding-left: 0;
+    }
+    .pip-option1-head {
+      font-size: 10pt;
+      font-weight: bold;
+      text-decoration: underline;
+      margin-bottom: 8pt;
+    }
+    .pip-dollar {
+      font-weight: bold;
+      text-decoration: underline;
+    }
+    /* Page 2 */
+    .pip-p2-col {
+      padding-top: 44pt;
+    }
+    .pip-waiver-head {
+      font-size: 10pt;
+      font-weight: bold;
+      line-height: 1.38;
+      margin-bottom: 14pt;
+    }
+    .pip-insurer-line {
+      display: inline-block;
+      min-width: 140pt;
+      border-bottom: 1.2pt solid #000;
+      vertical-align: bottom;
+      padding: 0 3pt 1pt 3pt;
+      font-weight: bold;
+      line-height: 1.1;
+    }
+    .pip-option-wrap {
+      margin-bottom: 16pt;
+    }
+    .pip-chk-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8pt;
+    }
+    .pip-chk-box {
+      width: 11pt;
+      height: 11pt;
+      margin-top: 2pt;
+      flex-shrink: 0;
+      border: 1pt solid #000;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9pt;
+    }
+    .pip-chk-label-full {
+      font-size: 10pt;
+      font-weight: bold;
+      text-decoration: underline;
+      line-height: 1.38;
+      flex: 1;
+    }
+    .pip-chk-label-waive {
+      font-size: 10pt;
+      font-weight: bold;
+      text-decoration: underline;
+      line-height: 1.38;
+      flex: 1;
+    }
+    .pip-chk-continuation {
+      font-size: 10pt;
+      line-height: 1.38;
+      margin-top: 3pt;
+      margin-bottom: 0;
+    }
+    .pip-sig-block {
+      margin-top: 30pt;
+    }
+    .pip-sig-row {
+      margin-bottom: 16pt;
+    }
+    .pip-sig-input {
+      display: block;
+      width: 100%;
+      border: none;
+      border-bottom: 1.2pt solid #000;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 10pt;
+      padding: 2pt 0 3pt 2pt;
+      background: transparent;
+      color: #000;
+    }
+    .pip-sig-label {
+      font-size: 10pt;
+      display: block;
+      margin-top: 3pt;
+    }
+    .pip-date-policy {
+      display: grid;
+      grid-template-columns: 110pt 1fr;
+      column-gap: 20pt;
+      margin-bottom: 16pt;
+    }
+    .pip-field-col {
+      display: flex;
+      flex-direction: column;
+    }
+    .pip-static-val {
+      display: block;
+      border-bottom: 1.2pt solid #000;
+      font-size: 10pt;
+      padding: 2pt 0 3pt 2pt;
+      font-family: Arial, Helvetica, sans-serif;
+      background: transparent;
+      color: #000;
+    }
 
-      /* WF (GA/FL) forms */
-      .wf-page {
-        page-break-after: always;
-        font-family: Arial, sans-serif;
-        font-size: 10pt;
-        line-height: 1.4;
-        color: #000;
-      }
-      .wf-page-last { page-break-after: auto; }
-      .wf-page p, .wf-page li, .wf-page td, .wf-page th {
-        font-family: Arial, sans-serif !important;
-        font-size: 10pt !important;
-        line-height: 1.4 !important;
-      }
-      .wf-page h2, .wf-page h3 {
-        font-family: Arial, sans-serif !important;
-        font-size: 11pt !important;
-        font-weight: bold !important;
-      }
+    /* WF (GA/FL) forms */
+    .wf-page {
+      page-break-after: always;
+      font-family: Arial, sans-serif;
+      font-size: 10pt;
+      line-height: 1.4;
+      color: #000;
+    }
+    .wf-page-last { page-break-after: auto; }
+    .wf-page p, .wf-page li, .wf-page td, .wf-page th {
+      font-family: Arial, sans-serif;
+      font-size: 10pt;
+      line-height: 1.4;
+    }
+    .wf-page h2, .wf-page h3 {
+      font-family: Arial, sans-serif;
+      font-size: 11pt;
+      font-weight: bold;
     }
   </style>
 
@@ -474,7 +582,7 @@ function buildMainPages(fields: Fields, sd: StateData, sigImg: string, today: st
 
     <div class="agr-sec" style="padding-top:0;border-top:none;">
       <span class="agr-sec-title">Accident Reporting</span>
-      <p>The Member must report any accident, collision, theft, or damage to the vehicle to Whip within 24 hours of the incident. Failure to timely report may affect the Member's rights under the Protection Plan and constitutes a breach of this Agreement. The Member agrees to cooperate fully with Whip's claims investigation, including providing a recorded statement, submitting to examination under oath if requested, and executing any documents required to preserve Whip's rights of recovery.</p>
+      <p>The Member must report any accident, collision, theft, or damage to the vehicle to Whip within 24 hours of the incident. To file a claim, visit <strong>drivewhip.com</strong> and click "File a Claim." Failure to timely report may affect the Member's rights under the Protection Plan and constitutes a breach of this Agreement. The Member agrees to cooperate fully with Whip's claims investigation, including providing a recorded statement, submitting to examination under oath if requested, and executing any documents required to preserve Whip's rights of recovery.</p>
     </div>
 
     <div class="agr-sec">
@@ -568,7 +676,10 @@ function buildAddonPages(
   return html;
 }
 
-// ── MD PIP PAGES (pixel-perfect, no format changes) ──────────────────────────
+// ── MD PIP PAGES (PIXEL-PERFECT — EXACT MATCH TO maryland_pip_waiver(1).html) ────────────────
+// HTML structure, CSS classes, and text are copied verbatim from the original legal document.
+// Only dynamic values are substituted: member name, signature image, date, and checkbox state.
+// DO NOT change fonts, layout, spacing, or text content.
 function buildMdPipPages(
   fields: Fields,
   sigDataURL: string | null,
@@ -577,111 +688,228 @@ function buildMdPipPages(
 ): string {
   const name = fields.memberName || '';
   const sigImg = sigDataURL
-    ? `<img src="${sigDataURL}" style="height:40pt;max-width:180pt;object-fit:contain;object-position:left bottom;">`
+    ? `<img src="${sigDataURL}" style="height:40pt;max-width:180pt;object-fit:contain;object-position:left bottom;display:block;">`
     : '';
-  const optFull = pipElection === 'full' ? '☑' : '☐';
-  const optWaive = pipElection === 'waive' ? '☑' : '☐';
+  // Checkbox rendering: checked = &#9745; (☑), unchecked = &#9744; (☐)
+  const chkFull  = pipElection === 'full'  ? '&#9745;' : '&#9744;';
+  const chkWaive = pipElection === 'waive' ? '&#9745;' : '&#9744;';
 
   return `
-  <!-- MD PIP NOTICE PAGE -->
-  <div class="pip-page" style="page-break-before:always;">
-    <h2 style="text-align:center;font-size:11pt;font-weight:bold;margin-bottom:8pt;">MARYLAND PERSONAL INJURY PROTECTION NOTICE</h2>
-    <p style="text-align:center;font-size:10pt;margin-bottom:12pt;">Metrocars Leasing Corp. d/b/a Whip</p>
+  <!-- MD PIP PAGE 1 — NOTICE (exact match to maryland_pip_waiver(1).html page 1) -->
+  <div class="pip-page">
 
-    <p>As a lessee of a motor vehicle registered in Maryland, you are entitled to elect Personal Injury Protection (PIP) coverage or to waive such coverage. This notice is provided pursuant to Maryland Insurance Article § 19-505.</p>
+    <div class="pip-doc-title">
+      Notice and Waiver of<br>
+      Personal Injury Protection (PIP) Coverage
+    </div>
 
-    <p><strong>What is PIP?</strong> Personal Injury Protection (PIP) is a type of no-fault insurance that pays for medical expenses and lost wages for you and your passengers regardless of who caused the accident. In Maryland, PIP coverage is available in the amount of $2,500 per person per accident.</p>
+    <div class="pip-two-col">
 
-    <div class="pip-two-col" style="margin:12pt 0;">
+      <!-- LEFT COLUMN -->
       <div>
-        <p><strong>Option 1 — Elect Full PIP Coverage</strong></p>
-        <p>You may elect to receive PIP coverage of $2,500 per person per accident. If you elect this option, PIP coverage will apply to you and your passengers for bodily injury sustained in an accident involving the leased vehicle, regardless of fault.</p>
-        <p>PIP coverage pays: (a) reasonable and necessary medical expenses; (b) 85% of lost wages up to the policy limit; and (c) essential services expenses.</p>
-        <p>PIP coverage does not apply to: (a) injuries sustained while the vehicle is being used to carry passengers for hire on a TNC platform (Periods 1, 2, and 3); (b) injuries to persons who are not occupants of the vehicle; or (c) injuries resulting from intentional acts.</p>
-      </div>
+
+        <p style="margin-bottom:10pt;">
+          <strong><u>Notice Concerning the Waiver of<br>
+          Personal Injury Protection (PIP)<br>
+          Coverage in Maryland</u></strong> (Private Passenger<br>
+          Automobile Liability Insurance)
+        </p>
+
+        <p>You have the choice of purchasing certain Personal Injury Protection (PIP) Coverages. Before deciding whether to purchase or waive this coverage, please read the following carefully.</p>
+
+        <p class="pip-option1-head">OPTION 1 - FULL PIP</p>
+
+        <p><strong>Full</strong> PIP coverage provides the following protection, without regard to fault::</p>
+
+        <ol class="num">
+          <li>It covers you and members of your family&nbsp; residing with you who are injured in
+            <strong>any</strong>&nbsp; motor vehicle accident; anyone injured while <strong>in</strong>
+            your vehicle; and pedestrians injured <strong>by</strong>&nbsp; your vehicle.
+          </li>
+          <li>The <strong>minimum</strong> coverage is $2,500 (<em>you may&nbsp; purchase more*</em>)
+            and may be used to cover:
+            <ol class="alpha">
+              <li>All reasonable and necessary medical&nbsp; expenses incurred within 3 years of&nbsp; injury; and</li>
+              <li>85 percent of actually incurred lost wages; or</li>
+              <li>If the injured person is not employed at&nbsp; the time of injury, any reasonable and
+                  necessary expenses to provide for essential services which that person&nbsp; would have
+                  provided for the care and maintenance of his or her family or household.</li>
+            </ol>
+          </li>
+        </ol>
+
+        <p>If you do <strong>not</strong> sign the waiver, you will automatically receive the full PIP
+        protection described above. Your PIP premium will be
+        <span class="pip-dollar">$2,400</span> (<strong><em>annually - Charged at $50/week</em></strong>).</p>
+
+      </div><!-- /left -->
+
+      <!-- RIGHT COLUMN -->
       <div>
-        <p><strong>Option 2 — Waive PIP Coverage</strong></p>
-        <p>You may affirmatively waive PIP coverage. If you waive PIP, neither you nor your passengers will have access to PIP benefits for injuries sustained in an accident involving the leased vehicle.</p>
-        <p>Before waiving PIP, you should consider: (a) whether you have other health insurance that would cover accident-related medical expenses; (b) whether you have disability insurance that would replace lost wages; and (c) the financial risk of being injured in an accident without PIP coverage.</p>
-        <p>Waiving PIP does not affect your right to pursue a liability claim against an at-fault driver.</p>
-      </div>
-    </div>
 
-    <p><strong>Your Election:</strong> Please indicate your election below. Your election will remain in effect for the duration of your lease agreement unless you notify Whip in writing of a change.</p>
+        <p>You may only waive PIP coverage for:</p>
 
-    <div class="pip-p2-col" style="margin:10pt 0;">
-      <div style="border:1pt solid #000;padding:8pt;">
-        <p>${optFull} <strong>I ELECT PIP COVERAGE</strong> in the amount of $2,500 per person per accident.</p>
-      </div>
-      <div style="border:1pt solid #000;padding:8pt;">
-        <p>${optWaive} <strong>I AFFIRMATIVELY WAIVE PIP COVERAGE.</strong> I understand that neither I nor my passengers will have PIP benefits.</p>
-      </div>
-    </div>
+        <ol class="num">
+          <li>The <strong>named</strong> insured (you);</li>
+          <li>All listed drivers on the policy; and</li>
+          <li>Members of your family who are 16 years of age or older and reside with you in your household.</li>
+        </ol>
 
-    <p style="margin-top:12pt;"><strong>Member Signature:</strong></p>
-    <div style="margin-top:4pt;">
-      <div>${sigImg}</div>
-      <div class="pip-p2-col" style="margin-top:4pt;">
-        <div>
-          <span class="pip-sig-line">${name}</span>
-          <span class="pip-sig-label">Member Printed Name</span>
+        <p>The waiver prevents the <strong>named</strong> insured (you) from collecting PIP benefits under
+        <strong>any</strong> motor vehicle liability insurance policy issued in the State of Maryland or another
+        form of security authorized to be used in place of a motor vehicle liability insurance policy.</p>
+
+        <p>The waiver prevents individuals described in category 2 or 3 above from collecting PIP benefits
+        under your policy. In addition, if these individuals are involved in a motor vehicle accident, the
+        waiver prevents these individuals from collecting PIP benefits under any other policy of motor vehicle
+        liability insurance issued in the state of Maryland or another form of security authorized to be used
+        in place of a motor vehicle liability insurance policy unless the individual:</p>
+
+        <p class="dash">- Is the first named insured under the other policy;</p>
+        <p class="dash">- Has not waived PIP benefits under the other policy; and</p>
+        <p class="dash">- Is not a named insured under any policy of&nbsp; motor vehicle liability&nbsp;
+        insurance where a waiver of PIP benefits is in effect.</p>
+
+        <p>The waiver does not impair the rights of other individuals such as pedestrians or minor children
+        from collecting PIP under your policy.</p>
+
+        <p>If you decide to sign the waiver, your PIP premium will be <u>0</u> percent of the full PIP
+        coverage. The total premium will be $ <u>0.00</u> (<em>annually</em>).</p>
+
+        <p>If you decide <strong>not</strong> to sign the waiver, your insurance company may not refuse to
+        write your insurance coverage.</p>
+
+      </div><!-- /right -->
+
+    </div><!-- /two-col -->
+
+  </div><!-- /pip page 1 -->
+
+  <!-- MD PIP PAGE 2 — WAIVER (exact match to maryland_pip_waiver(1).html page 2) -->
+  <div class="pip-page ${pipElection !== 'waive' ? 'pip-page-last' : ''}">
+
+    <div class="pip-two-col">
+
+      <!-- LEFT COLUMN — Waiver Body -->
+      <div class="pip-p2-col">
+
+        <p class="pip-waiver-head">
+          <u>Waiver of Personal Injury Protection<br>
+          (PIP) Coverage</u> (Private Passenger<br>
+          Automobile Liability Insurance)
+        </p>
+
+        <p style="margin-bottom:14pt;">I hereby confirm that I have fully read and
+        understood the attached notice, required by Section 19-506 of the Insurance Article, and I
+        understand and agree that</p>
+
+        <p><span class="pip-insurer-line">Metrocars Leasing</span>, in reliance upon
+        my signature as&nbsp; the first named insured/applicant, will NOT&nbsp; provide the
+        Personal Injury Protection (PIP) Coverage, required by Section&nbsp; 19-505 and described in
+        the attached notice&nbsp; provided to me with this waiver. This&nbsp; coverage is waived for any
+        injury which may&nbsp; be sustained by:</p>
+
+        <p><strong>1. Anyone listed as a named insured on the policy;</strong></p>
+
+        <p><strong>2. All drivers listed on the policy; and</strong></p>
+
+        <p><strong>3. All members of the named insured's family living in the insured's household
+        who are 16 years of age or older.</strong></p>
+
+        <p>I further understand and agree that the waiver of Personal Injury Protection (PIP) benefits
+        under the policy being applied for waives coverage for PIP benefits
+        <u>for anyone described above</u> under any other
+        policy&nbsp; issued in the State of Maryland or another&nbsp; form of security authorized to be
+        used in&nbsp; place of a motor vehicle liability insurance&nbsp; policy, unless the individual is:</p>
+
+        <p class="dash">-&nbsp;Is the first named insured under<br>&nbsp;&nbsp;the other policy; and</p>
+        <p class="dash">-&nbsp;Has not waived PIP benefits<br>&nbsp;&nbsp;under the other policy; and</p>
+        <p class="dash">- Is not a named insured under any&nbsp;&nbsp; policy of motor vehicle liability
+        insurance where a waiver of PIP&nbsp;&nbsp; benefits is in effect.</p>
+
+        <p>I, the first named insured/applicant, have&nbsp; fully read and understood the above noted
+        information and hereby: <strong><em>(check one of the following)</em></strong></p>
+
+      </div><!-- /waiver left -->
+
+      <!-- RIGHT COLUMN — Checkboxes + Signature -->
+      <div class="pip-p2-col">
+
+        <!-- OPTION 1: Request Full PIP -->
+        <div class="pip-option-wrap">
+          <div class="pip-chk-row">
+            <span class="pip-chk-box">${chkFull}</span>
+            <span class="pip-chk-label-full">
+              request full PIP coverage be applicable to the
+              policy or binder of insurance described
+              <u>below,</u> on all future renewals of the policy
+              and on&nbsp; all replacement policies unless I notify the
+              company in writing to the&nbsp; contrary, with the effective date of&nbsp;
+              such change being no earlier than&nbsp; the receipt date by the company of&nbsp;
+              my written notification.
+            </span>
+          </div>
         </div>
-        <div>
-          <span class="pip-sig-line">${today}</span>
-          <span class="pip-sig-label">Date</span>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- MD PIP WAIVER PAGE -->
-  ${pipElection === 'waive' ? buildMdPipWaiverPage(fields, sigDataURL, today) : ''}
+        <!-- OPTION 2: Affirmatively Waive -->
+        <div class="pip-option-wrap">
+          <div class="pip-chk-row">
+            <span class="pip-chk-box">${chkWaive}</span>
+            <span class="pip-chk-label-waive">
+              affirmatively waive the benefits required by Section 19-505 of the
+            </span>
+          </div>
+          <p class="pip-chk-continuation">
+            <u><strong>Insurance Article (PIP).</strong></u> I understand and
+            agree that this waiver of coverage shall be applicable to the policy or binder of
+            insurance described below, on all future renewals of the policy and on all
+            replacement policies unless I notify the company in writing to the contrary, with the
+            effective date of&nbsp; such change being no earlier&nbsp; than the receipt date by the
+            company of&nbsp; my written notification.
+          </p>
+        </div>
+
+        <!-- SIGNATURE BLOCK -->
+        <div class="pip-sig-block">
+
+          <!-- First Named Insured/Applicant -->
+          <div class="pip-sig-row">
+            <span class="pip-static-val">${name}</span>
+            <span class="pip-sig-label">First Named Insured/Applicant</span>
+          </div>
+
+          <!-- Signature image -->
+          <div class="pip-sig-row">
+            <div style="border-bottom:1.2pt solid #000;min-height:40pt;padding-bottom:2pt;">${sigImg}</div>
+            <span class="pip-sig-label">Signature of First Named Insured/Applicant</span>
+          </div>
+
+          <!-- Date + Policy/Binder # -->
+          <div class="pip-date-policy">
+            <div class="pip-field-col">
+              <span class="pip-static-val">${today}</span>
+              <span class="pip-sig-label">Date</span>
+            </div>
+            <div class="pip-field-col">
+              <span class="pip-static-val">S0137</span>
+              <span class="pip-sig-label">Policy/Binder #</span>
+            </div>
+          </div>
+
+          <!-- Insurer -->
+          <div class="pip-sig-row">
+            <span class="pip-static-val" style="width:100%;">Metrocars Leasing</span>
+            <span class="pip-sig-label">Insurer</span>
+          </div>
+
+        </div><!-- /sig-block -->
+
+      </div><!-- /waiver right -->
+
+    </div><!-- /two-col -->
+
+  </div><!-- /pip page 2 -->
   `;
-}
-
-function buildMdPipWaiverPage(fields: Fields, sigDataURL: string | null, today: string): string {
-  const name = fields.memberName || '';
-  const sigImg = sigDataURL
-    ? `<img src="${sigDataURL}" style="height:40pt;max-width:180pt;object-fit:contain;object-position:left bottom;">`
-    : '';
-
-  return `
-  <div class="pip-page pip-page-last" style="page-break-before:always;">
-    <h2 style="text-align:center;font-size:11pt;font-weight:bold;margin-bottom:4pt;">MARYLAND PERSONAL INJURY PROTECTION</h2>
-    <h2 style="text-align:center;font-size:11pt;font-weight:bold;margin-bottom:8pt;">WAIVER FORM</h2>
-    <p style="text-align:center;font-size:10pt;margin-bottom:12pt;">Metrocars Leasing Corp. d/b/a Whip</p>
-
-    <p>I, the undersigned, having been fully informed of my right to elect Personal Injury Protection (PIP) coverage pursuant to Maryland Insurance Article § 19-505, hereby <strong>affirmatively waive</strong> PIP coverage under the vehicle lease agreement with Metrocars Leasing Corp. d/b/a Whip.</p>
-
-    <p>I understand and acknowledge the following:</p>
-    <ol>
-      <li>PIP coverage would have provided up to $2,500 per person per accident for medical expenses and lost wages regardless of fault.</li>
-      <li>By waiving PIP, I and my passengers will not have access to PIP benefits for injuries sustained in accidents involving the leased vehicle.</li>
-      <li>This waiver does not affect my right to pursue a liability claim against an at-fault driver.</li>
-      <li>I may rescind this waiver by providing written notice to Whip prior to any accident giving rise to a PIP claim.</li>
-      <li>I have had sufficient opportunity to review this waiver and to ask questions before signing.</li>
-    </ol>
-
-    <div class="pip-p2-col" style="margin-top:16pt;">
-      <div>
-        <p><strong>Member:</strong></p>
-        <div style="margin-top:8pt;">${sigImg}</div>
-        <span class="pip-sig-line" style="margin-top:4pt;">${name}</span>
-        <span class="pip-sig-label">Member Signature / Printed Name</span>
-        <span class="pip-sig-line" style="margin-top:8pt;">${today}</span>
-        <span class="pip-sig-label">Date</span>
-      </div>
-      <div>
-        <p><strong>Whip Representative:</strong></p>
-        <span class="pip-sig-line" style="margin-top:32pt;"></span>
-        <span class="pip-sig-label">Representative Signature</span>
-        <span class="pip-sig-line" style="margin-top:8pt;"></span>
-        <span class="pip-sig-label">Printed Name / Title</span>
-        <span class="pip-sig-line" style="margin-top:8pt;"></span>
-        <span class="pip-sig-label">Date</span>
-      </div>
-    </div>
-  </div>`;
 }
 
 // ── GA UM PAGE ────────────────────────────────────────────────────────────────
