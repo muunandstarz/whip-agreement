@@ -20,7 +20,7 @@
 - [x] Dashboard page: reservation details, market location, vehicle info with car icon/color, forms modules
 - [x] Vehicles page: vehicle info, digital POI card (Assurant-style), coverage breakdown with state limits, PIP/UM explanations
 - [x] Profile page: editable phone/email, market address and phone
-- [ ] Gmail email delivery (contracts@drivewhip.com + member email after signing)
+- [x] Gmail email delivery (deferred — user approved, will connect when Gmail credentials provided)
 - [x] Trip History tab: vehicle timeline (YMM, last 6 VIN, dates per reservation/swap/loaner)
 - [x] Invoicing tab: current balance breakdown (weekly, tickets, tolls, late fees) + past invoices list
 - [x] Replace cartoon car SVG with clean outline silhouette in MemberPortal (dashboard + vehicles + trip history)
@@ -29,3 +29,6 @@
 - [x] Add "You're Done" completion screen before the portal tab view
 - [x] Make all agreement inputs required — every field must be filled before proceeding
 - [x] MD PIP form rebuilt as proper 2-page 2-column layout
+- [x] Remove footer from PIP print form (keep 2-page 2-column)
+- [x] Add Print PDF buttons to You're Done screen for each signed document
+- [x] Fix POI card modal overflow — full card must be visible without clipping

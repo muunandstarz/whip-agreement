@@ -264,12 +264,11 @@ export function buildPrintHTML(
     }
 
     /* ── FOOTER ── */
+    /* Footer only appears on agreement pages, not on PIP/addon form pages */
     .agr-footer {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      padding: 4pt 0.85in;
+      position: relative;
+      margin-top: 12pt;
+      padding: 4pt 0;
       border-top: 0.5pt solid #ccc;
       display: flex;
       justify-content: space-between;
@@ -290,6 +289,10 @@ export function buildPrintHTML(
 
     /* ── PIP FORM (PIXEL-PERFECT — EXACT MATCH TO maryland_pip_waiver(1).html) ── */
     /* These styles are copied verbatim from the original legal document HTML. DO NOT MODIFY. */
+    /* Hide the agreement footer on PIP pages — PIP form has no footer per spec */
+    .pip-page ~ .agr-footer,
+    .pip-page + .agr-footer { display: none !important; }
+    .pip-page .agr-footer { display: none !important; }
     .pip-page {
       font-family: Arial, Helvetica, sans-serif;
       font-size: 10pt;
@@ -475,6 +478,7 @@ export function buildPrintHTML(
   ${mainPages}
   ${addonPages}
 </div>
+
 `;
 }
 
@@ -676,9 +680,8 @@ function buildMainPages(fields: Fields, sd: StateData, sigImg: string, today: st
       </div>
       <p class="agr-cert">I certify that I have read this Member Lease Agreement and the Whip Terms of Service in their entirety, that I understand and agree to all terms and conditions, and that this agreement is legally binding upon my execution. I further certify that all information provided herein is accurate and complete.</p>
     </div>
+    ${footer}
   </div>
-
-  ${footer}
   `;
 }
 

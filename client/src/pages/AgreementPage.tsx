@@ -426,6 +426,8 @@ export default function AgreementPage() {
               fields={fields}
               stateData={stateData}
               onEnterPortal={() => setShowDoneScreen(false)}
+              onPrint={handlePrint}
+              onPrintAddon={handlePrintAddon}
             />
           )}
           {currentStep?.id === 'complete' && !showDoneScreen && (
@@ -1177,17 +1179,18 @@ function CompleteStep({ fields, stateData, onPrint, onPrintAddon }: {
 }
 
 // ── DONE SCREEN ─────────────────────────────────────────────────────────────
-function DoneScreen({ fields, stateData, onEnterPortal }: {
+function DoneScreen({ fields, stateData, onEnterPortal, onPrint, onPrintAddon }: {
   fields: MemberFields; stateData: StateData; onEnterPortal: () => void;
+  onPrint: () => void; onPrintAddon: (key: string) => void;
 }) {
   const firstName = fields.memberName ? fields.memberName.split(' ')[0] : null;
   const signedDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-  const docs = [
-    'Member Agreement',
-    ...(stateData.addons.includes('md-pip') ? ['Maryland PIP Waiver'] : []),
-    ...(stateData.addons.includes('ga-um') ? ['Georgia UM Rejection'] : []),
-    ...(stateData.addons.includes('fl-um') ? ['Florida UM/UIM Rejection'] : []),
-    ...(stateData.addons.includes('pa-pip') ? ['Pennsylvania Coverage Election'] : []),
+  const docs: { label: string; key: string | null }[] = [
+    { label: 'Member Agreement', key: null },
+    ...(stateData.addons.includes('md-pip') ? [{ label: 'Maryland PIP Waiver', key: 'md-pip' }] : []),
+    ...(stateData.addons.includes('ga-um') ? [{ label: 'Georgia UM Rejection', key: 'ga-um' }] : []),
+    ...(stateData.addons.includes('fl-um') ? [{ label: 'Florida UM/UIM Rejection', key: 'fl-um' }] : []),
+    ...(stateData.addons.includes('pa-pip') ? [{ label: 'Pennsylvania Coverage Election', key: 'pa-pip' }] : []),
   ];
 
   return (
@@ -1233,16 +1236,22 @@ function DoneScreen({ fields, stateData, onEnterPortal }: {
       <div>
         <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Signed Documents</div>
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
-          {docs.map((label, i) => (
-            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', borderBottom: i < docs.length - 1 ? '1px solid var(--border)' : 'none' }}>
+          {docs.map((doc, i) => (
+            <div key={doc.label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', borderBottom: i < docs.length - 1 ? '1px solid var(--border)' : 'none' }}>
               <div style={{ width: 36, height: 36, borderRadius: 8, background: 'rgba(255,98,33,0.08)', border: '1px solid rgba(255,98,33,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#ff6221' }}>
                 <FileText size={16} />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--foreground)' }}>{label}</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--foreground)' }}>{doc.label}</div>
                 <div style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>Signed {signedDate}</div>
               </div>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              <button
+                onClick={() => doc.key ? onPrintAddon(doc.key) : onPrint()}
+                style={{ flexShrink: 0, padding: '6px 12px', borderRadius: 8, background: 'rgba(255,98,33,0.08)', border: '1px solid rgba(255,98,33,0.2)', color: '#ff6221', fontSize: 12, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                PDF
+              </button>
             </div>
           ))}
         </div>

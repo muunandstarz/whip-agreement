@@ -163,16 +163,19 @@ function PoiCard({ fields }: { fields: MemberFields }) {
   return (
     <div onClick={() => setFlipped(f => !f)} style={{ perspective: 1000, cursor: 'pointer', userSelect: 'none', WebkitTapHighlightColor: 'transparent' }}>
       <div style={{
-        position: 'relative', width: '100%', paddingBottom: '56.25%',
+        position: 'relative', width: '100%',
         transformStyle: 'preserve-3d',
         transition: 'transform 0.5s cubic-bezier(0.23,1,0.32,1)',
         transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+        minHeight: 220,
       }}>
         {/* FRONT */}
         <div style={{
-          position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden',
+          position: flipped ? 'absolute' : 'relative', inset: flipped ? 0 : undefined,
+          backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden',
           background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, padding: '20px 22px',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.10)', display: 'flex', flexDirection: 'column', gap: 10, overflow: 'hidden',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.10)', display: 'flex', flexDirection: 'column', gap: 10,
+          width: '100%', boxSizing: 'border-box',
         }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -206,6 +209,7 @@ function PoiCard({ fields }: { fields: MemberFields }) {
           position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden',
           transform: 'rotateY(180deg)', background: '#1e3a8a', borderRadius: 12, padding: '20px 22px',
           boxShadow: '0 4px 24px rgba(0,0,0,0.10)', display: 'flex', flexDirection: 'column', gap: 12, color: 'white',
+          minHeight: 220,
         }}>
           <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '0.05em', borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: 8 }}>IN CASE OF ACCIDENT</div>
           <div style={{ fontSize: 11, lineHeight: 1.6 }}>
