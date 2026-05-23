@@ -8,9 +8,10 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { toast } from 'sonner';
 import {
   STATE_DATA, STATE_OPTIONS, TOS_TEXT, ACK_ITEMS,
-  URL_PARAM_MAP, type StateData
+  URL_PARAM_MAP, type StateData, getMarketForState
 } from '@/lib/agreementData';
 import { buildPrintHTML, buildAddonOnlyHTML } from '@/lib/printBuilder';
+import MemberPortal from './MemberPortal';
 
 // ── ICONS (inline SVG — no extra deps) ──────────────────────────────────────
 const ChevronRight = ({ size = 20, style }: { size?: number; style?: React.CSSProperties }) => (
@@ -387,7 +388,13 @@ export default function AgreementPage() {
             <AddonsStep stateData={stateData} pipElection={pipElection} setPipElection={setPipElection} />
           )}
           {currentStep?.id === 'complete' && (
-            <CompleteStep fields={fields} stateData={stateData} onPrint={handlePrint} onPrintAddon={handlePrintAddon} onBack={goBack} />
+            <MemberPortal
+              fields={fields}
+              onPrint={handlePrint}
+              onPrintAddon={handlePrintAddon}
+              addons={stateData.addons}
+              pipElection={pipElection}
+            />
           )}
         </div>
       </main>
@@ -417,6 +424,7 @@ function WelcomeStep({ fields, prefilled, onNext, setField }: {
 }) {
   const hasPrefill = prefilled.size > 0;
   const firstName = fields.memberName ? fields.memberName.split(' ')[0] : null;
+  const market = getMarketForState(fields.agreementState);
 
   const WELCOME_STEPS = [
     { id: 'welcome', label: 'Welcome' },
@@ -539,7 +547,7 @@ function WelcomeStep({ fields, prefilled, onNext, setField }: {
 
       {/* Help link */}
       <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--muted-foreground)', marginTop: 4 }}>
-        Need help? <a href="mailto:info@drivewhip.com" style={{ color: '#ff6221', fontWeight: 600 }}>Contact Support</a>
+        Need help? <a href={`tel:${market.phone.replace(/\D/g, '')}`} style={{ color: '#ff6221', fontWeight: 600 }}>Contact Support</a>
       </p>
     </div>
   );

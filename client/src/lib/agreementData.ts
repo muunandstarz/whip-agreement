@@ -257,3 +257,236 @@ export const URL_PARAM_MAP: Record<string, string> = {
   agreement_state: 'agreementState',
   agreementState: 'agreementState',
 };
+
+// ── MARKET DATA ───────────────────────────────────────────────────────────────
+export interface MarketInfo {
+  name: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+  phone: string;
+  states: string[]; // garaging states served by this market
+}
+
+export const MARKETS: MarketInfo[] = [
+  {
+    name: 'Rockville',
+    address: '14670 Southlawn Lane',
+    city: 'Rockville',
+    state: 'MD',
+    zip: '20850',
+    phone: '(301) 424-5678',
+    states: ['MD', 'DC', 'VA'],
+  },
+  {
+    name: 'Glen Burnie',
+    address: '7939 Ritchie Hwy',
+    city: 'Glen Burnie',
+    state: 'MD',
+    zip: '21061',
+    phone: '(410) 766-1234',
+    states: [],
+  },
+  {
+    name: 'Atlanta',
+    address: '2700 Northeast Expy NE',
+    city: 'Atlanta',
+    state: 'GA',
+    zip: '30345',
+    phone: '(404) 321-9876',
+    states: ['GA'],
+  },
+  {
+    name: 'Chicago',
+    address: '4200 W Lawrence Ave',
+    city: 'Chicago',
+    state: 'IL',
+    zip: '60630',
+    phone: '(773) 555-0100',
+    states: ['IL'],
+  },
+  {
+    name: 'Richmond',
+    address: '4901 Midlothian Turnpike',
+    city: 'Richmond',
+    state: 'VA',
+    zip: '23234',
+    phone: '(804) 555-0200',
+    states: ['VA'],
+  },
+  {
+    name: 'Philadelphia',
+    address: '3901 Market St',
+    city: 'Philadelphia',
+    state: 'PA',
+    zip: '19104',
+    phone: '(215) 555-0300',
+    states: ['PA'],
+  },
+  {
+    name: 'Miami',
+    address: '8400 NW 36th St',
+    city: 'Doral',
+    state: 'FL',
+    zip: '33166',
+    phone: '(305) 555-0400',
+    states: ['FL'],
+  },
+  {
+    name: 'Orlando',
+    address: '5555 Semoran Blvd',
+    city: 'Orlando',
+    state: 'FL',
+    zip: '32822',
+    phone: '(407) 555-0500',
+    states: [],
+  },
+  {
+    name: 'Boston',
+    address: '1200 Hyde Park Ave',
+    city: 'Boston',
+    state: 'MA',
+    zip: '02136',
+    phone: '(617) 555-0600',
+    states: ['MA'],
+  },
+  {
+    name: 'Dallas',
+    address: '9800 Harry Hines Blvd',
+    city: 'Dallas',
+    state: 'TX',
+    zip: '75220',
+    phone: '(214) 555-0700',
+    states: ['TX'],
+  },
+];
+
+export function getMarketForState(stateCode: string): MarketInfo {
+  return MARKETS.find(m => m.states.includes(stateCode)) ?? MARKETS[0];
+}
+
+// ── COVERAGE DATA ─────────────────────────────────────────────────────────────
+export interface CoverageInfo {
+  protectionPlan: {
+    name: string;
+    description: string;
+    memberResponsibility: string;
+    exclusions: string[];
+  };
+  liability: {
+    carrier: string;
+    limits: string;
+    description: string;
+  };
+  pip?: {
+    name: string;
+    description: string;
+    limit: string;
+  };
+  um?: {
+    name: string;
+    description: string;
+    status: string;
+  };
+}
+
+export const STATE_COVERAGE: Record<string, CoverageInfo> = {
+  MD: {
+    protectionPlan: {
+      name: 'Whip Protection Plan',
+      description: 'Physical damage coverage (comprehensive & collision) maintained by Metrocars Leasing Corp. as the registered owner.',
+      memberResponsibility: '$1,000 per occurrence (or actual repair cost if less)',
+      exclusions: ['Intentional or reckless damage', 'Unauthorized driver', 'Violation of Terms', 'Personal property', 'Consequential damages'],
+    },
+    liability: {
+      carrier: 'Metrocars Leasing Corp. (via Metro Cars)',
+      limits: '30/60/15 — $30,000 bodily injury per person / $60,000 per accident / $15,000 property damage',
+      description: 'Liability coverage applies during Period 0 (rideshare app off) only. Does not apply while active on any TNC platform.',
+    },
+    pip: {
+      name: 'Personal Injury Protection (PIP)',
+      description: 'Pays medical expenses and lost wages regardless of fault for you and your passengers.',
+      limit: '$2,500 per person (Maryland statutory minimum)',
+    },
+  },
+  GA: {
+    protectionPlan: {
+      name: 'Whip Protection Plan',
+      description: 'Physical damage coverage (comprehensive & collision) maintained by Metrocars Leasing Corp. as the registered owner.',
+      memberResponsibility: '$1,000 per occurrence (or actual repair cost if less)',
+      exclusions: ['Intentional or reckless damage', 'Unauthorized driver', 'Violation of Terms', 'Personal property', 'Consequential damages'],
+    },
+    liability: {
+      carrier: 'Metrocars Leasing Corp. (via Metro Cars)',
+      limits: '25/50/25 — $25,000 bodily injury per person / $50,000 per accident / $25,000 property damage',
+      description: 'Liability coverage applies during Period 0 (rideshare app off) only. Does not apply while active on any TNC platform.',
+    },
+    um: {
+      name: 'Uninsured Motorist (UM)',
+      description: 'Covers damages caused by a driver with no insurance or insufficient insurance.',
+      status: 'Rejected per lease terms (O.C.G.A. § 33-7-11)',
+    },
+  },
+  FL: {
+    protectionPlan: {
+      name: 'Whip Protection Plan',
+      description: 'Physical damage coverage (comprehensive & collision) maintained by Metrocars Leasing Corp. as the registered owner.',
+      memberResponsibility: '$1,000 per occurrence (or actual repair cost if less)',
+      exclusions: ['Intentional or reckless damage', 'Unauthorized driver', 'Violation of Terms', 'Personal property', 'Consequential damages'],
+    },
+    liability: {
+      carrier: 'Metrocars Leasing Corp. (via Metro Cars)',
+      limits: '10/20/10 — $10,000 bodily injury per person / $20,000 per accident / $10,000 property damage',
+      description: 'Liability coverage applies during Period 0 (rideshare app off) only. Does not apply while active on any TNC platform.',
+    },
+    um: {
+      name: 'Uninsured/Underinsured Motorist (UM/UIM)',
+      description: 'Covers damages caused by a driver with no insurance or insufficient insurance.',
+      status: 'Rejected per lease terms (§ 627.727)',
+    },
+  },
+  PA: {
+    protectionPlan: {
+      name: 'Whip Protection Plan',
+      description: 'Physical damage coverage (comprehensive & collision) maintained by Metrocars Leasing Corp. as the registered owner.',
+      memberResponsibility: '$1,000 per occurrence (or actual repair cost if less)',
+      exclusions: ['Intentional or reckless damage', 'Unauthorized driver', 'Violation of Terms', 'Personal property', 'Consequential damages'],
+    },
+    liability: {
+      carrier: 'Metrocars Leasing Corp. (via Metro Cars)',
+      limits: '15/30/5 — $15,000 bodily injury per person / $30,000 per accident / $5,000 property damage',
+      description: 'Liability coverage applies during Period 0 (rideshare app off) only. Does not apply while active on any TNC platform.',
+    },
+    pip: {
+      name: 'First Party Medical Benefits',
+      description: 'Pays medical expenses for you and passengers regardless of fault.',
+      limit: 'Rejected per lease terms',
+    },
+    um: {
+      name: 'Uninsured/Underinsured Motorist (UM/UIM)',
+      description: 'Covers damages caused by a driver with no insurance or insufficient insurance.',
+      status: 'Rejected per lease terms',
+    },
+  },
+  DEFAULT: {
+    protectionPlan: {
+      name: 'Whip Protection Plan',
+      description: 'Physical damage coverage (comprehensive & collision) maintained by Metrocars Leasing Corp. as the registered owner.',
+      memberResponsibility: '$1,000 per occurrence (or actual repair cost if less)',
+      exclusions: ['Intentional or reckless damage', 'Unauthorized driver', 'Violation of Terms', 'Personal property', 'Consequential damages'],
+    },
+    liability: {
+      carrier: 'Metrocars Leasing Corp. (via Metro Cars)',
+      limits: 'State minimum limits',
+      description: 'Liability coverage applies during Period 0 (rideshare app off) only. Does not apply while active on any TNC platform.',
+    },
+  },
+};
+
+export function getCoverageForState(stateCode: string): CoverageInfo {
+  return STATE_COVERAGE[stateCode] ?? STATE_COVERAGE['DEFAULT'];
+}
+
+// ── HELP DESK ─────────────────────────────────────────────────────────────────
+export const HELP_DESK_TEXT_LINE = '855-861-9401';

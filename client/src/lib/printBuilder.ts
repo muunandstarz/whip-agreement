@@ -726,218 +726,71 @@ function buildMdPipPages(
   const chkWaive = pipElection === 'waive' ? '&#9745;' : '&#9744;';
 
   return `
-  <!-- MD PIP PAGE 1 — NOTICE (exact match to maryland_pip_waiver(1).html page 1) -->
-  <div class="pip-page" style="page-break-before:always;">
+  <!-- MD PIP PAGE 1 — NOTICE (single-column, matches WhipMemberAgreement(3).pdf) -->
+  <div class="pip-page" style="page-break-before:always; font-family: Arial, sans-serif; font-size: 9.5pt; line-height: 1.5; padding: 0.75in 0.75in 0.5in;">
 
-    <div class="pip-doc-title">
-      Notice and Waiver of<br>
-      Personal Injury Protection (PIP) Coverage
-    </div>
+    <p style="margin:0 0 2pt;">Notice and Waiver of</p>
+    <p style="margin:0 0 2pt;">Personal Injury Protection (PIP) Coverage</p>
+    <p style="margin:0 0 2pt;"><strong><u>Notice Concerning the Waiver of</u></strong></p>
+    <p style="margin:0 0 2pt;"><strong><u>Personal Injury Protection (PIP)</u></strong></p>
+    <p style="margin:0 0 12pt;"><strong><u>Coverage in Maryland</u></strong> (Private Passenger<br>Automobile Liability Insurance)</p>
 
-    <div class="pip-two-col">
-
-      <!-- LEFT COLUMN -->
-      <div>
-
-        <p style="margin-bottom:10pt;">
-          <strong><u>Notice Concerning the Waiver of<br>
-          Personal Injury Protection (PIP)<br>
-          Coverage in Maryland</u></strong> (Private Passenger<br>
-          Automobile Liability Insurance)
-        </p>
-
-        <p>You have the choice of purchasing certain Personal Injury Protection (PIP) Coverages. Before deciding whether to purchase or waive this coverage, please read the following carefully.</p>
-
-        <p class="pip-option1-head">OPTION 1 - FULL PIP</p>
-
-        <p><strong>Full</strong> PIP coverage provides the following protection, without regard to fault::</p>
-
-        <ol class="num">
-          <li>It covers you and members of your family&nbsp; residing with you who are injured in
-            <strong>any</strong>&nbsp; motor vehicle accident; anyone injured while <strong>in</strong>
-            your vehicle; and pedestrians injured <strong>by</strong>&nbsp; your vehicle.
-          </li>
-          <li>The <strong>minimum</strong> coverage is $2,500 (<em>you may&nbsp; purchase more*</em>)
-            and may be used to cover:
-            <ol class="alpha">
-              <li>All reasonable and necessary medical&nbsp; expenses incurred within 3 years of&nbsp; injury; and</li>
-              <li>85 percent of actually incurred lost wages; or</li>
-              <li>If the injured person is not employed at&nbsp; the time of injury, any reasonable and
-                  necessary expenses to provide for essential services which that person&nbsp; would have
-                  provided for the care and maintenance of his or her family or household.</li>
-            </ol>
-          </li>
-        </ol>
-
-        <p>If you do <strong>not</strong> sign the waiver, you will automatically receive the full PIP
-        protection described above. Your PIP premium will be
-        <span class="pip-dollar">$2,400</span> (<strong><em>annually - Charged at $50/week</em></strong>).</p>
-
-      </div><!-- /left -->
-
-      <!-- RIGHT COLUMN -->
-      <div>
-
-        <p>You may only waive PIP coverage for:</p>
-
-        <ol class="num">
-          <li>The <strong>named</strong> insured (you);</li>
-          <li>All listed drivers on the policy; and</li>
-          <li>Members of your family who are 16 years of age or older and reside with you in your household.</li>
-        </ol>
-
-        <p>The waiver prevents the <strong>named</strong> insured (you) from collecting PIP benefits under
-        <strong>any</strong> motor vehicle liability insurance policy issued in the State of Maryland or another
-        form of security authorized to be used in place of a motor vehicle liability insurance policy.</p>
-
-        <p>The waiver prevents individuals described in category 2 or 3 above from collecting PIP benefits
-        under your policy. In addition, if these individuals are involved in a motor vehicle accident, the
-        waiver prevents these individuals from collecting PIP benefits under any other policy of motor vehicle
-        liability insurance issued in the state of Maryland or another form of security authorized to be used
-        in place of a motor vehicle liability insurance policy unless the individual:</p>
-
-        <p class="dash">- Is the first named insured under the other policy;</p>
-        <p class="dash">- Has not waived PIP benefits under the other policy; and</p>
-        <p class="dash">- Is not a named insured under any policy of&nbsp; motor vehicle liability&nbsp;
-        insurance where a waiver of PIP benefits is in effect.</p>
-
-        <p>The waiver does not impair the rights of other individuals such as pedestrians or minor children
-        from collecting PIP under your policy.</p>
-
-        <p>If you decide to sign the waiver, your PIP premium will be <u>0</u> percent of the full PIP
-        coverage. The total premium will be $ <u>0.00</u> (<em>annually</em>).</p>
-
-        <p>If you decide <strong>not</strong> to sign the waiver, your insurance company may not refuse to
-        write your insurance coverage.</p>
-
-      </div><!-- /right -->
-
-    </div><!-- /two-col -->
+    <p style="margin:0 0 6pt;">You have the choice of purchasing certain Personal Injury Protection (PIP) Coverages. Before deciding whether to purchase or waive this coverage, please read the following carefully.</p>
+    <p style="margin:0 0 4pt;">OPTION 1 - FULL PIP</p>
+    <p style="margin:0 0 6pt;"><strong>Full</strong> PIP coverage provides the following protection, without regard to fault::</p>
+    <p style="margin:0 0 4pt;">It covers you and members of your family residing with you who are injured in <strong>any</strong> motor vehicle accident; anyone injured while <strong>in</strong> your vehicle; and pedestrians injured <strong>by</strong> your vehicle.</p>
+    <p style="margin:0 0 4pt;">The <strong>minimum</strong> coverage is $2,500 (<em>you may purchase more*</em>) and may be used to cover:</p>
+    <p style="margin:0 0 4pt;">All reasonable and necessary medical expenses incurred within 3 years of injury; and</p>
+    <p style="margin:0 0 4pt;">85 percent of actually incurred lost wages; or</p>
+    <p style="margin:0 0 6pt;">If the injured person is not employed at the time of injury, any reasonable and necessary expenses to provide for essential services which that person would have provided for the care and maintenance of his or her family or household.</p>
+    <p style="margin:0 0 6pt;">If you do <strong>not</strong> sign the waiver, you will automatically receive the full PIP protection described above. Your PIP premium will be $2,400 (<strong><em>annually - Charged at $50/week</em></strong>).</p>
+    <p style="margin:0 0 6pt;">You may only waive PIP coverage for:</p>
+    <p style="margin:0 0 4pt;">The <strong>named</strong> insured (you);</p>
+    <p style="margin:0 0 4pt;">All listed drivers on the policy; and</p>
+    <p style="margin:0 0 6pt;">Members of your family who are 16 years of age or older and reside with you in your household.</p>
+    <p style="margin:0 0 6pt;">The waiver prevents the <strong>named</strong> insured (you) from collecting PIP benefits under <strong>any</strong> motor vehicle liability insurance policy issued in the State of Maryland or another form of security authorized to be used in place of a motor vehicle liability insurance policy.</p>
+    <p style="margin:0 0 6pt;">The waiver prevents individuals described in category 2 or 3 above from collecting PIP benefits under your policy. In addition, if these individuals are involved in a motor vehicle accident, the waiver prevents these individuals from collecting PIP benefits under any other policy of motor vehicle liability insurance issued in the state of Maryland or another form of security authorized to be used in place of a motor vehicle liability insurance policy unless the individual:</p>
+    <p style="margin:0 0 4pt;">- Is the first named insured under the other policy;</p>
+    <p style="margin:0 0 4pt;">- Has not waived PIP benefits under the other policy; and</p>
+    <p style="margin:0 0 6pt;">- Is not a named insured under any policy of motor vehicle liability insurance where a waiver of PIP benefits is in effect.</p>
+    <p style="margin:0 0 6pt;">The waiver does not impair the rights of other individuals such as pedestrians or minor children from collecting PIP under your policy.</p>
+    <p style="margin:0 0 6pt;">If you decide to sign the waiver, your PIP premium will be <u>0</u> percent of the full PIP coverage. The total premium will be $ <u>0.00</u> (<em>annually</em>).</p>
+    <p style="margin:0 0 6pt;">If you decide <strong>not</strong> to sign the waiver, your insurance company may not refuse to write your insurance coverage.</p>
+    <p style="margin:0 0 4pt;"><u>Waiver of Personal Injury Protection</u></p>
+    <p style="margin:0 0 4pt;"><u>(PIP) Coverage</u> (Private Passenger</p>
+    <p style="margin:0 0 10pt;">Automobile Liability Insurance)</p>
+    <p style="margin:0 0 6pt;">I hereby confirm that I have fully read and understood the attached notice, required by Section 19-506 of the Insurance Article, and I understand and agree that</p>
+    <p style="margin:0 0 6pt;">Metrocars Leasing, in reliance upon my signature as the first named insured/applicant, will NOT provide the Personal Injury Protection (PIP) Coverage, required by Section 19-505 and described in the attached notice provided to me with this waiver. This coverage is waived for any injury which may be sustained by:</p>
+    <p style="margin:0 0 4pt;"><strong>1. Anyone listed as a named insured on the policy;</strong></p>
+    <p style="margin:0 0 4pt;"><strong>2. All drivers listed on the policy; and</strong></p>
+    <p style="margin:0 0 6pt;"><strong>3. All members of the named insured's family living in the insured's household who are 16 years of age or older.</strong></p>
+    <p style="margin:0 0 6pt;">I further understand and agree that the waiver of Personal Injury Protection (PIP) benefits under the policy being applied for waives coverage for PIP benefits <u>for anyone described above</u> under any other policy issued in the State of</p>
 
   </div><!-- /pip page 1 -->
 
-  <!-- MD PIP PAGE 2 — WAIVER (exact match to maryland_pip_waiver(1).html page 2) -->
-  <div class="pip-page ${pipElection !== 'waive' ? 'pip-page-last' : ''}">
+  <!-- MD PIP PAGE 2 — WAIVER CONTINUATION + SIGNATURE -->
+  <div class="pip-page pip-page-last" style="font-family: Arial, sans-serif; font-size: 9.5pt; line-height: 1.5; padding: 0.75in 0.75in 0.5in;">
 
-    <div class="pip-two-col">
+    <p style="margin:0 0 6pt;">Maryland or another form of security authorized to be used in place of a motor vehicle liability insurance policy, unless the individual is:</p>
+    <p style="margin:0 0 4pt;">- Is the first named insured under</p>
+    <p style="margin:0 0 4pt;">&nbsp;&nbsp;the other policy; and</p>
+    <p style="margin:0 0 4pt;">- Has not waived PIP benefits</p>
+    <p style="margin:0 0 4pt;">&nbsp;&nbsp;under the other policy; and</p>
+    <p style="margin:0 0 10pt;">- Is not a named insured under any policy of motor vehicle liability insurance where a waiver of PIP benefits is in effect.</p>
+    <p style="margin:0 0 14pt;">I, the first named insured/applicant, have fully read and understood the above noted information and hereby: <strong><em>(check one of the following)</em></strong></p>
 
-      <!-- LEFT COLUMN — Waiver Body -->
-      <div class="pip-p2-col">
+    <p style="margin:0 0 8pt;">${chkFull} request full PIP coverage be applicable to the policy or binder of insurance described <u>below,</u> on all future renewals of the policy and on all replacement policies unless I notify the company in writing to the contrary, with the effective date of such change being no earlier than the receipt date by the company of my written notification.</p>
 
-        <p class="pip-waiver-head">
-          <u>Waiver of Personal Injury Protection<br>
-          (PIP) Coverage</u> (Private Passenger<br>
-          Automobile Liability Insurance)
-        </p>
+    <p style="margin:0 0 8pt;">${chkWaive} affirmatively waive the benefits required by Section 19-505 of the <u><strong>Insurance Article (PIP).</strong></u> I understand and agree that this waiver of coverage shall be applicable to the policy or binder of insurance described below, on all future renewals of the policy and on all replacement policies unless I notify the company in writing to the contrary, with the effective date of such change being no earlier than the receipt date by the company of my written notification.</p>
 
-        <p style="margin-bottom:14pt;">I hereby confirm that I have fully read and
-        understood the attached notice, required by Section 19-506 of the Insurance Article, and I
-        understand and agree that</p>
+    <p style="margin:0 0 4pt;">${name} First Named Insured/Applicant</p>
 
-        <p><span class="pip-insurer-line">Metrocars Leasing</span>, in reliance upon
-        my signature as&nbsp; the first named insured/applicant, will NOT&nbsp; provide the
-        Personal Injury Protection (PIP) Coverage, required by Section&nbsp; 19-505 and described in
-        the attached notice&nbsp; provided to me with this waiver. This&nbsp; coverage is waived for any
-        injury which may&nbsp; be sustained by:</p>
+    <div style="border-bottom:1pt solid #000; min-height:44pt; margin-bottom:2pt;">${sigImg}</div>
+    <p style="margin:0 0 8pt;">Signature of First Named Insured/Applicant</p>
 
-        <p><strong>1. Anyone listed as a named insured on the policy;</strong></p>
-
-        <p><strong>2. All drivers listed on the policy; and</strong></p>
-
-        <p><strong>3. All members of the named insured's family living in the insured's household
-        who are 16 years of age or older.</strong></p>
-
-        <p>I further understand and agree that the waiver of Personal Injury Protection (PIP) benefits
-        under the policy being applied for waives coverage for PIP benefits
-        <u>for anyone described above</u> under any other
-        policy&nbsp; issued in the State of Maryland or another&nbsp; form of security authorized to be
-        used in&nbsp; place of a motor vehicle liability insurance&nbsp; policy, unless the individual is:</p>
-
-        <p class="dash">-&nbsp;Is the first named insured under<br>&nbsp;&nbsp;the other policy; and</p>
-        <p class="dash">-&nbsp;Has not waived PIP benefits<br>&nbsp;&nbsp;under the other policy; and</p>
-        <p class="dash">- Is not a named insured under any&nbsp;&nbsp; policy of motor vehicle liability
-        insurance where a waiver of PIP&nbsp;&nbsp; benefits is in effect.</p>
-
-        <p>I, the first named insured/applicant, have&nbsp; fully read and understood the above noted
-        information and hereby: <strong><em>(check one of the following)</em></strong></p>
-
-      </div><!-- /waiver left -->
-
-      <!-- RIGHT COLUMN — Checkboxes + Signature -->
-      <div class="pip-p2-col">
-
-        <!-- OPTION 1: Request Full PIP -->
-        <div class="pip-option-wrap">
-          <div class="pip-chk-row">
-            <span class="pip-chk-box">${chkFull}</span>
-            <span class="pip-chk-label-full">
-              request full PIP coverage be applicable to the
-              policy or binder of insurance described
-              <u>below,</u> on all future renewals of the policy
-              and on&nbsp; all replacement policies unless I notify the
-              company in writing to the&nbsp; contrary, with the effective date of&nbsp;
-              such change being no earlier than&nbsp; the receipt date by the company of&nbsp;
-              my written notification.
-            </span>
-          </div>
-        </div>
-
-        <!-- OPTION 2: Affirmatively Waive -->
-        <div class="pip-option-wrap">
-          <div class="pip-chk-row">
-            <span class="pip-chk-box">${chkWaive}</span>
-            <span class="pip-chk-label-waive">
-              affirmatively waive the benefits required by Section 19-505 of the
-            </span>
-          </div>
-          <p class="pip-chk-continuation">
-            <u><strong>Insurance Article (PIP).</strong></u> I understand and
-            agree that this waiver of coverage shall be applicable to the policy or binder of
-            insurance described below, on all future renewals of the policy and on all
-            replacement policies unless I notify the company in writing to the contrary, with the
-            effective date of&nbsp; such change being no earlier&nbsp; than the receipt date by the
-            company of&nbsp; my written notification.
-          </p>
-        </div>
-
-        <!-- SIGNATURE BLOCK -->
-        <div class="pip-sig-block">
-
-          <!-- First Named Insured/Applicant -->
-          <div class="pip-sig-row">
-            <span class="pip-static-val">${name}</span>
-            <span class="pip-sig-label">First Named Insured/Applicant</span>
-          </div>
-
-          <!-- Signature image -->
-          <div class="pip-sig-row">
-            <div style="border-bottom:1.2pt solid #000;min-height:40pt;padding-bottom:2pt;">${sigImg}</div>
-            <span class="pip-sig-label">Signature of First Named Insured/Applicant</span>
-          </div>
-
-          <!-- Date + Policy/Binder # -->
-          <div class="pip-date-policy">
-            <div class="pip-field-col">
-              <span class="pip-static-val">${today}</span>
-              <span class="pip-sig-label">Date</span>
-            </div>
-            <div class="pip-field-col">
-              <span class="pip-static-val">S0137</span>
-              <span class="pip-sig-label">Policy/Binder #</span>
-            </div>
-          </div>
-
-          <!-- Insurer -->
-          <div class="pip-sig-row">
-            <span class="pip-static-val" style="width:100%;">Metrocars Leasing</span>
-            <span class="pip-sig-label">Insurer</span>
-          </div>
-
-        </div><!-- /sig-block -->
-
-      </div><!-- /waiver right -->
-
-    </div><!-- /two-col -->
+    <p style="margin:0 0 4pt;">${today} Date</p>
+    <p style="margin:0 0 4pt;">S0137 Policy/Binder #</p>
+    <p style="margin:0;">Metrocars Leasing Insurer</p>
 
   </div><!-- /pip page 2 -->
   `;
