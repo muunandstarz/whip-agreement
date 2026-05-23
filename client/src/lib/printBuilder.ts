@@ -478,6 +478,47 @@ export function buildPrintHTML(
 `;
 }
 
+export function buildAddonOnlyHTML(
+  addonKey: string,
+  fields: Fields,
+  stateData: StateData,
+  sigDataURL: string | null,
+  pipElection: 'full' | 'waive' | null
+): string {
+  const today = fields.dateSigned || new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  // Build only the requested addon
+  const singleAddon: StateData = { ...stateData, addons: [addonKey as StateData['addons'][number]] };
+  const addonPages = buildAddonPages(fields, singleAddon, sigDataURL, pipElection, today);
+
+  // Reuse the same CSS block so forms render identically
+  const cssStart = `<div id="print-output" style="display:none;">`;
+  const cssEnd = `</div>`;
+
+  return `
+${cssStart}
+  <style>
+    /* ── PRINT BASE ── */
+    #print-output {
+      font-family: 'Times New Roman', Times, serif;
+      font-size: 9pt;
+      line-height: 1.38;
+      color: #000;
+      background: white;
+    }
+    .agr-page { width: 100%; page-break-after: always; padding-bottom: 14pt; position: relative; }
+    .agr-page-last { page-break-after: auto; }
+    @media print {
+      @page { margin: 0.65in 0.65in 0.65in 0.65in; }
+      #print-output { display: block !important; }
+      body > *:not(#print-output) { display: none !important; }
+    }
+  </style>
+  ${addonPages}
+${cssEnd}
+`;
+}
+
 function buildMainPages(fields: Fields, sd: StateData, sigImg: string, today: string): string {
   const hdr1 = `
     <div class="agr-hdr">
@@ -634,16 +675,6 @@ function buildMainPages(fields: Fields, sd: StateData, sigImg: string, today: st
         </div>
       </div>
       <p class="agr-cert">I certify that I have read this Member Lease Agreement and the Whip Terms of Service in their entirety, that I understand and agree to all terms and conditions, and that this agreement is legally binding upon my execution. I further certify that all information provided herein is accurate and complete.</p>
-      <div class="agr-rep-row">
-        <div>
-          <div class="agr-rep-line"></div>
-          <span class="agr-rep-lbl">Whip Representative Signature</span>
-        </div>
-        <div>
-          <div class="agr-rep-line"></div>
-          <span class="agr-rep-lbl">Date</span>
-        </div>
-      </div>
     </div>
   </div>
 

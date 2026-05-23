@@ -10,7 +10,7 @@ import {
   STATE_DATA, STATE_OPTIONS, TOS_TEXT, ACK_ITEMS,
   URL_PARAM_MAP, type StateData
 } from '@/lib/agreementData';
-import { buildPrintHTML } from '@/lib/printBuilder';
+import { buildPrintHTML, buildAddonOnlyHTML } from '@/lib/printBuilder';
 
 // ── ICONS (inline SVG — no extra deps) ──────────────────────────────────────
 const ChevronRight = ({ size = 20, style }: { size?: number; style?: React.CSSProperties }) => (
@@ -279,6 +279,17 @@ export default function AgreementPage() {
     window.print();
   };
 
+  const handlePrintAddon = (addonKey: string) => {
+    const html = buildAddonOnlyHTML(addonKey, fields, stateData, sigDataURL, pipElection);
+    let el = document.getElementById('print-output');
+    if (el) el.remove();
+    const wrap = document.createElement('div');
+    wrap.innerHTML = html;
+    const newEl = wrap.querySelector('#print-output') as HTMLElement;
+    if (newEl) { newEl.style.display = 'none'; document.body.appendChild(newEl); }
+    window.print();
+  };
+
   const canProceed = () => {
     switch (currentStep?.id) {
       case 'welcome': return true;
@@ -376,7 +387,7 @@ export default function AgreementPage() {
             <AddonsStep stateData={stateData} pipElection={pipElection} setPipElection={setPipElection} />
           )}
           {currentStep?.id === 'complete' && (
-            <CompleteStep fields={fields} stateData={stateData} onPrint={handlePrint} onBack={goBack} />
+            <CompleteStep fields={fields} stateData={stateData} onPrint={handlePrint} onPrintAddon={handlePrintAddon} onBack={goBack} />
           )}
         </div>
       </main>
@@ -1014,17 +1025,17 @@ function AddonsStep({ stateData, pipElection, setPipElection }: {
 }
 
 // ── COMPLETE ─────────────────────────────────────────────────────────────────
-function CompleteStep({ fields, stateData, onPrint }: {
-  fields: MemberFields; stateData: StateData; onPrint: () => void; onBack: () => void;
+function CompleteStep({ fields, stateData, onPrint, onPrintAddon }: {
+  fields: MemberFields; stateData: StateData; onPrint: () => void; onPrintAddon: (addonKey: string) => void; onBack: () => void;
 }) {
   const firstName = fields.memberName ? fields.memberName.split(' ')[0] : null;
   const signedDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-  const docs = [
-    { label: 'Member Agreement', sub: 'Signed ' + signedDate },
-    ...(stateData.addons.includes('md-pip') ? [{ label: 'Maryland PIP Waiver', sub: 'Signed ' + signedDate }] : []),
-    ...(stateData.addons.includes('ga-um') ? [{ label: 'Georgia UM Rejection', sub: 'Signed ' + signedDate }] : []),
-    ...(stateData.addons.includes('fl-um') ? [{ label: 'Florida UM/UIM Rejection', sub: 'Signed ' + signedDate }] : []),
-    ...(stateData.addons.includes('pa-pip') ? [{ label: 'Pennsylvania Coverage Election', sub: 'Signed ' + signedDate }] : []),
+  const docs: { label: string; sub: string; onView: () => void }[] = [
+    { label: 'Member Agreement', sub: 'Signed ' + signedDate, onView: onPrint },
+    ...(stateData.addons.includes('md-pip') ? [{ label: 'Maryland PIP Waiver', sub: 'Signed ' + signedDate, onView: () => onPrintAddon('md-pip') }] : []),
+    ...(stateData.addons.includes('ga-um') ? [{ label: 'Georgia UM Rejection', sub: 'Signed ' + signedDate, onView: () => onPrintAddon('ga-um') }] : []),
+    ...(stateData.addons.includes('fl-um') ? [{ label: 'Florida UM/UIM Rejection', sub: 'Signed ' + signedDate, onView: () => onPrintAddon('fl-um') }] : []),
+    ...(stateData.addons.includes('pa-pip') ? [{ label: 'Pennsylvania Coverage Election', sub: 'Signed ' + signedDate, onView: () => onPrintAddon('pa-pip') }] : []),
   ];
 
   const bottomTabs = [
@@ -1066,7 +1077,7 @@ function CompleteStep({ fields, stateData, onPrint }: {
       <div>
         <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--foreground)', marginBottom: 12 }}>My Documents</h3>
         <div className="screen-card">
-          {docs.map(({ label, sub }, i) => (
+          {docs.map(({ label, sub, onView }, i) => (
             <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', borderBottom: i < docs.length - 1 ? '1px solid var(--border)' : 'none' }}>
               <div style={{ width: 36, height: 36, borderRadius: 8, background: '#fff7f4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <FileText size={18} />
@@ -1075,7 +1086,7 @@ function CompleteStep({ fields, stateData, onPrint }: {
                 <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--foreground)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</div>
                 <div style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>{sub}</div>
               </div>
-              <button onClick={onPrint} style={{ fontSize: 13, color: '#ff6221', fontWeight: 700, background: 'none', border: 'none', padding: '4px 8px', flexShrink: 0 }}>View</button>
+              <button onClick={onView} style={{ fontSize: 13, color: '#ff6221', fontWeight: 700, background: 'none', border: 'none', padding: '4px 8px', flexShrink: 0 }}>View</button>
             </div>
           ))}
         </div>
