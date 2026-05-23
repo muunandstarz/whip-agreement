@@ -27,3 +27,5 @@
 - [x] Remove Coming Soon blur from Invoicing page — make it fully demo-able
 - [x] Addon forms kept (user confirmed they are required)
 - [x] Add "You're Done" completion screen before the portal tab view
+- [x] Make all agreement inputs required — every field must be filled before proceeding
+- [x] MD PIP form rebuilt as proper 2-page 2-column layout
