@@ -118,7 +118,7 @@ const AGREEMENT_SECTIONS = [
     body: `You must report any accident, collision, theft, or vehicle damage to Whip within 24 hours of the incident. To file a claim, visit drivewhip.com and click "File a Claim".`,
     hint: {
       label: 'How to Report',
-      text: 'Call: 855-861-9401\nEmail: claims@drivewhip.com\nTo file a claim online: go to drivewhip.com and click "File a Claim"\nFailure to report within 24 hours may result in you bearing full financial responsibility.',
+      text: 'Call: 855-861-9401\nTo file a claim online: go to drivewhip.com and click "File a Claim"\nFailure to report within 24 hours may result in you bearing full financial responsibility.',
       link: { text: 'File a Claim at drivewhip.com', url: 'https://drivewhip.com' },
     },
     subItems: [],

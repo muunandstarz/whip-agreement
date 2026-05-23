@@ -115,11 +115,11 @@ export function buildPrintHTML(
     .agr-fields {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 4pt;
+      margin-bottom: 3pt;
       border: 0.75pt solid #000;
     }
     .agr-fields td {
-      padding: 2pt 4pt;
+      padding: 1.5pt 3pt;
       border: 0.75pt solid #000;
       font-family: 'Times New Roman', Times, serif;
       font-size: 9pt;
@@ -128,12 +128,12 @@ export function buildPrintHTML(
     }
     .agr-fl {
       font-family: Arial, sans-serif;
-      font-size: 5.5pt;
+      font-size: 5pt;
       letter-spacing: .1em;
       text-transform: uppercase;
       color: #555;
       display: block;
-      margin-bottom: 1pt;
+      margin-bottom: 0.5pt;
     }
     .agr-fv { font-size: 9pt; }
 
@@ -617,7 +617,7 @@ function buildMainPages(fields: Fields, sd: StateData, sigImg: string, today: st
   </div>
 
   <!-- PAGE 3 — SIGNATURE -->
-  <div class="agr-page agr-page-last">
+  <div class="agr-page">
     ${hdrSub(3)}
 
     <div class="agr-sig-box">
@@ -696,7 +696,7 @@ function buildMdPipPages(
 
   return `
   <!-- MD PIP PAGE 1 — NOTICE (exact match to maryland_pip_waiver(1).html page 1) -->
-  <div class="pip-page">
+  <div class="pip-page" style="page-break-before:always;">
 
     <div class="pip-doc-title">
       Notice and Waiver of<br>
@@ -912,113 +912,203 @@ function buildMdPipPages(
   `;
 }
 
-// ── GA UM PAGE ────────────────────────────────────────────────────────────────
+// ── GA UM PAGE (EXACT MATCH TO GARejectionForms.pdf) ─────────────────────────
 function buildGaUmPage(fields: Fields, sigDataURL: string | null, today: string): string {
   const name = fields.memberName || '';
   const sigImg = sigDataURL
-    ? `<img src="${sigDataURL}" style="height:40pt;max-width:180pt;object-fit:contain;object-position:left bottom;">`
+    ? `<img src="${sigDataURL}" style="max-height:36pt;max-width:100%;object-fit:contain;object-position:left bottom;display:block;">`
     : '';
 
   return `
-  <div class="wf-page wf-page-last" style="page-break-before:always;">
-    <h2 style="text-align:center;font-size:11pt;font-weight:bold;margin-bottom:4pt;">GEORGIA UNINSURED MOTORIST COVERAGE</h2>
-    <h2 style="text-align:center;font-size:11pt;font-weight:bold;margin-bottom:8pt;">SELECTION / REJECTION FORM</h2>
-    <p style="text-align:center;font-size:10pt;margin-bottom:12pt;">Metrocars Leasing Corp. d/b/a Whip</p>
+  <div class="wf-page wf-page-last" style="page-break-before:always;font-family:Arial,Helvetica,sans-serif;font-size:10pt;line-height:1.4;color:#000;">
 
-    <p>Pursuant to O.C.G.A. § 33-7-11, you are entitled to select or reject Uninsured Motorist (UM) coverage. UM coverage protects you if you are injured by a driver who has no insurance or insufficient insurance to cover your damages.</p>
+    <!-- Title box -->
+    <div style="border:1.5pt solid #000;padding:10pt 14pt;text-align:center;margin-bottom:14pt;">
+      <strong style="font-size:11pt;">GEORGIA UNINSURED MOTORIST COVERAGE SELECTION /<br>REJECTION FORM</strong>
+    </div>
 
-    <p><strong>Available UM Coverage Options:</strong></p>
-    <table style="width:100%;border-collapse:collapse;margin:8pt 0;">
-      <tr style="background:#f0f0f0;">
-        <th style="border:1pt solid #000;padding:4pt 6pt;text-align:left;font-size:9pt;">Option</th>
-        <th style="border:1pt solid #000;padding:4pt 6pt;text-align:left;font-size:9pt;">Description</th>
+    <!-- Policy / Applicant info table -->
+    <table style="width:100%;border-collapse:collapse;margin-bottom:14pt;">
+      <tr>
+        <td style="border:1pt solid #000;padding:4pt 6pt;width:50%;">
+          <strong style="font-size:8pt;">POLICY NUMBER:</strong><br>
+          S0137
+        </td>
+        <td style="border:1pt solid #000;padding:4pt 6pt;width:50%;">
+          <strong style="font-size:8pt;">POLICY EFFECTIVE DATE:</strong><br>
+          &nbsp;
+        </td>
       </tr>
       <tr>
-        <td style="border:1pt solid #000;padding:4pt 6pt;font-size:9pt;">☑ Reject UM Coverage</td>
-        <td style="border:1pt solid #000;padding:4pt 6pt;font-size:9pt;">I reject Uninsured Motorist coverage. I understand I will have no UM protection under this lease.</td>
-      </tr>
-      <tr>
-        <td style="border:1pt solid #000;padding:4pt 6pt;font-size:9pt;">☐ Select UM — Add-On</td>
-        <td style="border:1pt solid #000;padding:4pt 6pt;font-size:9pt;">UM coverage stacks on top of the at-fault driver's liability coverage.</td>
-      </tr>
-      <tr>
-        <td style="border:1pt solid #000;padding:4pt 6pt;font-size:9pt;">☐ Select UM — Reduced</td>
-        <td style="border:1pt solid #000;padding:4pt 6pt;font-size:9pt;">UM coverage is reduced by amounts paid by the at-fault driver's insurer.</td>
+        <td colspan="2" style="border:1pt solid #000;padding:4pt 6pt;">
+          <strong style="font-size:8pt;">APPLICANT / NAMED INSURED:</strong><br>
+          ${name}
+        </td>
       </tr>
     </table>
 
-    <p style="margin-top:10pt;"><strong>Member Acknowledgment:</strong> I have read and understand the UM coverage options described above. My selection is indicated above.</p>
+    <!-- Notice heading -->
+    <p style="text-align:center;font-weight:bold;margin-bottom:10pt;">Notice to Named Insured — Required Under O.C.G.A. § 33-7-11</p>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16pt;margin-top:14pt;">
-      <div>
-        <div>${sigImg}</div>
-        <span style="border-bottom:1pt solid #000;display:block;min-height:18pt;margin-top:4pt;">${name}</span>
-        <span style="font-size:8pt;color:#555;">Member Signature / Printed Name</span>
-        <span style="border-bottom:1pt solid #000;display:block;min-height:14pt;margin-top:8pt;">${today}</span>
-        <span style="font-size:8pt;color:#555;">Date</span>
-      </div>
-      <div>
-        <span style="border-bottom:1pt solid #000;display:block;min-height:40pt;margin-top:4pt;"></span>
-        <span style="font-size:8pt;color:#555;">Whip Representative Signature</span>
-        <span style="border-bottom:1pt solid #000;display:block;min-height:14pt;margin-top:8pt;"></span>
-        <span style="font-size:8pt;color:#555;">Date</span>
-      </div>
-    </div>
+    <p><strong>Georgia law requires every motor vehicle liability policy issued in this state to include Uninsured Motorist (UM) coverage at limits equal to the policy's bodily injury and property damage liability limits — UNLESS the named insured rejects UM coverage in writing or selects lower limits in writing.</strong></p>
+
+    <p>Uninsured Motorist coverage protects you and other persons covered under the policy against bodily injury and property damage caused by the negligence of an owner or operator of an uninsured motor vehicle. Under Georgia law, an "uninsured motor vehicle" includes a vehicle whose liability limits are less than the damages sustained by the injured person — meaning UM coverage in Georgia also functions as Underinsured Motorist coverage.</p>
+
+    <p>Georgia offers UM in two forms:</p>
+    <p style="margin-left:24pt;margin-bottom:6pt;">(1) Traditional / Reduced-by Coverage: UM benefits are reduced by the amount the at-fault driver's insurance pays.</p>
+    <p style="margin-left:24pt;margin-bottom:14pt;">(2) Add-on / Excess Coverage: UM benefits are paid in addition to the at-fault driver's liability insurance, up to the UM limits.</p>
+
+    <!-- SELECTION heading -->
+    <p style="font-weight:bold;text-decoration:underline;font-size:11pt;margin-bottom:8pt;">SELECTION</p>
+
+    <p><strong>I have read the notice above. I understand that my election applies to all persons covered under the policy and continues on all renewal, reinstatement, replacement, and substitute policies, unless I notify the company in writing of a change. I select ONE of the following:</strong></p>
+
+    <!-- Four options -->
+    <p style="margin-bottom:10pt;">&#9744; <strong>OPTION 1 — UM AT POLICY LIABILITY LIMITS (TRADITIONAL).</strong> I elect Traditional UM coverage at limits equal to my bodily injury and property damage liability limits.</p>
+
+    <p style="margin-bottom:10pt;">&#9744; <strong>OPTION 2 — UM AT POLICY LIABILITY LIMITS (ADD-ON).</strong> I elect Add-on UM coverage at limits equal to my bodily injury and property damage liability limits.</p>
+
+    <p style="margin-bottom:10pt;">&#9744; <strong>OPTION 3 — UM AT LOWER LIMITS.</strong> I elect UM coverage at limits lower than my bodily injury and property damage liability limits, but not less than the statutory minimum of $25,000 per person / $50,000 per accident bodily injury and $25,000 property damage.</p>
+
+    <p style="margin-bottom:14pt;">&#9745; <strong>OPTION 4 — REJECTION OF UM COVERAGE.</strong> I REJECT Uninsured Motorist coverage in its entirety. I understand that by rejecting this coverage, no person covered under this policy will have UM protection for injuries or property damage caused by an uninsured or underinsured driver.</p>
+
+    <p><strong>I understand that if I do not sign this form, my policy will include Uninsured Motorist coverage at limits equal to my bodily injury and property damage liability limits, and I will be charged the corresponding premium.</strong></p>
+
+    <!-- SIGNATURES heading -->
+    <p style="font-weight:bold;text-decoration:underline;font-size:11pt;margin-top:14pt;margin-bottom:8pt;">SIGNATURES</p>
+
+    <table style="width:100%;border-collapse:collapse;">
+      <tr>
+        <td style="border:1pt solid #000;padding:4pt 6pt;width:50%;min-height:44pt;vertical-align:top;">
+          <div style="font-size:8pt;font-weight:bold;margin-bottom:2pt;">APPLICANT SIGNATURE</div>
+          <div style="min-height:36pt;">${sigImg}</div>
+        </td>
+        <td style="border:1pt solid #000;padding:4pt 6pt;width:28%;vertical-align:top;">
+          <div style="font-size:8pt;font-weight:bold;margin-bottom:2pt;">PRINTED NAME</div>
+          <div style="min-height:36pt;">${name}</div>
+        </td>
+        <td style="border:1pt solid #000;padding:4pt 6pt;width:22%;vertical-align:top;">
+          <div style="font-size:8pt;font-weight:bold;margin-bottom:2pt;">DATE</div>
+          <div style="min-height:36pt;">${today}</div>
+        </td>
+      </tr>
+      <tr>
+        <td style="border:1pt solid #000;padding:4pt 6pt;vertical-align:top;">
+          <div style="font-size:8pt;font-weight:bold;margin-bottom:2pt;">PRODUCER NAME (PRINTED)</div>
+          <div style="min-height:36pt;">Metrocars Leasing Corp. d/b/a Whip</div>
+        </td>
+        <td style="border:1pt solid #000;padding:4pt 6pt;vertical-align:top;">
+          <div style="font-size:8pt;font-weight:bold;margin-bottom:2pt;">PRODUCER SIGNATURE</div>
+          <div style="min-height:36pt;"></div>
+        </td>
+        <td style="border:1pt solid #000;padding:4pt 6pt;vertical-align:top;">
+          <div style="font-size:8pt;font-weight:bold;margin-bottom:2pt;">DATE</div>
+          <div style="min-height:36pt;"></div>
+        </td>
+      </tr>
+    </table>
+
+    <p style="font-style:italic;font-size:8.5pt;text-align:center;margin-top:10pt;">This form is provided pursuant to O.C.G.A. § 33-7-11 and is intended to satisfy the written rejection / selection requirement of that section.</p>
+
   </div>`;
 }
 
-// ── FL UM PAGE ────────────────────────────────────────────────────────────────
+// ── FL UM PAGE (EXACT MATCH TO FLRejectionForms.pdf) ─────────────────────────
 function buildFlUmPage(fields: Fields, sigDataURL: string | null, today: string): string {
   const name = fields.memberName || '';
   const sigImg = sigDataURL
-    ? `<img src="${sigDataURL}" style="height:40pt;max-width:180pt;object-fit:contain;object-position:left bottom;">`
+    ? `<img src="${sigDataURL}" style="max-height:36pt;max-width:100%;object-fit:contain;object-position:left bottom;display:block;">`
     : '';
 
   return `
-  <div class="wf-page wf-page-last" style="page-break-before:always;">
-    <h2 style="text-align:center;font-size:11pt;font-weight:bold;margin-bottom:4pt;">FLORIDA UNINSURED / UNDERINSURED MOTORIST COVERAGE</h2>
-    <h2 style="text-align:center;font-size:11pt;font-weight:bold;margin-bottom:8pt;">SELECTION / REJECTION FORM</h2>
-    <p style="text-align:center;font-size:10pt;margin-bottom:12pt;">Metrocars Leasing Corp. d/b/a Whip</p>
+  <div class="wf-page wf-page-last" style="page-break-before:always;font-family:Arial,Helvetica,sans-serif;font-size:10pt;line-height:1.4;color:#000;">
 
-    <p>Pursuant to Florida Statutes § 627.727, you are entitled to select or reject Uninsured/Underinsured Motorist (UM/UIM) coverage. This form documents your election.</p>
+    <!-- Title box -->
+    <div style="border:1.5pt solid #000;padding:10pt 14pt;text-align:center;margin-bottom:14pt;">
+      <strong style="font-size:11pt;">FLORIDA UNINSURED / UNDERINSURED MOTORIST COVERAGE<br>SELECTION / REJECTION FORM</strong>
+    </div>
 
-    <p><strong>UM/UIM Coverage Election:</strong></p>
-    <table style="width:100%;border-collapse:collapse;margin:8pt 0;">
-      <tr style="background:#f0f0f0;">
-        <th style="border:1pt solid #000;padding:4pt 6pt;text-align:left;font-size:9pt;">Selection</th>
-        <th style="border:1pt solid #000;padding:4pt 6pt;text-align:left;font-size:9pt;">Description</th>
+    <!-- Policy / Applicant info table -->
+    <table style="width:100%;border-collapse:collapse;margin-bottom:14pt;">
+      <tr>
+        <td style="border:1pt solid #000;padding:4pt 6pt;width:50%;">
+          <strong style="font-size:8pt;">POLICY NUMBER:</strong><br>
+          S0137
+        </td>
+        <td style="border:1pt solid #000;padding:4pt 6pt;width:50%;">
+          <strong style="font-size:8pt;">POLICY EFFECTIVE DATE:</strong><br>
+          &nbsp;
+        </td>
       </tr>
       <tr>
-        <td style="border:1pt solid #000;padding:4pt 6pt;font-size:9pt;">☑ Reject UM/UIM</td>
-        <td style="border:1pt solid #000;padding:4pt 6pt;font-size:9pt;">I reject Uninsured/Underinsured Motorist coverage for this lease vehicle.</td>
-      </tr>
-      <tr>
-        <td style="border:1pt solid #000;padding:4pt 6pt;font-size:9pt;">☐ Select Stacked UM/UIM</td>
-        <td style="border:1pt solid #000;padding:4pt 6pt;font-size:9pt;">UM/UIM coverage stacks on top of the at-fault driver's liability limits.</td>
-      </tr>
-      <tr>
-        <td style="border:1pt solid #000;padding:4pt 6pt;font-size:9pt;">☐ Select Non-Stacked UM/UIM</td>
-        <td style="border:1pt solid #000;padding:4pt 6pt;font-size:9pt;">UM/UIM coverage is limited to the policy limits without stacking.</td>
+        <td colspan="2" style="border:1pt solid #000;padding:4pt 6pt;">
+          <strong style="font-size:8pt;">APPLICANT / NAMED INSURED:</strong><br>
+          ${name}
+        </td>
       </tr>
     </table>
 
-    <p style="margin-top:10pt;"><strong>Member Acknowledgment:</strong> I have been offered UM/UIM coverage and have made the selection indicated above. I understand that rejecting UM/UIM coverage means I will have no protection if injured by an uninsured or underinsured driver.</p>
+    <!-- Notice heading -->
+    <p style="text-align:center;font-weight:bold;margin-bottom:10pt;">Notice to Named Insured — Required Under § 627.727, Florida Statutes</p>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16pt;margin-top:14pt;">
-      <div>
-        <div>${sigImg}</div>
-        <span style="border-bottom:1pt solid #000;display:block;min-height:18pt;margin-top:4pt;">${name}</span>
-        <span style="font-size:8pt;color:#555;">Member Signature / Printed Name</span>
-        <span style="border-bottom:1pt solid #000;display:block;min-height:14pt;margin-top:8pt;">${today}</span>
-        <span style="font-size:8pt;color:#555;">Date</span>
-      </div>
-      <div>
-        <span style="border-bottom:1pt solid #000;display:block;min-height:40pt;margin-top:4pt;"></span>
-        <span style="font-size:8pt;color:#555;">Whip Representative Signature</span>
-        <span style="border-bottom:1pt solid #000;display:block;min-height:14pt;margin-top:8pt;"></span>
-        <span style="font-size:8pt;color:#555;">Date</span>
-      </div>
-    </div>
+    <p><strong>Florida law requires every motor vehicle liability policy issued in this state to include Uninsured Motorist (UM) bodily injury coverage at limits equal to the policy's bodily injury liability limits — UNLESS the named insured selects lower limits or rejects UM coverage in writing on this approved form.</strong></p>
+
+    <p>Uninsured Motorist coverage protects you, members of your family residing with you, and other persons covered under the policy from bodily injury, sickness, disease, or death caused by the negligence of the owner or operator of an uninsured motor vehicle, including a hit-and-run vehicle and a vehicle whose insurer becomes insolvent. It also includes Underinsured Motorist (UIM) protection — coverage for situations in which the at-fault driver's liability limits are insufficient to fully compensate you for your damages.</p>
+
+    <p>Your policy's bodily injury liability limits are the Florida statutory minimums required under § 324.021(7), Florida Statutes.</p>
+
+    <p><strong>The premium for UM coverage at full limits, the premium for UM coverage at lower limits, and the premium savings for rejecting UM coverage will be disclosed on your declarations or coverage disclosure document.</strong></p>
+
+    <!-- SELECTION heading -->
+    <p style="font-weight:bold;text-decoration:underline;font-size:11pt;margin-top:12pt;margin-bottom:8pt;">SELECTION</p>
+
+    <p><strong>I have read the notice above and make the following election. I understand that my election applies to me, all relatives residing in my household, and all persons covered under the policy. I understand that this election applies to the policy described above and to all renewals and replacement policies, unless I notify the company in writing of a change.</strong></p>
+
+    <!-- Three options -->
+    <p style="margin-bottom:10pt;">&#9744; <strong>OPTION 1 — UM AT FULL BODILY INJURY LIABILITY LIMITS.</strong> I elect Uninsured Motorist coverage at limits equal to my bodily injury liability limits.</p>
+
+    <p style="margin-bottom:10pt;">&#9744; <strong>OPTION 2 — UM AT LOWER LIMITS.</strong> I elect Uninsured Motorist coverage at limits lower than my bodily injury liability limits. I understand that lower UM limits will reduce the amount available to me, my household relatives, and other covered persons in the event of injury caused by an uninsured or underinsured driver.</p>
+
+    <p style="margin-bottom:10pt;">&#9745; <strong>OPTION 3 — REJECTION OF UM COVERAGE.</strong> I REJECT Uninsured Motorist coverage in its entirety. I understand that by rejecting this coverage, I, my household relatives, and other covered persons will have no protection under this policy for injuries caused by an uninsured or underinsured driver, including a hit-and-run driver.</p>
+
+    <p><strong>I understand that if I do not sign this form, my policy will include Uninsured Motorist coverage at limits equal to my bodily injury liability limits, and I will be charged the corresponding premium. I further understand that this rejection or selection of lower limits will continue on all renewals, reinstatements, replacements, substitute, or amended policies issued by this insurer unless I request a change in writing.</strong></p>
+
+    <!-- SIGNATURES heading -->
+    <p style="font-weight:bold;text-decoration:underline;font-size:11pt;margin-top:14pt;margin-bottom:8pt;">SIGNATURES</p>
+
+    <table style="width:100%;border-collapse:collapse;">
+      <tr>
+        <td style="border:1pt solid #000;padding:4pt 6pt;width:50%;min-height:44pt;vertical-align:top;">
+          <div style="font-size:8pt;font-weight:bold;margin-bottom:2pt;">APPLICANT SIGNATURE</div>
+          <div style="min-height:36pt;">${sigImg}</div>
+        </td>
+        <td style="border:1pt solid #000;padding:4pt 6pt;width:28%;vertical-align:top;">
+          <div style="font-size:8pt;font-weight:bold;margin-bottom:2pt;">PRINTED NAME</div>
+          <div style="min-height:36pt;">${name}</div>
+        </td>
+        <td style="border:1pt solid #000;padding:4pt 6pt;width:22%;vertical-align:top;">
+          <div style="font-size:8pt;font-weight:bold;margin-bottom:2pt;">DATE</div>
+          <div style="min-height:36pt;">${today}</div>
+        </td>
+      </tr>
+      <tr>
+        <td style="border:1pt solid #000;padding:4pt 6pt;vertical-align:top;">
+          <div style="font-size:8pt;font-weight:bold;margin-bottom:2pt;">PRODUCER NAME (PRINTED)</div>
+          <div style="min-height:36pt;">Metrocars Leasing Corp. d/b/a Whip</div>
+        </td>
+        <td style="border:1pt solid #000;padding:4pt 6pt;vertical-align:top;">
+          <div style="font-size:8pt;font-weight:bold;margin-bottom:2pt;">PRODUCER SIGNATURE</div>
+          <div style="min-height:36pt;"></div>
+        </td>
+        <td style="border:1pt solid #000;padding:4pt 6pt;vertical-align:top;">
+          <div style="font-size:8pt;font-weight:bold;margin-bottom:2pt;">DATE</div>
+          <div style="min-height:36pt;"></div>
+        </td>
+      </tr>
+    </table>
+
+    <p style="font-style:italic;font-size:8.5pt;text-align:center;margin-top:10pt;">This form is provided pursuant to § 627.727, Florida Statutes, and is intended to satisfy the written rejection / selection requirement of that section.</p>
+
   </div>`;
 }
 

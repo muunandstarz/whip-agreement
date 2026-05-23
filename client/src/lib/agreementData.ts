@@ -170,7 +170,7 @@ The Protection Plan included in the weekly membership fee provides physical dama
 
 7. ACCIDENT AND INCIDENT REPORTING
 
-Members must report any accident, collision, theft, or vehicle damage to Whip within 24 hours of the incident by calling 855-861-9401 or emailing claims@drivewhip.com. Failure to timely report may result in the Member bearing full financial responsibility for resulting damages. Members must cooperate fully with Whip's claims investigation, including providing recorded statements, submitting to examination under oath, and executing all necessary documents.
+Members must report any accident, collision, theft, or vehicle damage to Whip within 24 hours of the incident by calling 855-861-9401 or visiting drivewhip.com and clicking "File a Claim". Failure to timely report may result in the Member bearing full financial responsibility for resulting damages. Members must cooperate fully with Whip's claims investigation, including providing recorded statements, submitting to examination under oath, and executing all necessary documents.
 
 8. VEHICLE RETURN
 
@@ -212,7 +212,7 @@ By signing the Member Lease Agreement, you acknowledge that you have read, under
 
 Metrocars Leasing Corp. d/b/a Whip
 14670 Southlawn Lane, Rockville MD 20850
-855-861-9401 | drivewhip.com | info@drivewhip.com
+855-861-9401 | drivewhip.com
 `;
 
 export const ACK_ITEMS = [
