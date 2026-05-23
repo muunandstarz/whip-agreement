@@ -492,7 +492,7 @@ function buildMainPages(fields: Fields, sd: StateData, sigImg: string, today: st
   const hdrSub = (pg: number) => `
     <div class="agr-hdr">
       <img src="${LOGO}" class="agr-hdr-logo" alt="Whip" onerror="this.style.display='none'">
-      <div class="agr-hdr-right-sub">Member Lease Agreement · ${sd.name} · Page ${pg}</div>
+      <div class="agr-hdr-right-sub">Member Lease Agreement${sd.code !== 'OTHER' ? ' · ' + sd.name : ''} · Page ${pg}</div>
     </div>`;
 
   const footer = `
@@ -617,7 +617,7 @@ function buildMainPages(fields: Fields, sd: StateData, sigImg: string, today: st
   </div>
 
   <!-- PAGE 3 — SIGNATURE -->
-  <div class="agr-page">
+  <div class="agr-page agr-page-last">
     ${hdrSub(3)}
 
     <div class="agr-sig-box">
