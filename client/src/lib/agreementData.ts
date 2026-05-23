@@ -241,19 +241,34 @@ export const URL_PARAM_MAP: Record<string, string> = {
   vehicle: 'vehicle',
   ymm: 'vehicle',
   vin: 'vin',
-  // NOTE: dl, licenseState, phone, email intentionally excluded — member must enter these themselves
+  // DL and license state can be pre-filled via URL for staff-initiated flows
+  dl: 'dlNumber',
+  dlNumber: 'dlNumber',
+  driver_license: 'dlNumber',
+  licenseState: 'licenseState',
+  license_state: 'licenseState',
+  // Phone and email pre-fill
+  phone: 'phone',
+  email: 'email',
   dob: 'dob',
   date_of_birth: 'dob',
   address: 'address',
   city_state_zip: 'cityStateZip',
   cityStateZip: 'cityStateZip',
+  // Weekly fee — short alias
+  weekly: 'weeklyFee',
   weekly_fee: 'weeklyFee',
   weeklyFee: 'weeklyFee',
   deposit: 'deposit',
+  // Dates — short aliases
+  start: 'startDate',
   start_date: 'startDate',
   startDate: 'startDate',
+  end: 'endDate',
   end_date: 'endDate',
   endDate: 'endDate',
+  // State — short alias
+  state: 'agreementState',
   agreement_state: 'agreementState',
   agreementState: 'agreementState',
 };

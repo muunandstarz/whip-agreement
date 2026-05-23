@@ -142,6 +142,8 @@ const AGREEMENT_SECTIONS = [
 // ── MAIN COMPONENT ───────────────────────────────────────────────────────────
 export default function AgreementPage() {
   const { theme, toggleTheme } = useTheme();
+  // mode=agreement hides the portal — shows only the agreement flow + done screen
+  const agreementOnly = new URLSearchParams(window.location.search).get('mode') === 'agreement';
 
   const [prefilled, setPrefilled] = useState<Set<string>>(new Set());
   const [fields, setFields] = useState<MemberFields>({
@@ -428,9 +430,10 @@ export default function AgreementPage() {
               onEnterPortal={() => setShowDoneScreen(false)}
               onPrint={handlePrint}
               onPrintAddon={handlePrintAddon}
+              agreementOnly={agreementOnly}
             />
           )}
-          {currentStep?.id === 'complete' && !showDoneScreen && (
+          {currentStep?.id === 'complete' && !showDoneScreen && !agreementOnly && (
             <MemberPortal
               fields={fields}
               onPrint={handlePrint}
@@ -438,6 +441,13 @@ export default function AgreementPage() {
               addons={stateData.addons}
               pipElection={pipElection}
             />
+          )}
+          {currentStep?.id === 'complete' && !showDoneScreen && agreementOnly && (
+            <div style={{ padding: '40px 24px', textAlign: 'center', color: 'var(--muted-foreground)' }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>✓</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--foreground)', marginBottom: 8 }}>Agreement Complete</div>
+              <p style={{ fontSize: 14 }}>Your signed documents are ready. You may close this window.</p>
+            </div>
           )}
         </div>
       </main>
@@ -1179,9 +1189,9 @@ function CompleteStep({ fields, stateData, onPrint, onPrintAddon }: {
 }
 
 // ── DONE SCREEN ─────────────────────────────────────────────────────────────
-function DoneScreen({ fields, stateData, onEnterPortal, onPrint, onPrintAddon }: {
+function DoneScreen({ fields, stateData, onEnterPortal, onPrint, onPrintAddon, agreementOnly }: {
   fields: MemberFields; stateData: StateData; onEnterPortal: () => void;
-  onPrint: () => void; onPrintAddon: (key: string) => void;
+  onPrint: () => void; onPrintAddon: (key: string) => void; agreementOnly?: boolean;
 }) {
   const firstName = fields.memberName ? fields.memberName.split(' ')[0] : null;
   const signedDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
@@ -1284,19 +1294,21 @@ function DoneScreen({ fields, stateData, onEnterPortal, onPrint, onPrintAddon }:
         </div>
       </div>
 
-      {/* Enter portal CTA */}
-      <button
-        onClick={onEnterPortal}
-        style={{
-          width: '100%', padding: '14px', borderRadius: 10,
-          background: '#171b31', color: 'white',
-          fontWeight: 700, fontSize: 15, border: '1.5px solid rgba(255,255,255,0.12)',
-          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-        }}
-      >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-        Go to My Portal
-      </button>
+      {/* Enter portal CTA — hidden in agreement-only mode */}
+      {!agreementOnly && (
+        <button
+          onClick={onEnterPortal}
+          style={{
+            width: '100%', padding: '14px', borderRadius: 10,
+            background: '#171b31', color: 'white',
+            fontWeight: 700, fontSize: 15, border: '1.5px solid rgba(255,255,255,0.12)',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Go to My Portal
+        </button>
+      )}
     </div>
   );
 }
