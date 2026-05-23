@@ -21,3 +21,5 @@
 - [x] Vehicles page: vehicle info, digital POI card (Assurant-style), coverage breakdown with state limits, PIP/UM explanations
 - [x] Profile page: editable phone/email, market address and phone
 - [ ] Gmail email delivery (contracts@drivewhip.com + member email after signing)
+- [x] Trip History tab: vehicle timeline (YMM, last 6 VIN, dates per reservation/swap/loaner)
+- [x] Invoicing tab: current balance breakdown (weekly, tickets, tolls, late fees) + past invoices list

@@ -6,6 +6,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { toast } from 'sonner';
+import { trpc } from '@/lib/trpc';
 import {
   STATE_DATA, STATE_OPTIONS, TOS_TEXT, ACK_ITEMS,
   URL_PARAM_MAP, type StateData, getMarketForState
@@ -193,6 +194,20 @@ export default function AgreementPage() {
   const [sigDataURL, setSigDataURL] = useState<string | null>(null);
 
   const [pipElection, setPipElection] = useState<PipElection>(null);
+  const [emailSent, setEmailSent] = useState(false);
+
+  const sendEmailMutation = trpc.agreement.sendEmail.useMutation({
+    onSuccess: (data) => {
+      if (data.sent) {
+        setEmailSent(true);
+        toast.success('Agreement emailed successfully');
+      }
+    },
+    onError: () => {
+      // Silent failure — email is best-effort
+      console.warn('[Email] Failed to send agreement email');
+    },
+  });
 
   const stateData: StateData = STATE_DATA[fields.agreementState] || STATE_DATA['OTHER'];
   const hasAddons = stateData.addons.length > 0;
@@ -206,8 +221,26 @@ export default function AgreementPage() {
   }, []);
 
   const goNext = useCallback(() => {
-    if (stepIdx < effectiveSteps.length - 1) goTo(stepIdx + 1);
-  }, [stepIdx, effectiveSteps.length, goTo]);
+    const nextIdx = stepIdx + 1;
+    if (nextIdx < effectiveSteps.length) {
+      const nextStep = effectiveSteps[nextIdx];
+      // Fire email when advancing to the complete step
+      if (nextStep?.id === 'complete' && !emailSent) {
+        const agreementHtml = buildPrintHTML(fields, stateData, sigDataURL, pipElection);
+        const addonHtmls = stateData.addons.map(key => ({
+          label: key === 'md-pip' ? 'Maryland_PIP_Waiver' : key === 'ga-um' ? 'Georgia_UM_Rejection' : key === 'fl-um' ? 'Florida_UM_Rejection' : 'PA_Coverage_Election',
+          html: buildAddonOnlyHTML(key, fields, stateData, sigDataURL, pipElection),
+        }));
+        sendEmailMutation.mutate({
+          memberName: fields.memberName || 'Member',
+          memberEmail: fields.email || undefined,
+          agreementHtml,
+          addonHtmls: addonHtmls.length > 0 ? addonHtmls : undefined,
+        });
+      }
+      goTo(nextIdx);
+    }
+  }, [stepIdx, effectiveSteps, goTo, emailSent, fields, stateData, sigDataURL, pipElection, sendEmailMutation]);
 
   const goBack = useCallback(() => {
     if (stepIdx > 0) goTo(stepIdx - 1);

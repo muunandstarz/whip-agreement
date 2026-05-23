@@ -1,9 +1,13 @@
 // MemberPortal.tsx
-// Post-signing member portal: Dashboard, Vehicles, Profile
+// Post-signing member portal: Dashboard, Vehicles, Trip History, Invoicing, Support, Profile
 // Design: Navy/orange Whip brand, card-based, mobile-first
 
 import { useState } from 'react';
-import { getMarketForState, getCoverageForState, HELP_DESK_TEXT_LINE, type MarketInfo, type CoverageInfo } from '@/lib/agreementData';
+import {
+  getMarketForState, getCoverageForState, HELP_DESK_TEXT_LINE,
+  buildDemoTripHistory, buildDemoInvoice,
+  type TripRecord, type InvoiceLineItem, type PastInvoice,
+} from '@/lib/agreementData';
 
 // ── TYPES ────────────────────────────────────────────────────────────────────
 interface MemberFields {
@@ -36,6 +40,21 @@ const CarIcon = () => (
     <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
   </svg>
 );
+const HistoryIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="1 4 1 10 7 10"/>
+    <path d="M3.51 15a9 9 0 1 0 .49-3.5"/>
+    <polyline points="12 7 12 12 15 15"/>
+  </svg>
+);
+const InvoiceIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="3" width="20" height="18" rx="2"/>
+    <line x1="7" y1="8" x2="17" y2="8"/>
+    <line x1="7" y1="12" x2="17" y2="12"/>
+    <line x1="7" y1="16" x2="13" y2="16"/>
+  </svg>
+);
 const SupportIcon = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -56,11 +75,6 @@ const FileIcon = () => (
 const ShieldIcon = ({ color = 'currentColor' }: { color?: string }) => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-  </svg>
-);
-const CheckIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M20 6L9 17l-5-5"/>
   </svg>
 );
 const MapPinIcon = () => (
@@ -85,6 +99,11 @@ const ChevronRight = () => (
     <path d="M9 18l6-6-6-6"/>
   </svg>
 );
+const CheckCircleIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 15.01 9 12.01"/>
+  </svg>
+);
 
 // ── HELPERS ──────────────────────────────────────────────────────────────────
 function parseVehicle(vehicle: string) {
@@ -103,23 +122,33 @@ function formatDate(d: string) {
   } catch { return d; }
 }
 
-// Simple car silhouette SVG (sedan shape)
+function last6(vin: string) {
+  return vin ? vin.slice(-6).toUpperCase() : '——————';
+}
+
 function CarSilhouette({ color }: { color: string }) {
   return (
     <svg viewBox="0 0 120 50" width="120" height="50" xmlns="http://www.w3.org/2000/svg">
-      {/* Body */}
       <rect x="5" y="22" width="110" height="20" rx="6" fill={color} />
-      {/* Cabin */}
       <path d="M30 22 L42 8 L78 8 L90 22 Z" fill={color} />
-      {/* Windows */}
       <path d="M44 20 L50 10 L70 10 L76 20 Z" fill="rgba(255,255,255,0.35)" />
-      {/* Wheels */}
       <circle cx="28" cy="42" r="8" fill="#1e293b" />
       <circle cx="28" cy="42" r="4" fill="#94a3b8" />
       <circle cx="92" cy="42" r="8" fill="#1e293b" />
       <circle cx="92" cy="42" r="4" fill="#94a3b8" />
     </svg>
   );
+}
+
+const MAKE_COLORS: Record<string, string> = {
+  TESLA: '#cc0000', TOYOTA: '#eb0a1e', HONDA: '#e40521', FORD: '#003478',
+  CHEVROLET: '#d4a017', NISSAN: '#c3002f', HYUNDAI: '#002c5f', KIA: '#05141f',
+  BMW: '#0066b1', MERCEDES: '#00adef', AUDI: '#bb0a30', VOLKSWAGEN: '#001e50',
+  DODGE: '#d01f1f', JEEP: '#4a7c59', SUBARU: '#003087', MAZDA: '#910a2d',
+};
+
+function carColor(make: string) {
+  return MAKE_COLORS[make.toUpperCase()] ?? '#ff6221';
 }
 
 // ── POI CARD ─────────────────────────────────────────────────────────────────
@@ -131,116 +160,53 @@ function PoiCard({ fields }: { fields: MemberFields }) {
   const expDate = fields.endDate ? formatDate(fields.endDate) : new Date(today.setFullYear(today.getFullYear() + 1)).toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: '2-digit' });
 
   return (
-    <div
-      onClick={() => setFlipped(f => !f)}
-      style={{
-        perspective: 1000,
-        cursor: 'pointer',
-        userSelect: 'none',
-        WebkitTapHighlightColor: 'transparent',
-      }}
-    >
+    <div onClick={() => setFlipped(f => !f)} style={{ perspective: 1000, cursor: 'pointer', userSelect: 'none', WebkitTapHighlightColor: 'transparent' }}>
       <div style={{
-        position: 'relative',
-        width: '100%',
-        paddingBottom: '56.25%', // 16:9 ratio
+        position: 'relative', width: '100%', paddingBottom: '56.25%',
         transformStyle: 'preserve-3d',
         transition: 'transform 0.5s cubic-bezier(0.23,1,0.32,1)',
         transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
       }}>
         {/* FRONT */}
         <div style={{
-          position: 'absolute', inset: 0,
-          backfaceVisibility: 'hidden',
-          WebkitBackfaceVisibility: 'hidden',
-          background: 'white',
-          border: '1px solid #e2e8f0',
-          borderRadius: 12,
-          padding: '20px 22px',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.10)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 10,
-          overflow: 'hidden',
+          position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden',
+          background: 'white', border: '1px solid #e2e8f0', borderRadius: 12, padding: '20px 22px',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.10)', display: 'flex', flexDirection: 'column', gap: 10, overflow: 'hidden',
         }}>
-          {/* Header */}
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                {/* Assurant-style logo placeholder */}
-                <div style={{ width: 28, height: 28, borderRadius: 6, background: '#1e3a8a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                </div>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: '#1e3a8a', letterSpacing: '-0.01em' }}>Assurant Claim</div>
-                  <div style={{ fontSize: 10, color: '#64748b' }}>State of {fields.agreementState ? (['MD','GA','FL','PA','IL','TX','VA','MA'].includes(fields.agreementState) ? { MD:'Maryland',GA:'Georgia',FL:'Florida',PA:'Pennsylvania',IL:'Illinois',TX:'Texas',VA:'Virginia',MA:'Massachusetts' }[fields.agreementState as 'MD'] : fields.agreementState) : 'Maryland'}</div>
-                </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 28, height: 28, borderRadius: 6, background: '#1e3a8a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: '#1e3a8a', letterSpacing: '-0.01em' }}>Assurant Claim</div>
+                <div style={{ fontSize: 10, color: '#64748b' }}>State of {fields.agreementState || 'Maryland'}</div>
               </div>
             </div>
-            <div style={{ fontSize: 9, color: '#94a3b8', textAlign: 'right' }}>Tap to flip</div>
+            <div style={{ fontSize: 9, color: '#94a3b8' }}>Tap to flip</div>
           </div>
-
           <div style={{ fontSize: 11, fontWeight: 800, color: '#0f172a', letterSpacing: '0.05em', borderBottom: '1px solid #e2e8f0', paddingBottom: 8 }}>
             INSURANCE IDENTIFICATION CARD
           </div>
-
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 16px', fontSize: 11 }}>
-            <div>
-              <div style={{ color: '#64748b', fontWeight: 700, fontSize: 9, letterSpacing: '0.06em' }}>POLICY NUMBER</div>
-              <div style={{ color: '#0f172a', fontWeight: 600 }}>{fields.reservationId || 'S0137'}</div>
-            </div>
+            <div><div style={{ color: '#64748b', fontWeight: 700, fontSize: 9, letterSpacing: '0.06em' }}>POLICY NUMBER</div><div style={{ color: '#0f172a', fontWeight: 600 }}>{fields.reservationId || 'S0137'}</div></div>
             <div />
-            <div>
-              <div style={{ color: '#64748b', fontWeight: 700, fontSize: 9, letterSpacing: '0.06em' }}>EFFECTIVE DATE</div>
-              <div style={{ color: '#0f172a', fontWeight: 600 }}>{effectiveDate}</div>
-            </div>
-            <div>
-              <div style={{ color: '#64748b', fontWeight: 700, fontSize: 9, letterSpacing: '0.06em' }}>EXPIRATION DATE</div>
-              <div style={{ color: '#0f172a', fontWeight: 600 }}>{expDate}</div>
-            </div>
-            <div style={{ gridColumn: '1 / -1' }}>
-              <div style={{ color: '#64748b', fontWeight: 700, fontSize: 9, letterSpacing: '0.06em' }}>VEHICLE IDENTIFICATION NUMBER</div>
-              <div style={{ color: '#0f172a', fontWeight: 600, fontFamily: 'monospace', fontSize: 12 }}>{fields.vin || '—'}</div>
-            </div>
-            <div>
-              <div style={{ color: '#64748b', fontWeight: 700, fontSize: 9, letterSpacing: '0.06em' }}>YEAR</div>
-              <div style={{ color: '#0f172a', fontWeight: 600 }}>{year}</div>
-            </div>
-            <div>
-              <div style={{ color: '#64748b', fontWeight: 700, fontSize: 9, letterSpacing: '0.06em' }}>MAKE</div>
-              <div style={{ color: '#0f172a', fontWeight: 600 }}>{make.toUpperCase()}</div>
-            </div>
-            <div style={{ gridColumn: '1 / -1' }}>
-              <div style={{ color: '#64748b', fontWeight: 700, fontSize: 9, letterSpacing: '0.06em' }}>MODEL</div>
-              <div style={{ color: '#0f172a', fontWeight: 600 }}>{model.toUpperCase()}</div>
-            </div>
-            <div style={{ gridColumn: '1 / -1' }}>
-              <div style={{ color: '#64748b', fontWeight: 700, fontSize: 9, letterSpacing: '0.06em' }}>NAMED INSURED</div>
-              <div style={{ color: '#0f172a', fontWeight: 600 }}>METROCARS LEASING CORP</div>
-              <div style={{ color: '#0f172a', fontSize: 10 }}>14670 SOUTHLAWN LANE</div>
-              <div style={{ color: '#0f172a', fontSize: 10 }}>ROCKVILLE MD 20850</div>
-            </div>
+            <div><div style={{ color: '#64748b', fontWeight: 700, fontSize: 9, letterSpacing: '0.06em' }}>EFFECTIVE DATE</div><div style={{ color: '#0f172a', fontWeight: 600 }}>{effectiveDate}</div></div>
+            <div><div style={{ color: '#64748b', fontWeight: 700, fontSize: 9, letterSpacing: '0.06em' }}>EXPIRATION DATE</div><div style={{ color: '#0f172a', fontWeight: 600 }}>{expDate}</div></div>
+            <div style={{ gridColumn: '1 / -1' }}><div style={{ color: '#64748b', fontWeight: 700, fontSize: 9, letterSpacing: '0.06em' }}>VIN</div><div style={{ color: '#0f172a', fontWeight: 600, fontFamily: 'monospace', fontSize: 12 }}>{fields.vin || '—'}</div></div>
+            <div><div style={{ color: '#64748b', fontWeight: 700, fontSize: 9, letterSpacing: '0.06em' }}>YEAR</div><div style={{ color: '#0f172a', fontWeight: 600 }}>{year}</div></div>
+            <div><div style={{ color: '#64748b', fontWeight: 700, fontSize: 9, letterSpacing: '0.06em' }}>MAKE</div><div style={{ color: '#0f172a', fontWeight: 600 }}>{make.toUpperCase()}</div></div>
+            <div style={{ gridColumn: '1 / -1' }}><div style={{ color: '#64748b', fontWeight: 700, fontSize: 9, letterSpacing: '0.06em' }}>MODEL</div><div style={{ color: '#0f172a', fontWeight: 600 }}>{model.toUpperCase()}</div></div>
+            <div style={{ gridColumn: '1 / -1' }}><div style={{ color: '#64748b', fontWeight: 700, fontSize: 9, letterSpacing: '0.06em' }}>NAMED INSURED</div><div style={{ color: '#0f172a', fontWeight: 600 }}>METROCARS LEASING CORP</div><div style={{ color: '#0f172a', fontSize: 10 }}>14670 SOUTHLAWN LANE · ROCKVILLE MD 20850</div></div>
           </div>
         </div>
-
         {/* BACK */}
         <div style={{
-          position: 'absolute', inset: 0,
-          backfaceVisibility: 'hidden',
-          WebkitBackfaceVisibility: 'hidden',
-          transform: 'rotateY(180deg)',
-          background: '#1e3a8a',
-          borderRadius: 12,
-          padding: '20px 22px',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.10)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 12,
-          color: 'white',
+          position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden',
+          transform: 'rotateY(180deg)', background: '#1e3a8a', borderRadius: 12, padding: '20px 22px',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.10)', display: 'flex', flexDirection: 'column', gap: 12, color: 'white',
         }}>
-          <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '0.05em', borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: 8 }}>
-            IN CASE OF ACCIDENT
-          </div>
+          <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: '0.05em', borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: 8 }}>IN CASE OF ACCIDENT</div>
           <div style={{ fontSize: 11, lineHeight: 1.6 }}>
             <div style={{ marginBottom: 6 }}><strong>1.</strong> Call 911 if anyone is injured</div>
             <div style={{ marginBottom: 6 }}><strong>2.</strong> Exchange insurance info with all parties</div>
@@ -249,7 +215,7 @@ function PoiCard({ fields }: { fields: MemberFields }) {
             <div style={{ paddingLeft: 16 }}>🌐 drivewhip.com → File a Claim</div>
           </div>
           <div style={{ marginTop: 'auto', fontSize: 10, color: 'rgba(255,255,255,0.6)', borderTop: '1px solid rgba(255,255,255,0.15)', paddingTop: 8 }}>
-            Policy: {fields.reservationId || '—'} · Assurant Claim · Metrocars Leasing Corp.
+            Policy: {fields.reservationId || '—'} · Assurant · Metrocars Leasing Corp.
           </div>
         </div>
       </div>
@@ -266,23 +232,15 @@ function DashboardPage({ fields, addons, onPrint, onPrintAddon }: {
   const market = getMarketForState(fields.agreementState);
   const { year, make, model } = parseVehicle(fields.vehicle);
   const signedDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const color = carColor(make);
 
-  const docs: { label: string; key: string; onView: () => void }[] = [
-    { label: 'Member Agreement', key: 'main', onView: onPrint },
-    ...(addons.includes('md-pip') ? [{ label: 'Maryland PIP Waiver', key: 'md-pip', onView: () => onPrintAddon('md-pip') }] : []),
-    ...(addons.includes('ga-um') ? [{ label: 'Georgia UM Rejection', key: 'ga-um', onView: () => onPrintAddon('ga-um') }] : []),
-    ...(addons.includes('fl-um') ? [{ label: 'Florida UM/UIM Rejection', key: 'fl-um', onView: () => onPrintAddon('fl-um') }] : []),
-    ...(addons.includes('pa-pip') ? [{ label: 'Pennsylvania Coverage Election', key: 'pa-pip', onView: () => onPrintAddon('pa-pip') }] : []),
+  const docs: { label: string; onView: () => void }[] = [
+    { label: 'Member Agreement', onView: onPrint },
+    ...(addons.includes('md-pip') ? [{ label: 'Maryland PIP Waiver', onView: () => onPrintAddon('md-pip') }] : []),
+    ...(addons.includes('ga-um') ? [{ label: 'Georgia UM Rejection', onView: () => onPrintAddon('ga-um') }] : []),
+    ...(addons.includes('fl-um') ? [{ label: 'Florida UM/UIM Rejection', onView: () => onPrintAddon('fl-um') }] : []),
+    ...(addons.includes('pa-pip') ? [{ label: 'Pennsylvania Coverage Election', onView: () => onPrintAddon('pa-pip') }] : []),
   ];
-
-  // Derive a vehicle color from make for the car icon
-  const makeColors: Record<string, string> = {
-    TESLA: '#cc0000', TOYOTA: '#eb0a1e', HONDA: '#e40521', FORD: '#003478',
-    CHEVROLET: '#d4a017', NISSAN: '#c3002f', HYUNDAI: '#002c5f', KIA: '#05141f',
-    BMW: '#0066b1', MERCEDES: '#00adef', AUDI: '#bb0a30', VOLKSWAGEN: '#001e50',
-    DODGE: '#d01f1f', JEEP: '#4a7c59', SUBARU: '#003087', MAZDA: '#910a2d',
-  };
-  const carColor = makeColors[make.toUpperCase()] ?? '#ff6221';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 20 }}>
@@ -323,9 +281,9 @@ function DashboardPage({ fields, addons, onPrint, onPrintAddon }: {
       <div>
         <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Vehicle</div>
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <div style={{ background: 'var(--muted)', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <CarSilhouette color={carColor} />
+              <CarSilhouette color={color} />
             </div>
             <div>
               <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--foreground)', lineHeight: 1.2 }}>{year} {make}</div>
@@ -352,7 +310,7 @@ function DashboardPage({ fields, addons, onPrint, onPrintAddon }: {
         </div>
       </div>
 
-      {/* Forms */}
+      {/* My Documents */}
       <div>
         <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>My Documents</div>
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
@@ -375,27 +333,20 @@ function DashboardPage({ fields, addons, onPrint, onPrintAddon }: {
 }
 
 // ── VEHICLES PAGE ─────────────────────────────────────────────────────────────
-function VehiclesPage({ fields, addons, pipElection, onPrint }: {
-  fields: MemberFields; addons: string[]; pipElection: 'full' | 'waive' | null; onPrint: () => void;
+function VehiclesPage({ fields, addons, pipElection }: {
+  fields: MemberFields; addons: string[]; pipElection: 'full' | 'waive' | null;
 }) {
   const { year, make, model } = parseVehicle(fields.vehicle);
   const coverage = getCoverageForState(fields.agreementState);
   const [poiOpen, setPoiOpen] = useState(false);
-
-  const makeColors: Record<string, string> = {
-    TESLA: '#cc0000', TOYOTA: '#eb0a1e', HONDA: '#e40521', FORD: '#003478',
-    CHEVROLET: '#d4a017', NISSAN: '#c3002f', HYUNDAI: '#002c5f', KIA: '#05141f',
-    BMW: '#0066b1', MERCEDES: '#00adef', AUDI: '#bb0a30', VOLKSWAGEN: '#001e50',
-    DODGE: '#d01f1f', JEEP: '#4a7c59', SUBARU: '#003087', MAZDA: '#910a2d',
-  };
-  const carColor = makeColors[make.toUpperCase()] ?? '#ff6221';
+  const color = carColor(make);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 20 }}>
       {/* Vehicle hero */}
       <div style={{ background: '#171b31', borderRadius: 12, padding: '24px 20px', textAlign: 'center' }}>
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
-          <CarSilhouette color={carColor} />
+          <CarSilhouette color={color} />
         </div>
         <div style={{ fontSize: 22, fontWeight: 800, color: 'white', lineHeight: 1.2 }}>{year} {make}</div>
         <div style={{ fontSize: 16, color: 'rgba(255,255,255,0.65)', marginBottom: 4 }}>{model}</div>
@@ -424,13 +375,7 @@ function VehiclesPage({ fields, addons, pipElection, onPrint }: {
       {/* Proof of Insurance */}
       <div>
         <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Proof of Insurance</div>
-        <button
-          onClick={() => setPoiOpen(true)}
-          style={{
-            width: '100%', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12,
-            padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', textAlign: 'left',
-          }}
-        >
+        <button onClick={() => setPoiOpen(true)} style={{ width: '100%', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', textAlign: 'left' }}>
           <div style={{ width: 40, height: 40, borderRadius: 10, background: '#eff6ff', border: '1px solid #bfdbfe', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <ShieldIcon color="#1d4ed8" />
           </div>
@@ -449,9 +394,7 @@ function VehiclesPage({ fields, addons, pipElection, onPrint }: {
         {/* Protection Plan */}
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, marginBottom: 10, overflow: 'hidden' }}>
           <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 8, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <ShieldIcon color="#16a34a" />
-            </div>
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: '#f0fdf4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><ShieldIcon color="#16a34a" /></div>
             <div>
               <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--foreground)' }}>{coverage.protectionPlan.name}</div>
               <div style={{ fontSize: 11, color: '#16a34a', fontWeight: 600 }}>Active</div>
@@ -474,9 +417,7 @@ function VehiclesPage({ fields, addons, pipElection, onPrint }: {
         {/* Liability */}
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, marginBottom: 10, overflow: 'hidden' }}>
           <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 8, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <ShieldIcon color="#1d4ed8" />
-            </div>
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><ShieldIcon color="#1d4ed8" /></div>
             <div>
               <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--foreground)' }}>Liability Coverage</div>
               <div style={{ fontSize: 11, color: '#1d4ed8', fontWeight: 600 }}>Through Metro Cars</div>
@@ -513,9 +454,7 @@ function VehiclesPage({ fields, addons, pipElection, onPrint }: {
         {coverage.um && (
           <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
             <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <ShieldIcon color="#ef4444" />
-              </div>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><ShieldIcon color="#ef4444" /></div>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--foreground)' }}>{coverage.um.name}</div>
                 <div style={{ fontSize: 11, color: '#ef4444', fontWeight: 600 }}>Rejected</div>
@@ -531,30 +470,257 @@ function VehiclesPage({ fields, addons, pipElection, onPrint }: {
 
       {/* POI Modal */}
       {poiOpen && (
-        <div
-          onClick={() => setPoiOpen(false)}
-          style={{
-            position: 'fixed', inset: 0, zIndex: 200,
-            background: 'rgba(0,0,0,0.6)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: '20px',
-          }}
-        >
+        <div onClick={() => setPoiOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 400 }}>
             <PoiCard fields={fields} />
-            <button
-              onClick={() => setPoiOpen(false)}
-              style={{
-                marginTop: 12, width: '100%', padding: '12px', borderRadius: 10,
-                background: 'white', border: 'none', fontSize: 14, fontWeight: 700,
-                color: '#171b31', cursor: 'pointer',
-              }}
-            >
-              Close
-            </button>
+            <button onClick={() => setPoiOpen(false)} style={{ marginTop: 12, width: '100%', padding: '12px', borderRadius: 10, background: 'white', border: 'none', fontSize: 14, fontWeight: 700, color: '#171b31', cursor: 'pointer' }}>Close</button>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ── TRIP HISTORY PAGE ─────────────────────────────────────────────────────────
+const TRIP_TYPE_CONFIG = {
+  reservation: { label: 'Reservation', bg: '#eff6ff', border: '#bfdbfe', color: '#1d4ed8', dot: '#3b82f6' },
+  swap:        { label: 'Swap',        bg: '#fff7ed', border: '#fed7aa', color: '#c2410c', dot: '#f97316' },
+  loaner:      { label: 'Loaner',      bg: '#f0fdf4', border: '#bbf7d0', color: '#15803d', dot: '#22c55e' },
+};
+
+function TripCard({ trip, isActive }: { trip: TripRecord; isActive: boolean }) {
+  const { year, make, model } = parseVehicle(trip.vehicle);
+  const cfg = TRIP_TYPE_CONFIG[trip.type];
+  const color = carColor(make);
+
+  return (
+    <div style={{
+      background: 'var(--card)', border: `1px solid ${isActive ? '#ff6221' : 'var(--border)'}`,
+      borderRadius: 12, overflow: 'hidden',
+      boxShadow: isActive ? '0 0 0 2px rgba(255,98,33,0.15)' : 'none',
+    }}>
+      {/* Header row */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
+        {/* Car silhouette small */}
+        <div style={{ background: 'var(--muted)', borderRadius: 8, padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <svg viewBox="0 0 120 50" width="60" height="25" xmlns="http://www.w3.org/2000/svg">
+            <rect x="5" y="22" width="110" height="20" rx="6" fill={color} />
+            <path d="M30 22 L42 8 L78 8 L90 22 Z" fill={color} />
+            <path d="M44 20 L50 10 L70 10 L76 20 Z" fill="rgba(255,255,255,0.35)" />
+            <circle cx="28" cy="42" r="8" fill="#1e293b" /><circle cx="28" cy="42" r="4" fill="#94a3b8" />
+            <circle cx="92" cy="42" r="8" fill="#1e293b" /><circle cx="92" cy="42" r="4" fill="#94a3b8" />
+          </svg>
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--foreground)', lineHeight: 1.2 }}>{year} {make} {model}</div>
+          <div style={{ fontSize: 12, color: 'var(--muted-foreground)', fontFamily: 'monospace', marginTop: 2 }}>···{last6(trip.vin)}</div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: cfg.color, background: cfg.bg, border: `1px solid ${cfg.border}`, borderRadius: 20, padding: '2px 10px' }}>{cfg.label}</span>
+          {isActive && <span style={{ fontSize: 10, fontWeight: 700, color: '#ff6221', background: 'rgba(255,98,33,0.1)', borderRadius: 20, padding: '2px 8px' }}>Active</span>}
+        </div>
+      </div>
+      {/* Date row */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px' }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted-foreground)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span style={{ fontSize: 13, color: 'var(--muted-foreground)' }}>
+          {formatDate(trip.startDate)} — {trip.endDate ? formatDate(trip.endDate) : <span style={{ color: '#ff6221', fontWeight: 700 }}>Present</span>}
+        </span>
+      </div>
+      {trip.notes && (
+        <div style={{ padding: '0 16px 12px', fontSize: 12, color: 'var(--muted-foreground)', fontStyle: 'italic' }}>{trip.notes}</div>
+      )}
+    </div>
+  );
+}
+
+function TripHistoryPage({ fields }: { fields: MemberFields }) {
+  const trips = buildDemoTripHistory(fields.vehicle, fields.vin, fields.startDate, fields.endDate);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 20 }}>
+      {/* Header */}
+      <div style={{ background: '#171b31', borderRadius: 12, padding: '20px 18px' }}>
+        <div style={{ fontSize: 20, fontWeight: 800, color: 'white', marginBottom: 4 }}>Trip History</div>
+        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>{trips.length} vehicles · All reservations, swaps &amp; loaners</div>
+      </div>
+
+      {/* Legend */}
+      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        {(Object.entries(TRIP_TYPE_CONFIG) as [string, typeof TRIP_TYPE_CONFIG['reservation']][]).map(([type, cfg]) => (
+          <div key={type} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--muted-foreground)' }}>
+            <div style={{ width: 10, height: 10, borderRadius: '50%', background: cfg.dot }} />
+            {cfg.label}
+          </div>
+        ))}
+      </div>
+
+      {/* Timeline */}
+      <div style={{ position: 'relative' }}>
+        {/* Vertical line */}
+        <div style={{ position: 'absolute', left: 19, top: 24, bottom: 24, width: 2, background: 'var(--border)', zIndex: 0 }} />
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {trips.map((trip, i) => {
+            const isActive = !trip.endDate;
+            const cfg = TRIP_TYPE_CONFIG[trip.type];
+            return (
+              <div key={trip.id} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', position: 'relative', zIndex: 1 }}>
+                {/* Timeline dot */}
+                <div style={{
+                  width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
+                  background: isActive ? '#ff6221' : cfg.bg,
+                  border: `2px solid ${isActive ? '#ff6221' : cfg.border}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: isActive ? '0 0 0 4px rgba(255,98,33,0.15)' : 'none',
+                }}>
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke={isActive ? 'white' : cfg.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="1" y="3" width="15" height="13" rx="2"/>
+                    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+                    <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+                  </svg>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <TripCard trip={trip} isActive={isActive} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Summary */}
+      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '14px 16px' }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>Summary</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+          {[
+            { label: 'Reservations', value: trips.filter(t => t.type === 'reservation').length, color: '#3b82f6' },
+            { label: 'Swaps', value: trips.filter(t => t.type === 'swap').length, color: '#f97316' },
+            { label: 'Loaners', value: trips.filter(t => t.type === 'loaner').length, color: '#22c55e' },
+          ].map(({ label, value, color: c }) => (
+            <div key={label} style={{ textAlign: 'center', padding: '10px 0', background: 'var(--muted)', borderRadius: 8 }}>
+              <div style={{ fontSize: 22, fontWeight: 800, color: c }}>{value}</div>
+              <div style={{ fontSize: 11, color: 'var(--muted-foreground)', marginTop: 2 }}>{label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── INVOICING PAGE ────────────────────────────────────────────────────────────
+const INVOICE_TYPE_COLORS: Record<string, { bg: string; color: string; label: string }> = {
+  weekly: { bg: '#eff6ff', color: '#1d4ed8', label: 'Weekly' },
+  ticket: { bg: '#fef2f2', color: '#dc2626', label: 'Ticket' },
+  toll:   { bg: '#fff7ed', color: '#c2410c', label: 'Toll' },
+  late:   { bg: '#fefce8', color: '#a16207', label: 'Late Fee' },
+  credit: { bg: '#f0fdf4', color: '#15803d', label: 'Credit' },
+};
+
+function InvoicingPage({ fields }: { fields: MemberFields }) {
+  const invoice = buildDemoInvoice(fields.weeklyFee, fields.startDate);
+  const [expandedPast, setExpandedPast] = useState(false);
+
+  const fmt = (n: number) => `$${n.toFixed(2)}`;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 20, position: 'relative' }}>
+      {/* Coming Soon overlay */}
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 150,
+        background: 'rgba(23,27,49,0.55)',
+        backdropFilter: 'blur(3px)',
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+        paddingTop: 80,
+        pointerEvents: 'none',
+      }}>
+        <div style={{
+          background: '#171b31', border: '2px solid #ff6221', borderRadius: 16,
+          padding: '16px 28px', display: 'flex', alignItems: 'center', gap: 12,
+          boxShadow: '0 8px 40px rgba(0,0,0,0.4)',
+        }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff6221" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: 'white' }}>Coming Soon</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>Live invoicing · Q3 2026</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Current Balance Card */}
+      <div style={{ background: '#171b31', borderRadius: 12, padding: '24px 20px', textAlign: 'center' }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>Current Balance Due</div>
+        <div style={{ fontSize: 40, fontWeight: 900, color: '#ff6221', lineHeight: 1, marginBottom: 8 }}>{fmt(invoice.currentBalance)}</div>
+        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>Due {invoice.dueDate}</div>
+        <button style={{
+          marginTop: 16, padding: '12px 32px', borderRadius: 10, border: 'none',
+          background: '#ff6221', color: 'white', fontSize: 15, fontWeight: 700, cursor: 'pointer',
+          width: '100%',
+        }}>
+          Pay Now
+        </button>
+      </div>
+
+      {/* Line Items */}
+      <div>
+        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Current Charges</div>
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+          {invoice.lineItems.map((item: InvoiceLineItem, i) => {
+            const cfg = INVOICE_TYPE_COLORS[item.type] ?? INVOICE_TYPE_COLORS.weekly;
+            return (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', borderBottom: i < invoice.lineItems.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                <div style={{ width: 34, height: 34, borderRadius: 8, background: cfg.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <span style={{ fontSize: 10, fontWeight: 800, color: cfg.color }}>{cfg.label.slice(0, 3).toUpperCase()}</span>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--foreground)' }}>{item.label}</div>
+                  {(item.date || item.note) && (
+                    <div style={{ fontSize: 11, color: 'var(--muted-foreground)' }}>
+                      {item.date}{item.date && item.note ? ' · ' : ''}{item.note}
+                    </div>
+                  )}
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: item.type === 'credit' ? '#16a34a' : 'var(--foreground)', flexShrink: 0 }}>
+                  {item.type === 'credit' ? '-' : ''}{fmt(item.amount)}
+                </div>
+              </div>
+            );
+          })}
+          {/* Total row */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', background: 'var(--muted)', borderTop: '2px solid var(--border)' }}>
+            <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--foreground)' }}>Total Due</span>
+            <span style={{ fontSize: 18, fontWeight: 900, color: '#ff6221' }}>{fmt(invoice.currentBalance)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Past Invoices */}
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Invoice History</div>
+          <button onClick={() => setExpandedPast(e => !e)} style={{ fontSize: 12, color: '#ff6221', fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer' }}>
+            {expandedPast ? 'Show Less' : 'Show All'}
+          </button>
+        </div>
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+          {(expandedPast ? invoice.pastInvoices : invoice.pastInvoices.slice(0, 3)).map((inv: PastInvoice, i, arr) => (
+            <div key={inv.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none' }}>
+              <div style={{ width: 34, height: 34, borderRadius: 8, background: '#f0fdf4', border: '1px solid #bbf7d0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <CheckCircleIcon />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--foreground)', fontFamily: 'monospace' }}>{inv.id}</div>
+                <div style={{ fontSize: 11, color: 'var(--muted-foreground)' }}>{inv.period}</div>
+              </div>
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--foreground)' }}>{fmt(inv.total)}</div>
+                <div style={{ fontSize: 11, color: '#16a34a', fontWeight: 600 }}>Paid {inv.date}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -590,7 +756,6 @@ function ProfilePage({ fields, onUpdateField }: {
       <div>
         <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Member Information</div>
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
-          {/* Name — read only */}
           {[
             { label: 'Full Name', value: fields.memberName || '—' },
             { label: 'Date of Birth', value: fields.dob || '—' },
@@ -607,13 +772,8 @@ function ProfilePage({ fields, onUpdateField }: {
           <div style={{ padding: '11px 16px', borderBottom: '1px solid var(--border)' }}>
             {editPhone ? (
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <input
-                  type="tel"
-                  value={phoneVal}
-                  onChange={e => setPhoneVal(e.target.value)}
-                  style={{ flex: 1, fontSize: 13, padding: '6px 10px', border: '1.5px solid #ff6221', borderRadius: 7, outline: 'none', background: 'var(--input)', color: 'var(--foreground)' }}
-                  autoFocus
-                />
+                <input type="tel" value={phoneVal} onChange={e => setPhoneVal(e.target.value)}
+                  style={{ flex: 1, fontSize: 13, padding: '6px 10px', border: '1.5px solid #ff6221', borderRadius: 7, outline: 'none', background: 'var(--input)', color: 'var(--foreground)' }} autoFocus />
                 <button onClick={savePhone} style={{ fontSize: 12, fontWeight: 700, color: 'white', background: '#ff6221', border: 'none', borderRadius: 7, padding: '6px 12px', cursor: 'pointer' }}>Save</button>
                 <button onClick={() => { setPhoneVal(fields.phone); setEditPhone(false); }} style={{ fontSize: 12, color: 'var(--muted-foreground)', background: 'none', border: 'none', cursor: 'pointer' }}>Cancel</button>
               </div>
@@ -632,13 +792,8 @@ function ProfilePage({ fields, onUpdateField }: {
           <div style={{ padding: '11px 16px' }}>
             {editEmail ? (
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <input
-                  type="email"
-                  value={emailVal}
-                  onChange={e => setEmailVal(e.target.value)}
-                  style={{ flex: 1, fontSize: 13, padding: '6px 10px', border: '1.5px solid #ff6221', borderRadius: 7, outline: 'none', background: 'var(--input)', color: 'var(--foreground)' }}
-                  autoFocus
-                />
+                <input type="email" value={emailVal} onChange={e => setEmailVal(e.target.value)}
+                  style={{ flex: 1, fontSize: 13, padding: '6px 10px', border: '1.5px solid #ff6221', borderRadius: 7, outline: 'none', background: 'var(--input)', color: 'var(--foreground)' }} autoFocus />
                 <button onClick={saveEmail} style={{ fontSize: 12, fontWeight: 700, color: 'white', background: '#ff6221', border: 'none', borderRadius: 7, padding: '6px 12px', cursor: 'pointer' }}>Save</button>
                 <button onClick={() => { setEmailVal(fields.email); setEditEmail(false); }} style={{ fontSize: 12, color: 'var(--muted-foreground)', background: 'none', border: 'none', cursor: 'pointer' }}>Cancel</button>
               </div>
@@ -678,7 +833,7 @@ function ProfilePage({ fields, onUpdateField }: {
 }
 
 // ── MAIN PORTAL ───────────────────────────────────────────────────────────────
-type PortalTab = 'dashboard' | 'vehicles' | 'support' | 'profile';
+type PortalTab = 'dashboard' | 'vehicles' | 'trips' | 'invoices' | 'support' | 'profile';
 
 export default function MemberPortal({ fields, onPrint, onPrintAddon, addons, pipElection }: PortalProps) {
   const [tab, setTab] = useState<PortalTab>('dashboard');
@@ -690,11 +845,18 @@ export default function MemberPortal({ fields, onPrint, onPrintAddon, addons, pi
   };
 
   const tabs: { id: PortalTab; label: string; icon: React.ReactNode }[] = [
-    { id: 'dashboard', label: 'Dashboard', icon: <DashIcon /> },
-    { id: 'vehicles', label: 'Vehicles', icon: <CarIcon /> },
-    { id: 'support', label: 'Support', icon: <SupportIcon /> },
-    { id: 'profile', label: 'Profile', icon: <ProfileIcon /> },
+    { id: 'dashboard', label: 'Home',     icon: <DashIcon /> },
+    { id: 'vehicles',  label: 'Vehicle',  icon: <CarIcon /> },
+    { id: 'trips',     label: 'Trips',    icon: <HistoryIcon /> },
+    { id: 'invoices',  label: 'Invoices', icon: <InvoiceIcon /> },
+    { id: 'support',   label: 'Support',  icon: <SupportIcon /> },
+    { id: 'profile',   label: 'Profile',  icon: <ProfileIcon /> },
   ];
+
+  const TAB_LABELS: Record<PortalTab, string> = {
+    dashboard: 'Dashboard', vehicles: 'Vehicle', trips: 'Trip History',
+    invoices: 'Invoices', support: 'Support', profile: 'Profile',
+  };
 
   const LOGO_URL = '/manus-storage/whip_logo_db5e4f39.png';
 
@@ -706,7 +868,7 @@ export default function MemberPortal({ fields, onPrint, onPrintAddon, addons, pi
           onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
         <div className="top-bar-right">
           <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--muted-foreground)' }}>
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            {TAB_LABELS[tab]}
           </span>
         </div>
       </header>
@@ -717,18 +879,23 @@ export default function MemberPortal({ fields, onPrint, onPrintAddon, addons, pi
           <DashboardPage fields={localFields} addons={addons} onPrint={onPrint} onPrintAddon={onPrintAddon} />
         )}
         {tab === 'vehicles' && (
-          <VehiclesPage fields={localFields} addons={addons} pipElection={pipElection} onPrint={onPrint} />
+          <VehiclesPage fields={localFields} addons={addons} pipElection={pipElection} />
+        )}
+        {tab === 'trips' && (
+          <TripHistoryPage fields={localFields} />
+        )}
+        {tab === 'invoices' && (
+          <InvoicingPage fields={localFields} />
         )}
         {tab === 'support' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 20 }}>
             <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--foreground)', margin: '0 0 4px' }}>Support</h2>
             <p style={{ fontSize: 14, color: 'var(--muted-foreground)', margin: 0 }}>We're here to help.</p>
 
-            {/* Help desk text line */}
             <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px' }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>Help Desk Text Line</div>
               <a href={`sms:${HELP_DESK_TEXT_LINE.replace(/\D/g, '')}`} style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none' }}>
-                <div style={{ width: 44, height: 44, borderRadius: 10, background: '#fff7f4', border: '1px solid #ffe4d9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 10, background: '#fff7f4', border: '1px solid #ffe4d9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#ff6221' }}>
                   <SupportIcon />
                 </div>
                 <div>
@@ -738,7 +905,6 @@ export default function MemberPortal({ fields, onPrint, onPrintAddon, addons, pi
               </a>
             </div>
 
-            {/* Local office */}
             <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px' }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>Your Local Office</div>
               <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--foreground)', marginBottom: 8 }}>Whip {market.name}</div>
@@ -755,22 +921,12 @@ export default function MemberPortal({ fields, onPrint, onPrintAddon, addons, pi
               </a>
             </div>
 
-            {/* File a claim */}
             <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px' }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>File a Claim</div>
               <p style={{ fontSize: 13, color: 'var(--muted-foreground)', margin: '0 0 12px', lineHeight: 1.5 }}>
                 Report accidents, theft, or vehicle damage within 24 hours.
               </p>
-              <a
-                href="https://drivewhip.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                  background: '#ff6221', color: 'white', textDecoration: 'none',
-                  borderRadius: 10, padding: '12px 16px', fontSize: 14, fontWeight: 700,
-                }}
-              >
+              <a href="https://drivewhip.com" target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#ff6221', color: 'white', textDecoration: 'none', borderRadius: 10, padding: '12px 16px', fontSize: 14, fontWeight: 700 }}>
                 Go to drivewhip.com → File a Claim
               </a>
             </div>
@@ -781,12 +937,12 @@ export default function MemberPortal({ fields, onPrint, onPrintAddon, addons, pi
         )}
       </main>
 
-      {/* BOTTOM TAB BAR */}
+      {/* BOTTOM TAB BAR — 6 tabs, smaller text */}
       <div style={{
         position: 'fixed', bottom: 0, left: 0, right: 0,
         background: 'var(--card)', borderTop: '1px solid var(--border)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-around',
-        padding: '8px 0', paddingBottom: 'max(8px, env(safe-area-inset-bottom))',
+        padding: '6px 0', paddingBottom: 'max(6px, env(safe-area-inset-bottom))',
         zIndex: 90, boxShadow: '0 -4px 20px rgba(0,0,0,0.06)',
       }}>
         {tabs.map(({ id, label, icon }) => (
@@ -794,10 +950,11 @@ export default function MemberPortal({ fields, onPrint, onPrintAddon, addons, pi
             key={id}
             onClick={() => setTab(id)}
             style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-              background: 'none', border: 'none', padding: '4px 12px', cursor: 'pointer',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+              background: 'none', border: 'none', padding: '4px 6px', cursor: 'pointer',
               color: tab === id ? '#ff6221' : 'var(--muted-foreground)',
-              fontSize: 10, fontWeight: tab === id ? 700 : 400,
+              fontSize: 9, fontWeight: tab === id ? 700 : 400,
+              minWidth: 0, flex: 1,
             }}
           >
             <span style={{ color: tab === id ? '#ff6221' : 'var(--muted-foreground)' }}>{icon}</span>

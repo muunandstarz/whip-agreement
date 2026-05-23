@@ -490,3 +490,143 @@ export function getCoverageForState(stateCode: string): CoverageInfo {
 
 // ── HELP DESK ─────────────────────────────────────────────────────────────────
 export const HELP_DESK_TEXT_LINE = '855-861-9401';
+
+// ── TRIP HISTORY (demo data) ──────────────────────────────────────────────────
+export type TripType = 'reservation' | 'swap' | 'loaner';
+
+export interface TripRecord {
+  id: string;
+  type: TripType;
+  vehicle: string; // "2024 Tesla Model Y"
+  vin: string;     // full VIN — display last 6
+  startDate: string; // YYYY-MM-DD
+  endDate: string | null; // null = current/active
+  notes?: string;
+}
+
+/**
+ * Generate a plausible demo trip history based on the member's current vehicle.
+ * The current reservation is always the most recent entry.
+ */
+export function buildDemoTripHistory(
+  currentVehicle: string,
+  currentVin: string,
+  currentStartDate: string,
+  currentEndDate: string
+): TripRecord[] {
+  // Parse start date to compute prior dates
+  const start = currentStartDate ? new Date(currentStartDate + 'T12:00:00') : new Date();
+
+  const offset = (days: number) => {
+    const d = new Date(start);
+    d.setDate(d.getDate() - days);
+    return d.toISOString().split('T')[0];
+  };
+
+  return [
+    // Current reservation (active)
+    {
+      id: 'res-current',
+      type: 'reservation',
+      vehicle: currentVehicle || '2024 Tesla Model Y Long Range',
+      vin: currentVin || '5YJYGDEE9MF123456',
+      startDate: currentStartDate || offset(0),
+      endDate: currentEndDate || null,
+    },
+    // Swap — 3 days before current start
+    {
+      id: 'swap-01',
+      type: 'swap',
+      vehicle: '2023 Toyota Camry XSE',
+      vin: '4T1BZ1HK7PU123789',
+      startDate: offset(90),
+      endDate: offset(3),
+      notes: 'Swap — maintenance on prior vehicle',
+    },
+    // Prior reservation
+    {
+      id: 'res-02',
+      type: 'reservation',
+      vehicle: '2023 Toyota Camry XSE',
+      vin: '4T1BZ1HK7PU123789',
+      startDate: offset(270),
+      endDate: offset(90),
+    },
+    // Loaner
+    {
+      id: 'loaner-01',
+      type: 'loaner',
+      vehicle: '2022 Honda Accord Sport',
+      vin: '1HGCV1F34NA012345',
+      startDate: offset(310),
+      endDate: offset(305),
+      notes: 'Loaner — accident repair',
+    },
+    // First reservation
+    {
+      id: 'res-01',
+      type: 'reservation',
+      vehicle: '2022 Nissan Altima SV',
+      vin: '1N4BL4BV3NN123456',
+      startDate: offset(540),
+      endDate: offset(310),
+    },
+  ];
+}
+
+// ── INVOICE DATA (demo) ───────────────────────────────────────────────────────
+export interface InvoiceLineItem {
+  label: string;
+  amount: number; // in dollars
+  type: 'weekly' | 'ticket' | 'toll' | 'late' | 'credit';
+  date?: string;
+  note?: string;
+}
+
+export interface PastInvoice {
+  id: string;
+  period: string;
+  total: number;
+  paid: boolean;
+  date: string;
+}
+
+export interface InvoiceData {
+  currentBalance: number;
+  dueDate: string;
+  lineItems: InvoiceLineItem[];
+  pastInvoices: PastInvoice[];
+}
+
+/**
+ * Build demo invoice data based on the member's weekly fee.
+ */
+export function buildDemoInvoice(weeklyFee: string, startDate: string): InvoiceData {
+  const weekly = parseFloat(weeklyFee) || 285;
+
+  const start = startDate ? new Date(startDate + 'T12:00:00') : new Date();
+  const dueDate = new Date(start);
+  dueDate.setDate(dueDate.getDate() + 7);
+  const dueDateStr = dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+  const lineItems: InvoiceLineItem[] = [
+    { label: 'Weekly Rental Fee', amount: weekly, type: 'weekly', date: 'Current week' },
+    { label: 'E-ZPass Toll — I-495 N', amount: 4.75, type: 'toll', date: '5/18/2026', note: 'License plate match' },
+    { label: 'E-ZPass Toll — I-95 S', amount: 3.25, type: 'toll', date: '5/20/2026', note: 'License plate match' },
+    { label: 'Parking Ticket — DC DMV', amount: 75.00, type: 'ticket', date: '5/15/2026', note: 'No standing zone' },
+    { label: 'Late Fee — Prior Week', amount: 25.00, type: 'late', date: '5/14/2026' },
+  ];
+
+  const currentBalance = lineItems.reduce((sum, i) => sum + i.amount, 0);
+
+  const pastInvoices: PastInvoice[] = [
+    { id: 'INV-2026-0021', period: 'May 7 – May 13, 2026', total: weekly, paid: true, date: '5/13/2026' },
+    { id: 'INV-2026-0018', period: 'Apr 30 – May 6, 2026', total: weekly + 4.25, paid: true, date: '5/06/2026' },
+    { id: 'INV-2026-0015', period: 'Apr 23 – Apr 29, 2026', total: weekly + 25, paid: true, date: '4/29/2026' },
+    { id: 'INV-2026-0012', period: 'Apr 16 – Apr 22, 2026', total: weekly, paid: true, date: '4/22/2026' },
+    { id: 'INV-2026-0009', period: 'Apr 9 – Apr 15, 2026', total: weekly + 75 + 3.50, paid: true, date: '4/15/2026' },
+    { id: 'INV-2026-0006', period: 'Apr 2 – Apr 8, 2026', total: weekly, paid: true, date: '4/08/2026' },
+  ];
+
+  return { currentBalance, dueDate: dueDateStr, lineItems, pastInvoices };
+}
