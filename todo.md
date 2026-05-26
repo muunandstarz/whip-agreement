@@ -37,3 +37,7 @@
 - [x] Add mode=demo: lock all fields except DOB/phone/address/email, hide portal and account creation
 - [x] Fix PIP form pixel-perfect 2-page 2-column (verify against original HTML)
 - [x] Combined PDF view in new browser tab (agreement + addons as one readable document)
+
+## P0 Fixes (demo mode)
+- [x] Fix missing margins on agreement-only/demo mode view
+- [x] Fully block portal and account creation in mode=demo and mode=agreement

@@ -1304,8 +1304,8 @@ function DoneScreen({ fields, stateData, onEnterPortal, onPrint, onPrintAddon, o
         </button>
       )}
 
-      {/* Create account prompt — hidden in demo mode */}
-      {!demoMode && (
+      {/* Create account prompt — hidden in demo mode and agreement-only mode */}
+      {!demoMode && !agreementOnly && (
         <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '20px 18px' }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--foreground)', marginBottom: 6 }}>Create your Whip account</div>
           <p style={{ fontSize: 13, color: 'var(--muted-foreground)', margin: '0 0 14px', lineHeight: 1.5 }}>
@@ -1333,8 +1333,8 @@ function DoneScreen({ fields, stateData, onEnterPortal, onPrint, onPrintAddon, o
         </div>
       )}
 
-      {/* Enter portal CTA — hidden in agreement-only mode */}
-      {!agreementOnly && (
+      {/* Enter portal CTA — hidden in agreement-only and demo mode */}
+      {!agreementOnly && !demoMode && (
         <button
           onClick={onEnterPortal}
           style={{
