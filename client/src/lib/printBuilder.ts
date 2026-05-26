@@ -482,6 +482,154 @@ export function buildPrintHTML(
 `;
 }
 
+/**
+ * Build a full standalone HTML document for viewing in a new browser tab.
+ * Shows the complete agreement + all addon forms as a readable scrollable document.
+ */
+export function buildViewerHTML(
+  fields: Fields,
+  stateData: StateData,
+  sigDataURL: string | null,
+  pipElection: 'full' | 'waive' | null
+): string {
+  const today = fields.dateSigned || new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const sigImg = sigDataURL
+    ? `<img src="${sigDataURL}" style="height:52pt;max-width:100%;object-fit:contain;object-position:left bottom;">`
+    : '';
+  const mainPages = buildMainPages(fields, stateData, sigImg, today);
+  const addonPages = buildAddonPages(fields, stateData, sigDataURL, pipElection, today);
+
+  // Extract the inner content from the print-output div (strip the wrapper)
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Whip Member Agreement — ${fields.memberName || 'Member'}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #e5e7eb;
+      font-family: 'Times New Roman', Times, serif;
+      font-size: 9pt;
+      line-height: 1.38;
+      color: #000;
+      padding: 24px 0;
+    }
+    /* Toolbar */
+    #viewer-toolbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 44px;
+      background: #171b31;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      z-index: 1000;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    #viewer-toolbar .toolbar-title {
+      color: white;
+      font-family: Arial, sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+    #viewer-toolbar .toolbar-title span {
+      color: #ff6221;
+    }
+    #viewer-toolbar button {
+      background: #ff6221;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 7px 16px;
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    #viewer-toolbar button:hover { background: #e55519; }
+    /* Page container */
+    #doc-pages {
+      margin-top: 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      padding-bottom: 40px;
+    }
+    /* Each page looks like a sheet of paper */
+    .agr-page, .pip-page, .wf-page {
+      background: white;
+      width: 8.5in;
+      min-height: 11in;
+      padding: 0.65in;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+      position: relative;
+      page-break-after: always;
+    }
+    .agr-page-last, .pip-page-last, .wf-page-last { page-break-after: auto; }
+    @media print {
+      body { background: white; padding: 0; }
+      #viewer-toolbar { display: none; }
+      #doc-pages { margin-top: 0; gap: 0; padding: 0; }
+      .agr-page, .pip-page, .wf-page {
+        box-shadow: none;
+        width: 100%;
+        min-height: auto;
+        padding: 0.65in;
+      }
+    }
+    @media (max-width: 900px) {
+      .agr-page, .pip-page, .wf-page { width: 100%; min-height: auto; }
+    }
+    /* Agreement styles */
+    .agr-hdr { display:flex; justify-content:space-between; align-items:flex-start; padding-bottom:6pt; border-bottom:1.5pt solid #171b31; margin-bottom:6pt; }
+    .agr-hdr-logo { height:28pt; width:auto; }
+    .agr-hdr-right { text-align:right; font-family:Arial,sans-serif; font-size:7pt; color:#555; line-height:1.4; }
+    .agr-hdr-right-sub { font-family:Arial,sans-serif; font-size:6.5pt; color:#888; text-align:right; }
+    .agr-title-block { margin:5pt 0 4pt; }
+    .agr-title-block h1 { font-family:'Times New Roman',Times,serif; font-size:20pt; font-weight:bold; color:#000; margin:0 0 2pt; line-height:1.1; }
+    .agr-subtitle { font-family:Arial,sans-serif; font-size:7pt; letter-spacing:.18em; text-transform:uppercase; color:#555; }
+    .agr-fields { width:100%; border-collapse:collapse; margin-bottom:3pt; border:0.75pt solid #000; }
+    .agr-fields td { padding:1.5pt 3pt; border:0.75pt solid #000; font-family:'Times New Roman',Times,serif; font-size:9pt; vertical-align:top; width:50%; }
+    .agr-fl { font-family:Arial,sans-serif; font-size:5pt; letter-spacing:.1em; text-transform:uppercase; color:#555; display:block; margin-bottom:0.5pt; }
+    .agr-fv { font-size:9pt; }
+    .agr-sec { margin-bottom:0; padding-top:3pt; border-top:0.5pt solid #ccc; }
+    .agr-sec-title { font-family:Arial,sans-serif; font-size:6.5pt; letter-spacing:.22em; text-transform:uppercase; color:#000; font-weight:bold; display:block; margin-bottom:2pt; }
+    .agr-sec p { font-family:'Times New Roman',Times,serif; font-size:9pt; line-height:1.38; margin:0 0 3pt; }
+    .agr-sig-block { margin-top:6pt; padding-top:6pt; border-top:0.75pt solid #000; }
+    .agr-sig-row { display:flex; gap:12pt; align-items:flex-end; margin-bottom:8pt; }
+    .agr-sig-field { flex:1; }
+    .agr-sig-line { display:block; border-bottom:0.75pt solid #000; min-height:36pt; padding-bottom:2pt; }
+    .agr-sig-label { font-family:Arial,sans-serif; font-size:6pt; text-transform:uppercase; letter-spacing:.1em; color:#555; display:block; margin-top:2pt; }
+    .agr-ack-list { margin:0; padding-left:14pt; }
+    .agr-ack-list li { font-family:'Times New Roman',Times,serif; font-size:8.5pt; line-height:1.38; margin-bottom:2pt; }
+    .agr-footer { display:flex; justify-content:space-between; font-family:Arial,sans-serif; font-size:6pt; color:#888; padding-top:4pt; border-top:0.5pt solid #ddd; margin-top:6pt; }
+    .afc { text-align:center; }
+    /* PIP styles */
+    .pip-page { font-family:Arial,Helvetica,sans-serif; font-size:10pt; line-height:1.38; color:#000; }
+    /* WF styles */
+    .wf-page { font-family:Arial,sans-serif; font-size:10pt; line-height:1.4; color:#000; }
+    .wf-page p, .wf-page li, .wf-page td, .wf-page th { font-family:Arial,sans-serif; font-size:10pt; line-height:1.4; }
+    .wf-page h2, .wf-page h3 { font-family:Arial,sans-serif; font-size:11pt; font-weight:bold; }
+  </style>
+</head>
+<body>
+  <div id="viewer-toolbar">
+    <div class="toolbar-title"><span>whip</span> · Member Agreement</div>
+    <button onclick="window.print()">&#128438; Print / Save PDF</button>
+  </div>
+  <div id="doc-pages">
+    ${mainPages}
+    ${addonPages}
+  </div>
+</body>
+</html>`;
+}
+
 export function buildAddonOnlyHTML(
   addonKey: string,
   fields: Fields,

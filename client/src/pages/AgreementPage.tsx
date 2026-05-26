@@ -11,7 +11,7 @@ import {
   STATE_DATA, STATE_OPTIONS, TOS_TEXT, ACK_ITEMS,
   URL_PARAM_MAP, type StateData, getMarketForState
 } from '@/lib/agreementData';
-import { buildPrintHTML, buildAddonOnlyHTML } from '@/lib/printBuilder';
+import { buildPrintHTML, buildAddonOnlyHTML, buildViewerHTML } from '@/lib/printBuilder';
 import MemberPortal from './MemberPortal';
 
 // ── ICONS (inline SVG — no extra deps) ──────────────────────────────────────
@@ -144,6 +144,8 @@ export default function AgreementPage() {
   const { theme, toggleTheme } = useTheme();
   // mode=agreement hides the portal — shows only the agreement flow + done screen
   const agreementOnly = new URLSearchParams(window.location.search).get('mode') === 'agreement';
+  // mode=demo locks all fields except DOB/phone/email/address, hides portal + account creation
+  const demoMode = new URLSearchParams(window.location.search).get('mode') === 'demo';
 
   const [prefilled, setPrefilled] = useState<Set<string>>(new Set());
   const [fields, setFields] = useState<MemberFields>({
@@ -327,6 +329,15 @@ export default function AgreementPage() {
     window.print();
   };
 
+  const handleViewCombined = () => {
+    const html = buildViewerHTML(fields, stateData, sigDataURL, pipElection);
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(html);
+      win.document.close();
+    }
+  };
+
   const canProceed = () => {
     switch (currentStep?.id) {
       case 'welcome': return true;
@@ -397,7 +408,7 @@ export default function AgreementPage() {
             <WelcomeStep fields={fields} prefilled={prefilled} onNext={goNext} setField={setField} />
           )}
           {currentStep?.id === 'info' && (
-            <InfoStep fields={fields} prefilled={prefilled} setField={setField} />
+            <InfoStep fields={fields} prefilled={prefilled} setField={setField} demoMode={demoMode} />
           )}
           {currentStep?.id === 'tos' && (
             <TosStep
@@ -430,10 +441,12 @@ export default function AgreementPage() {
               onEnterPortal={() => setShowDoneScreen(false)}
               onPrint={handlePrint}
               onPrintAddon={handlePrintAddon}
-              agreementOnly={agreementOnly}
+              onViewCombined={handleViewCombined}
+              agreementOnly={agreementOnly || demoMode}
+              demoMode={demoMode}
             />
           )}
-          {currentStep?.id === 'complete' && !showDoneScreen && !agreementOnly && (
+          {currentStep?.id === 'complete' && !showDoneScreen && !(agreementOnly || demoMode) && (
             <MemberPortal
               fields={fields}
               onPrint={handlePrint}
@@ -442,7 +455,7 @@ export default function AgreementPage() {
               pipElection={pipElection}
             />
           )}
-          {currentStep?.id === 'complete' && !showDoneScreen && agreementOnly && (
+          {currentStep?.id === 'complete' && !showDoneScreen && (agreementOnly || demoMode) && (
             <div style={{ padding: '40px 24px', textAlign: 'center', color: 'var(--muted-foreground)' }}>
               <div style={{ fontSize: 40, marginBottom: 12 }}>✓</div>
               <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--foreground)', marginBottom: 8 }}>Agreement Complete</div>
@@ -607,11 +620,14 @@ function WelcomeStep({ fields, prefilled, onNext, setField }: {
 }
 
 // ── INFO ─────────────────────────────────────────────────────────────────────
-function InfoStep({ fields, prefilled, setField }: {
+function InfoStep({ fields, prefilled, setField, demoMode }: {
   fields: MemberFields; prefilled: Set<string>;
   setField: (k: keyof MemberFields, v: string) => void;
+  demoMode?: boolean;
 }) {
-  const pf = (k: string) => prefilled.has(k) ? 'prefilled' : '';
+  const pf = (k: string) => (prefilled.has(k) || (demoMode && !['dob','phone','email','address','cityStateZip'].includes(k))) ? 'prefilled' : '';
+  // In demo mode, lock everything except DOB, phone, email, address, cityStateZip
+  const locked = (k: string) => demoMode ? !['dob','phone','email','address','cityStateZip'].includes(k) : prefilled.has(k);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
@@ -623,42 +639,45 @@ function InfoStep({ fields, prefilled, setField }: {
           <FI label="Full Legal Name *" className={pf('memberName')}>
             <input className={`field-input ${pf('memberName')}`} value={fields.memberName}
               onChange={e => setField('memberName', e.target.value)} placeholder="John D. Smith"
-              readOnly={prefilled.has('memberName')} />
+              readOnly={locked('memberName')} />
           </FI>
           <FI label="Date of Birth *" className={pf('dob')}>
             <input type="date" className={`field-input ${pf('dob')}`} value={fields.dob}
               onChange={e => setField('dob', e.target.value)}
-              readOnly={prefilled.has('dob')} />
+              readOnly={locked('dob')} />
           </FI>
-          <FI label="Driver's License Number *">
-            <input className="field-input" value={fields.dlNumber}
+          <FI label="Driver's License Number *" className={pf('dlNumber')}>
+            <input className={`field-input ${pf('dlNumber')}`} value={fields.dlNumber}
               onChange={e => setField('dlNumber', e.target.value)} placeholder="S123-456-789-012"
-              style={{ fontFamily: 'monospace' }} />
+              style={{ fontFamily: 'monospace' }} readOnly={locked('dlNumber')} />
           </FI>
-          <FI label="State of License *">
-            <select className="field-input field-input-select"
-              value={fields.licenseState} onChange={e => setField('licenseState', e.target.value)}>
+          <FI label="State of License *" className={pf('licenseState')}>
+            <select className={`field-input field-input-select ${pf('licenseState')}`}
+              value={fields.licenseState} onChange={e => setField('licenseState', e.target.value)}
+              disabled={locked('licenseState')}>
               <option value="">Select…</option>
               {STATE_OPTIONS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
             </select>
           </FI>
-          <FI label="Email Address *">
-            <input type="email" className="field-input" value={fields.email}
-              onChange={e => setField('email', e.target.value)} placeholder="john.smith@gmail.com" />
+          <FI label="Email Address *" className={pf('email')}>
+            <input type="email" className={`field-input ${pf('email')}`} value={fields.email}
+              onChange={e => setField('email', e.target.value)} placeholder="john.smith@gmail.com"
+              readOnly={locked('email')} />
           </FI>
-          <FI label="Phone Number *">
-            <input type="tel" className="field-input" value={fields.phone}
-              onChange={e => setField('phone', e.target.value)} placeholder="(404) 555-0123" />
+          <FI label="Phone Number *" className={pf('phone')}>
+            <input type="tel" className={`field-input ${pf('phone')}`} value={fields.phone}
+              onChange={e => setField('phone', e.target.value)} placeholder="(404) 555-0123"
+              readOnly={locked('phone')} />
           </FI>
           <FI label="Street Address *" className={pf('address')}>
             <input className={`field-input ${pf('address')}`} value={fields.address}
               onChange={e => setField('address', e.target.value)} placeholder="123 Main Street"
-              readOnly={prefilled.has('address')} />
+              readOnly={locked('address')} />
           </FI>
           <FI label="City, State, ZIP *" className={pf('cityStateZip')}>
             <input className={`field-input ${pf('cityStateZip')}`} value={fields.cityStateZip}
               onChange={e => setField('cityStateZip', e.target.value)} placeholder="Atlanta, GA 30301"
-              readOnly={prefilled.has('cityStateZip')} />
+              readOnly={locked('cityStateZip')} />
           </FI>
         </div>
       </div>
@@ -673,44 +692,44 @@ function InfoStep({ fields, prefilled, setField }: {
           <FI label="Member / Customer ID *" className={pf('customerId')}>
             <input className={`field-input ${pf('customerId')}`} value={fields.customerId}
               onChange={e => setField('customerId', e.target.value)}
-              readOnly={prefilled.has('customerId')} style={{ fontFamily: 'monospace' }} />
+              readOnly={locked('customerId')} style={{ fontFamily: 'monospace' }} />
           </FI>
           <FI label="Reservation ID *" className={pf('reservationId')}>
             <input className={`field-input ${pf('reservationId')}`} value={fields.reservationId}
               onChange={e => setField('reservationId', e.target.value)}
-              readOnly={prefilled.has('reservationId')} style={{ fontFamily: 'monospace' }} />
+              readOnly={locked('reservationId')} style={{ fontFamily: 'monospace' }} />
           </FI>
           <FI label="Vehicle (Year Make Model) *" className={pf('vehicle')}>
             <input className={`field-input ${pf('vehicle')}`} value={fields.vehicle}
               onChange={e => setField('vehicle', e.target.value)} placeholder="2022 Toyota Camry"
-              readOnly={prefilled.has('vehicle')} />
+              readOnly={locked('vehicle')} />
           </FI>
           <FI label="VIN *" className={pf('vin')}>
             <input className={`field-input ${pf('vin')}`} value={fields.vin}
               onChange={e => setField('vin', e.target.value.toUpperCase())} placeholder="17-character VIN"
-              maxLength={17} readOnly={prefilled.has('vin')}
+              maxLength={17} readOnly={locked('vin')}
               style={{ fontFamily: 'monospace', textTransform: 'uppercase' }} />
           </FI>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             <FI label="Weekly Fee ($) *" className={pf('weeklyFee')}>
               <input type="number" className={`field-input ${pf('weeklyFee')}`} value={fields.weeklyFee}
                 onChange={e => setField('weeklyFee', e.target.value)} placeholder="0.00"
-                readOnly={prefilled.has('weeklyFee')} />
+                readOnly={locked('weeklyFee')} />
             </FI>
             <FI label="Deposit ($) *" className={pf('deposit')}>
               <input type="number" className={`field-input ${pf('deposit')}`} value={fields.deposit}
                 onChange={e => setField('deposit', e.target.value)} placeholder="0.00"
-                readOnly={prefilled.has('deposit')} />
+                readOnly={locked('deposit')} />
             </FI>
             <FI label="Start Date *" className={pf('startDate')}>
               <input type="date" className={`field-input ${pf('startDate')}`} value={fields.startDate}
                 onChange={e => setField('startDate', e.target.value)}
-                readOnly={prefilled.has('startDate')} />
+                readOnly={locked('startDate')} />
             </FI>
             <FI label="End Date *" className={pf('endDate')}>
               <input type="date" className={`field-input ${pf('endDate')}`} value={fields.endDate}
                 onChange={e => setField('endDate', e.target.value)}
-                readOnly={prefilled.has('endDate')} />
+                readOnly={locked('endDate')} />
             </FI>
           </div>
         </div>
@@ -1189,9 +1208,11 @@ function CompleteStep({ fields, stateData, onPrint, onPrintAddon }: {
 }
 
 // ── DONE SCREEN ─────────────────────────────────────────────────────────────
-function DoneScreen({ fields, stateData, onEnterPortal, onPrint, onPrintAddon, agreementOnly }: {
+function DoneScreen({ fields, stateData, onEnterPortal, onPrint, onPrintAddon, onViewCombined, agreementOnly, demoMode }: {
   fields: MemberFields; stateData: StateData; onEnterPortal: () => void;
-  onPrint: () => void; onPrintAddon: (key: string) => void; agreementOnly?: boolean;
+  onPrint: () => void; onPrintAddon: (key: string) => void;
+  onViewCombined?: () => void;
+  agreementOnly?: boolean; demoMode?: boolean;
 }) {
   const firstName = fields.memberName ? fields.memberName.split(' ')[0] : null;
   const signedDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
@@ -1267,32 +1288,50 @@ function DoneScreen({ fields, stateData, onEnterPortal, onPrint, onPrintAddon, a
         </div>
       </div>
 
-      {/* Create account prompt */}
-      <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '20px 18px' }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--foreground)', marginBottom: 6 }}>Create your Whip account</div>
-        <p style={{ fontSize: 13, color: 'var(--muted-foreground)', margin: '0 0 14px', lineHeight: 1.5 }}>
-          Set up a password to access your member portal anytime — view documents, track trips, and manage your profile.
-        </p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <input
-            type="email"
-            placeholder="Email address"
-            defaultValue={fields.email || ''}
-            style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--foreground)', fontSize: 14, boxSizing: 'border-box' }}
-          />
-          <input
-            type="password"
-            placeholder="Create a password"
-            style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--foreground)', fontSize: 14, boxSizing: 'border-box' }}
-          />
-          <button
-            onClick={() => toast('Account creation coming soon', { description: 'This will be available in the full Whip app.' })}
-            style={{ width: '100%', padding: '12px', borderRadius: 8, background: '#ff6221', color: 'white', fontWeight: 700, fontSize: 15, border: 'none', cursor: 'pointer' }}
-          >
-            Create Account
-          </button>
+      {/* View all documents button */}
+      {onViewCombined && (
+        <button
+          onClick={onViewCombined}
+          style={{
+            width: '100%', padding: '13px', borderRadius: 10,
+            background: 'var(--card)', color: 'var(--foreground)',
+            fontWeight: 700, fontSize: 14, border: '1.5px solid var(--border)',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          View All Documents (Combined PDF)
+        </button>
+      )}
+
+      {/* Create account prompt — hidden in demo mode */}
+      {!demoMode && (
+        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '20px 18px' }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--foreground)', marginBottom: 6 }}>Create your Whip account</div>
+          <p style={{ fontSize: 13, color: 'var(--muted-foreground)', margin: '0 0 14px', lineHeight: 1.5 }}>
+            Set up a password to access your member portal anytime — view documents, track trips, and manage your profile.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <input
+              type="email"
+              placeholder="Email address"
+              defaultValue={fields.email || ''}
+              style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--foreground)', fontSize: 14, boxSizing: 'border-box' }}
+            />
+            <input
+              type="password"
+              placeholder="Create a password"
+              style={{ width: '100%', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--foreground)', fontSize: 14, boxSizing: 'border-box' }}
+            />
+            <button
+              onClick={() => toast('Account creation coming soon', { description: 'This will be available in the full Whip app.' })}
+              style={{ width: '100%', padding: '12px', borderRadius: 8, background: '#ff6221', color: 'white', fontWeight: 700, fontSize: 15, border: 'none', cursor: 'pointer' }}
+            >
+              Create Account
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Enter portal CTA — hidden in agreement-only mode */}
       {!agreementOnly && (

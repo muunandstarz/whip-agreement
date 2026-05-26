@@ -32,3 +32,8 @@
 - [x] Remove footer from PIP print form (keep 2-page 2-column)
 - [x] Add Print PDF buttons to You're Done screen for each signed document
 - [x] Fix POI card modal overflow — full card must be visible without clipping
+
+## Demo Mode (v1 presentation link)
+- [x] Add mode=demo: lock all fields except DOB/phone/address/email, hide portal and account creation
+- [x] Fix PIP form pixel-perfect 2-page 2-column (verify against original HTML)
+- [x] Combined PDF view in new browser tab (agreement + addons as one readable document)
