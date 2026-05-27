@@ -76,4 +76,17 @@
 - [ ] Gmail credentials (GMAIL_USER + GMAIL_APP_PASSWORD) — email delivery not active until configured
 - [ ] TextLine API key — SMS delivery stubbed
 - [ ] Member account creation / login / forgot password flow
-- [ ] Claims workspace (mood board provided)
+
+## Email & SMS Integration
+- [x] Wire SMTP via cPanel webmail (insurance@drivewhip.com, host: c60263.sgvps.net)
+- [x] Replace nodemailer stub with live SMTP delivery for send/resend/reminder/expiry emails
+- [x] Wire TextLine API key for SMS send/resend
+- [x] Email and SMS tests passing (19 total)
+- [ ] Live end-to-end test with real member (user to add themselves and trigger a send)
+
+## Member Login (drivewhip.com goal)
+- [ ] Note: eventual goal is drivewhip.com/login → member sees their profile/agreement status
+
+## Data Format Notes
+- Reservation ID format: [member number]-[last 6 of VIN]-[mmddyyyy of pickup] e.g. 1042-N09186-05012026
+- [ ] Parse and display reservation ID components (member #, VIN suffix, pickup date) in member detail and agreement views

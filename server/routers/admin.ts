@@ -1,7 +1,8 @@
 import { TRPCError } from "@trpc/server";
 import { randomBytes, randomUUID } from "crypto";
-import nodemailer from "nodemailer";
 import { z } from "zod";
+import { sendEmail, buildAgreementEmail, buildReminderEmail, buildVerificationCodeEmail } from "../email";
+import { sendSms, buildAgreementSms, buildReminderSms } from "../sms";
 import {
   createAgreement,
   createDocument,
@@ -44,33 +45,7 @@ function generateVerificationCode(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-async function sendGmail(opts: {
-  to: string | string[];
-  subject: string;
-  html: string;
-  text?: string;
-}) {
-  const gmailUser = process.env.GMAIL_USER;
-  const gmailPass = process.env.GMAIL_APP_PASSWORD;
-  if (!gmailUser || !gmailPass) {
-    console.warn("[Email] Gmail not configured");
-    return false;
-  }
-  const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false,
-    auth: { user: gmailUser, pass: gmailPass },
-  });
-  await transporter.sendMail({
-    from: `"Whip Agreements" <${gmailUser}>`,
-    to: Array.isArray(opts.to) ? opts.to.join(", ") : opts.to,
-    subject: opts.subject,
-    html: opts.html,
-    text: opts.text ?? opts.subject,
-  });
-  return true;
-}
+// Email and SMS helpers imported from server/email.ts and server/sms.ts
 
 // ─── Member Import ────────────────────────────────────────────────────────────
 
@@ -235,30 +210,21 @@ export const adminRouter = router({
         let smsSent = false;
 
         if (input.via === "email" || input.via === "both") {
-          const html = `
-            <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
-              <div style="background:#0b1228;padding:24px;text-align:center">
-                <span style="color:#FF6A00;font-size:28px;font-weight:bold;font-style:italic">whip</span>
-              </div>
-              <div style="padding:32px;background:#f9f9f9">
-                <h2 style="color:#0b1228">Hi ${member.name.split(" ")[0]},</h2>
-                <p>Your Whip Member Agreement is ready to sign. Please review and complete it at your earliest convenience.</p>
-                <p><strong>Vehicle:</strong> ${member.vehicle}<br>
-                <strong>Reservation:</strong> ${member.reservationId}<br>
-                <strong>Agreement State:</strong> ${member.agreementState}</p>
-                <div style="text-align:center;margin:32px 0">
-                  <a href="${link}" style="background:#FF6A00;color:#fff;padding:16px 32px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px">Review &amp; Sign Agreement</a>
-                </div>
-                <p style="color:#666;font-size:13px">This link expires in 72 hours. If you have questions, contact your local Whip office.</p>
-              </div>
-            </div>`;
-          emailSent = await sendGmail({ to: member.email, subject: "Your Whip Member Agreement is Ready to Sign", html });
+          const { subject, html } = buildAgreementEmail({
+            firstName: member.name.split(" ")[0],
+            vehicle: member.vehicle,
+            reservationId: member.reservationId,
+            agreementState: member.agreementState,
+            link,
+          });
+          emailSent = await sendEmail({ to: member.email, subject, html });
         }
 
         if (input.via === "sms" || input.via === "both") {
-          // TextLine integration — log for now, wire API key separately
-          console.log(`[TextLine] Would send SMS to ${member.phone}: Sign your Whip agreement: ${link}`);
-          smsSent = true; // optimistic until TextLine is wired
+          smsSent = await sendSms({
+            to: member.phone,
+            message: buildAgreementSms({ firstName: member.name.split(" ")[0], link }),
+          });
         }
 
         await updateAgreement(input.agreementId, {
@@ -301,20 +267,17 @@ export const adminRouter = router({
         if (!member) throw new TRPCError({ code: "NOT_FOUND" });
         const origin = input.origin ?? "https://whipagree-3narmaq7.manus.space";
         const link = `${origin}/agreement/${agreement.token}`;
-        const html = `
-          <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
-            <div style="background:#0b1228;padding:24px;text-align:center">
-              <span style="color:#FF6A00;font-size:28px;font-weight:bold;font-style:italic">whip</span>
-            </div>
-            <div style="padding:32px;background:#f9f9f9">
-              <h2 style="color:#0b1228">Reminder: Your Whip Agreement Needs Your Signature</h2>
-              <p>Hi ${member.name.split(" ")[0]}, this is a reminder to complete your Whip Member Agreement.</p>
-              <div style="text-align:center;margin:32px 0">
-                <a href="${link}" style="background:#FF6A00;color:#fff;padding:16px 32px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px">Complete Your Agreement</a>
-              </div>
-            </div>
-          </div>`;
-        await sendGmail({ to: member.email, subject: "Reminder: Complete Your Whip Agreement", html });
+        const { subject: remSubject, html: remHtml } = buildReminderEmail({
+          firstName: member.name.split(" ")[0],
+          vehicle: member.vehicle,
+          link,
+          reminderCount: (agreement.reminderCount ?? 0) + 1,
+        });
+        await sendEmail({ to: member.email, subject: remSubject, html: remHtml });
+        // Also send SMS reminder if original was sent via SMS or both
+        if (agreement.sentVia === "sms" || agreement.sentVia === "both") {
+          await sendSms({ to: member.phone, message: buildReminderSms({ firstName: member.name.split(" ")[0], link }) });
+        }
 
         return { ok: true };
       }),
@@ -363,8 +326,8 @@ export const adminRouter = router({
 
         await createEmailVerificationCode({ agreementId: agreement.id, email: input.email, code, expiresAt });
 
-        const html = `<div style="font-family:sans-serif;padding:32px"><h2>Your Whip Verification Code</h2><p style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#FF6A00">${code}</p><p>This code expires in 10 minutes.</p></div>`;
-        await sendGmail({ to: input.email, subject: `Your Whip verification code: ${code}`, html });
+        const { subject: codeSubject, html: codeHtml } = buildVerificationCodeEmail({ code, email: input.email });
+        await sendEmail({ to: input.email, subject: codeSubject, html: codeHtml });
 
         return { sent: true };
       }),

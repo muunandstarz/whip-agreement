@@ -755,7 +755,7 @@ export default function AdminDashboard() {
     return (
       <div className="min-h-screen bg-[#0b1228] flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl p-8 text-center max-w-sm">
-          <span className="text-4xl font-bold italic text-[#FF6A00]">whip</span>
+          <img src="/manus-storage/whip-logo_215524ca.png" alt="Whip" className="h-12 w-auto mx-auto" />
           <h2 className="text-xl font-bold text-gray-900 mt-6 mb-2">Access Denied</h2>
           <p className="text-gray-500 text-sm">You don't have permission to access the admin dashboard.</p>
         </div>
@@ -776,7 +776,7 @@ export default function AdminDashboard() {
       <header className="bg-[#0b1228] border-b border-white/10 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14">
           <div className="flex items-center gap-4">
-            <span className="text-2xl font-bold italic text-[#FF6A00]">whip</span>
+            <img src="/manus-storage/whip-logo_215524ca.png" alt="Whip" className="h-8 w-auto" />
             <span className="text-white/40 text-sm hidden sm:block">Agreement Admin</span>
           </div>
           <div className="flex items-center gap-3">
