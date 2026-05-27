@@ -73,8 +73,8 @@
 - [x] Admin dashboard UI: Overview, Members, Agreements, Generate Link tabs
 
 ## Deferred
-- [ ] Gmail credentials (GMAIL_USER + GMAIL_APP_PASSWORD) — email delivery not active until configured
-- [ ] TextLine API key — SMS delivery stubbed
+- [x] Gmail credentials — replaced by cPanel SMTP (insurance@drivewhip.com)
+- [x] TextLine API key — wired (xo79ytdfv7thm5s6i07l)
 - [ ] Member account creation / login / forgot password flow
 
 ## Email & SMS Integration
