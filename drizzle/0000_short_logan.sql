@@ -1,0 +1,123 @@
+CREATE TABLE `agreement_events` (
+	`id` bigint AUTO_INCREMENT NOT NULL,
+	`agreementId` int NOT NULL,
+	`memberId` int NOT NULL,
+	`eventType` enum('created','sent','delivered','opened','verification_attempted','verification_failed','verified','step_completed','signed','addon_signed','completed','abandoned','expired','revoked','resent','pdf_generated','pdf_downloaded','link_accessed') NOT NULL,
+	`ipAddress` varchar(45),
+	`userAgent` text,
+	`performedBy` int,
+	`metadata` json,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	CONSTRAINT `agreement_events_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `agreements` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`memberId` int NOT NULL,
+	`token` varchar(128) NOT NULL,
+	`expiresAt` timestamp NOT NULL,
+	`revokedAt` timestamp,
+	`revokedBy` int,
+	`agreementVersion` varchar(20) NOT NULL DEFAULT '1.0',
+	`agreementState` varchar(10) NOT NULL,
+	`status` enum('not_sent','sent','delivered','opened','verified','in_progress','completed','expired','failed','needs_review') NOT NULL DEFAULT 'not_sent',
+	`verificationMethod` enum('dob','dl_last4','email_code'),
+	`verifiedAt` timestamp,
+	`verificationAttempts` int NOT NULL DEFAULT 0,
+	`signedAt` timestamp,
+	`signatureData` text,
+	`ipAddress` varchar(45),
+	`userAgent` text,
+	`addonsSigned` json,
+	`sentAt` timestamp,
+	`sentBy` int,
+	`sentVia` enum('email','sms','both'),
+	`lastReminderAt` timestamp,
+	`reminderCount` int NOT NULL DEFAULT 0,
+	`lastStep` varchar(64),
+	`partialData` json,
+	`hasException` boolean NOT NULL DEFAULT false,
+	`exceptionReason` text,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `agreements_id` PRIMARY KEY(`id`),
+	CONSTRAINT `agreements_token_unique` UNIQUE(`token`)
+);
+--> statement-breakpoint
+CREATE TABLE `documents` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`agreementId` int NOT NULL,
+	`memberId` int NOT NULL,
+	`documentType` enum('member_agreement','md_pip_waiver','ga_um_rejection','fl_um_rejection','pa_coverage_election','audit_certificate','combined_pdf') NOT NULL,
+	`s3Key` varchar(512) NOT NULL,
+	`s3Url` varchar(1024) NOT NULL,
+	`fileSizeBytes` int,
+	`mimeType` varchar(128) NOT NULL DEFAULT 'application/pdf',
+	`vin` varchar(17),
+	`reservationId` varchar(64),
+	`customerId` varchar(64),
+	`agreementState` varchar(10),
+	`agreementVersion` varchar(20),
+	`generatedAt` timestamp NOT NULL DEFAULT (now()),
+	`generatedBy` int,
+	CONSTRAINT `documents_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `email_verification_codes` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`agreementId` int NOT NULL,
+	`email` varchar(320) NOT NULL,
+	`code` varchar(8) NOT NULL,
+	`expiresAt` timestamp NOT NULL,
+	`usedAt` timestamp,
+	`attempts` int NOT NULL DEFAULT 0,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	CONSTRAINT `email_verification_codes_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `members` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`name` varchar(255) NOT NULL,
+	`dob` varchar(20) NOT NULL,
+	`phone` varchar(30) NOT NULL,
+	`email` varchar(320) NOT NULL,
+	`driverLicense` varchar(64) NOT NULL,
+	`licenseState` varchar(10) NOT NULL,
+	`address` varchar(255) NOT NULL,
+	`cityStateZip` varchar(255) NOT NULL,
+	`customerId` varchar(64) NOT NULL,
+	`reservationId` varchar(64) NOT NULL,
+	`vehicle` varchar(255) NOT NULL,
+	`vin` varchar(17) NOT NULL,
+	`weeklyRate` varchar(20) NOT NULL,
+	`deposit` varchar(20) NOT NULL,
+	`agreementState` varchar(10) NOT NULL,
+	`startDate` varchar(20) NOT NULL,
+	`endDate` varchar(20) NOT NULL,
+	`memberPhone` varchar(30),
+	`memberEmail` varchar(320),
+	`memberAddress` varchar(255),
+	`memberCityStateZip` varchar(255),
+	`memberFieldsUpdatedAt` timestamp,
+	`importSource` enum('csv','manual','api') NOT NULL DEFAULT 'manual',
+	`importedBy` int,
+	`matchStatus` enum('matched','flagged','unreviewed') NOT NULL DEFAULT 'unreviewed',
+	`matchNotes` text,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `members_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `users` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`openId` varchar(64) NOT NULL,
+	`name` text,
+	`email` varchar(320),
+	`loginMethod` varchar(64),
+	`role` enum('user','admin','manager','readonly') NOT NULL DEFAULT 'user',
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	`lastSignedIn` timestamp NOT NULL DEFAULT (now()),
+	CONSTRAINT `users_id` PRIMARY KEY(`id`),
+	CONSTRAINT `users_openId_unique` UNIQUE(`openId`)
+);
