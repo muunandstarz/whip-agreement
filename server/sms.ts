@@ -1,6 +1,6 @@
 /**
  * SMS delivery via TextLine API
- * Credentials: TEXTLINE_API_KEY
+ * Credentials: TEXTLINE_API_KEY (use Access Token from TextLine Settings → API)
  *
  * TextLine API docs: https://textline.com/api
  * Endpoint: POST https://application.textline.com/api/conversations.json
