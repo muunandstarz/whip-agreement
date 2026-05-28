@@ -144,3 +144,10 @@
 - [x] Agreement form: pre-fill fixed — member data passed directly as props after verification
 - [x] Admin dashboard: prominent orange Member Portal toggle button in header
 - [x] Agreements tab: multi-select checkboxes + Send to Selected action bar
+
+## Market Configuration
+- [x] 9 markets defined: Rockville, Glen Burnie, Atlanta, Chicago, Dallas, Philadelphia, Boston, Miami, Orlando, Richmond
+- [x] Each market's garaging state = the state it physically operates in
+- [x] MD members: Rockville or Glen Burnie distinguished by market field on member record (same state, different market)
+- [x] FL members: Miami or Orlando distinguished by market field on member record (same state, different market)
+- [x] State drives the legal workflow/forms; market field drives the admin list display

@@ -286,22 +286,24 @@ export interface MarketInfo {
 
 export const MARKETS: MarketInfo[] = [
   {
+    // Rockville — Maryland (DC Metro North)
     name: 'Rockville',
     address: '14670 Southlawn Lane',
     city: 'Rockville',
     state: 'MD',
     zip: '20850',
     phone: '(301) 424-5678',
-    states: ['MD', 'DC', 'VA'],
+    states: ['MD'],
   },
   {
+    // Glen Burnie — Maryland (Baltimore Metro)
     name: 'Glen Burnie',
     address: '7939 Ritchie Hwy',
     city: 'Glen Burnie',
     state: 'MD',
     zip: '21061',
     phone: '(410) 766-1234',
-    states: [],
+    states: [],  // MD members are assigned to a specific market on import; both are MD
   },
   {
     name: 'Atlanta',
@@ -322,13 +324,13 @@ export const MARKETS: MarketInfo[] = [
     states: ['IL'],
   },
   {
-    name: 'Richmond',
-    address: '4901 Midlothian Turnpike',
-    city: 'Richmond',
-    state: 'VA',
-    zip: '23234',
-    phone: '(804) 555-0200',
-    states: ['VA'],
+    name: 'Dallas',
+    address: '9800 Harry Hines Blvd',
+    city: 'Dallas',
+    state: 'TX',
+    zip: '75220',
+    phone: '(214) 555-0700',
+    states: ['TX'],
   },
   {
     name: 'Philadelphia',
@@ -340,24 +342,6 @@ export const MARKETS: MarketInfo[] = [
     states: ['PA'],
   },
   {
-    name: 'Miami',
-    address: '8400 NW 36th St',
-    city: 'Doral',
-    state: 'FL',
-    zip: '33166',
-    phone: '(305) 555-0400',
-    states: ['FL'],
-  },
-  {
-    name: 'Orlando',
-    address: '5555 Semoran Blvd',
-    city: 'Orlando',
-    state: 'FL',
-    zip: '32822',
-    phone: '(407) 555-0500',
-    states: [],
-  },
-  {
     name: 'Boston',
     address: '1200 Hyde Park Ave',
     city: 'Boston',
@@ -367,13 +351,33 @@ export const MARKETS: MarketInfo[] = [
     states: ['MA'],
   },
   {
-    name: 'Dallas',
-    address: '9800 Harry Hines Blvd',
-    city: 'Dallas',
-    state: 'TX',
-    zip: '75220',
-    phone: '(214) 555-0700',
-    states: ['TX'],
+    // Miami — South Florida
+    name: 'Miami',
+    address: '8400 NW 36th St',
+    city: 'Doral',
+    state: 'FL',
+    zip: '33166',
+    phone: '(305) 555-0400',
+    states: ['FL'],
+  },
+  {
+    // Orlando — Central Florida
+    name: 'Orlando',
+    address: '5555 Semoran Blvd',
+    city: 'Orlando',
+    state: 'FL',
+    zip: '32822',
+    phone: '(407) 555-0500',
+    states: [],  // FL members assigned to Miami or Orlando on import
+  },
+  {
+    name: 'Richmond',
+    address: '4901 Midlothian Turnpike',
+    city: 'Richmond',
+    state: 'VA',
+    zip: '23234',
+    phone: '(804) 555-0200',
+    states: ['VA'],
   },
 ];
 
