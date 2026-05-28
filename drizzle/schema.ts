@@ -139,6 +139,10 @@ export const agreements = mysqlTable("agreements", {
   // Scheduled reminder cron job (heartbeat)
   scheduleCronTaskUid: varchar("scheduleCronTaskUid", { length: 65 }),
 
+  // PIP election tracking (Maryland only)
+  pipElected: boolean("pipElected").default(false).notNull(),
+  pipInvoiced: boolean("pipInvoiced").default(false).notNull(),
+
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

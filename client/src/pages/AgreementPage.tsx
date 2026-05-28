@@ -154,7 +154,8 @@ export default function AgreementPage({
 } = {}) {
   const { theme, toggleTheme } = useTheme();
   // mode=agreement hides the portal — shows only the agreement flow + done screen
-  const agreementOnly = tokenMode || new URLSearchParams(window.location.search).get('mode') === 'agreement';
+  // tokenMode (real member links) should still show the portal after completion
+  const agreementOnly = new URLSearchParams(window.location.search).get('mode') === 'agreement';
   // mode=demo locks all fields except DOB/phone/email/address, hides portal + account creation
   const demoMode = new URLSearchParams(window.location.search).get('mode') === 'demo';
 
@@ -174,6 +175,41 @@ export default function AgreementPage({
     const params = new URLSearchParams(window.location.search);
     const next = { ...fields };
     const pf = new Set<string>();
+
+    // prefill=1 in demo mode: auto-populate with realistic sample data
+    if (params.get('prefill') === '1') {
+      const today = new Date();
+      const start = new Date(today); start.setDate(today.getDate() - 3);
+      const end = new Date(today); end.setDate(today.getDate() + 361);
+      const fmt = (d: Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      const demoData: Partial<MemberFields> = {
+        memberName: 'Alex Johnson',
+        dob: '1990-03-15',
+        phone: '(443) 555-0192',
+        email: 'alex.johnson@example.com',
+        dlNumber: 'J123456789',
+        licenseState: 'MD',
+        address: '4821 Elm Street',
+        cityStateZip: 'Baltimore, MD 21201',
+        customerId: 'DEMO-001',
+        reservationId: 'RES-DEMO-2026',
+        vehicle: '2023 Toyota Camry',
+        vin: '4T1BF1FK5EU123456',
+        weeklyFee: '299',
+        deposit: '500',
+        agreementState: 'MD',
+        startDate: fmt(start),
+        endDate: fmt(end),
+      };
+      Object.entries(demoData).forEach(([k, v]) => {
+        (next as Record<string, string>)[k] = v as string;
+        pf.add(k);
+      });
+      setFields(next);
+      setPrefilled(pf);
+      return;
+    }
+
     // Helper: convert MM/DD/YYYY or M/D/YYYY to YYYY-MM-DD for date inputs
     const toISODate = (v: string) => {
       const m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
@@ -262,6 +298,7 @@ export default function AgreementPage({
             memberEmail: fields.email || undefined,
             memberAddress: fields.address || undefined,
             memberCityStateZip: fields.cityStateZip || undefined,
+            pipElected: pipElection === 'full',
           });
         }
         // Send email with signed agreement
@@ -1038,10 +1075,54 @@ function SignStep({ fields, setField, canvasRef, hasSig, startDraw, draw, endDra
 function AddonsStep({ stateData, pipElection, setPipElection }: {
   stateData: StateData; pipElection: PipElection; setPipElection: (v: PipElection) => void;
 }) {
+  const [pipConfirmPending, setPipConfirmPending] = useState(false);
+  const [pipInvoiceNotice, setPipInvoiceNotice] = useState(false);
+
+  const handleFullPipClick = () => {
+    if (pipElection === 'full') return; // already selected
+    setPipConfirmPending(true);
+  };
+
+  const confirmFullPip = () => {
+    setPipConfirmPending(false);
+    setPipElection('full');
+    setPipInvoiceNotice(true);
+  };
+
+  const cancelFullPip = () => {
+    setPipConfirmPending(false);
+  };
+
   return (
     <div>
       <h2 className="page-title">{stateData.name} Required Forms</h2>
       <p className="page-subtitle">{stateData.name} law requires the following elections before your agreement is complete.</p>
+
+      {/* PIP Confirmation Dialog */}
+      {pipConfirmPending && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 20px' }}>
+          <div style={{ background: 'var(--card)', borderRadius: 16, padding: '28px 24px', maxWidth: 380, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+            <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--foreground)', marginBottom: 10 }}>Confirm Full PIP Coverage</div>
+            <p style={{ fontSize: 14, color: 'var(--muted-foreground)', lineHeight: 1.6, marginBottom: 20 }}>
+              Full PIP coverage adds <strong style={{ color: 'var(--foreground)' }}>$50 per week</strong> to your rental cost. Are you sure you want to elect full PIP coverage?
+            </p>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={confirmFullPip}
+                style={{ flex: 1, padding: '12px', borderRadius: 8, background: '#ff6221', color: 'white', fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer' }}
+              >
+                Yes, I Agree — +$50/week
+              </button>
+              <button
+                onClick={cancelFullPip}
+                style={{ flex: 1, padding: '12px', borderRadius: 8, background: 'var(--muted)', color: 'var(--muted-foreground)', fontWeight: 600, fontSize: 14, border: '1px solid var(--border)', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {stateData.addons.includes('md-pip') && (
         <div className="screen-card">
@@ -1051,23 +1132,23 @@ function AddonsStep({ stateData, pipElection, setPipElection }: {
           </div>
           <div className="screen-card-body" style={{ paddingTop: 16 }}>
             <p style={{ fontSize: 14, color: 'var(--foreground)', marginBottom: 16, lineHeight: 1.55 }}>
-              Personal Injury Protection (PIP) pays medical expenses and lost wages regardless of fault. Select your coverage option:
+              Personal Injury Protection (PIP) covers medical expenses and lost wages up to <strong>$2,500 per person per accident</strong>, regardless of fault. Select your coverage option:
             </p>
             <div
               className={`radio-option ${pipElection === 'full' ? 'selected' : ''}`}
-              onClick={() => setPipElection('full')}
+              onClick={handleFullPipClick}
             >
               <div className="radio-dot">
                 <div className="radio-dot-inner" />
               </div>
               <div>
                 <div className="radio-option-label">Request Full PIP Coverage</div>
-                <div className="radio-option-desc">$2,400/year — $50/week. Covers medical expenses and lost wages for you and passengers.</div>
+                <div className="radio-option-desc">Up to $2,500 per person per accident — $50/week additional charge. Covers medical expenses and lost wages for you and passengers.</div>
               </div>
             </div>
             <div
               className={`radio-option ${pipElection === 'waive' ? 'selected' : ''}`}
-              onClick={() => setPipElection('waive')}
+              onClick={() => { setPipElection('waive'); setPipInvoiceNotice(false); }}
             >
               <div className="radio-dot">
                 <div className="radio-dot-inner" />
@@ -1080,6 +1161,12 @@ function AddonsStep({ stateData, pipElection, setPipElection }: {
             {pipElection === 'waive' && (
               <div style={{ background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#92400e', lineHeight: 1.5 }}>
                 <strong>Notice:</strong> By waiving PIP, you and your passengers will have no PIP benefits. A signed waiver will be included in your printed agreement.
+              </div>
+            )}
+            {pipElection === 'full' && pipInvoiceNotice && (
+              <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8, padding: '12px 14px', fontSize: 13, color: '#15803d', lineHeight: 1.6 }}>
+                <div style={{ fontWeight: 700, marginBottom: 4 }}>✓ Full PIP Coverage Elected</div>
+                An invoice for your PIP coverage ($50/week) will be sent to your email shortly. Please watch for it and complete payment to activate coverage.
               </div>
             )}
           </div>

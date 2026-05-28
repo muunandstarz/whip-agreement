@@ -915,6 +915,29 @@ function BulkProgressModal({
   );
 }
 
+// ─── PIP Invoiced Toggle ────────────────────────────────────────────────────
+function PipInvoicedToggle({ agreementId, invoiced, onToggle }: { agreementId: number; invoiced: boolean; onToggle: () => void }) {
+  const markPipInvoiced = trpc.admin.agreements.markPipInvoiced.useMutation({
+    onSuccess: () => { onToggle(); },
+  });
+  return (
+    <div className="flex flex-col items-start gap-0.5">
+      <span className="text-xs font-semibold text-orange-600">PIP Elected</span>
+      <button
+        onClick={() => markPipInvoiced.mutate({ agreementId, invoiced: !invoiced })}
+        disabled={markPipInvoiced.isPending}
+        className={`text-xs px-2 py-0.5 rounded border font-medium transition-colors ${
+          invoiced
+            ? 'bg-green-100 text-green-700 border-green-300 hover:bg-green-200'
+            : 'bg-yellow-50 text-yellow-700 border-yellow-300 hover:bg-yellow-100'
+        }`}
+      >
+        {markPipInvoiced.isPending ? '…' : invoiced ? '✓ Invoiced' : 'Not Invoiced'}
+      </button>
+    </div>
+  );
+}
+
 // ─── Agreements Tab ───────────────────────────────────────────────────────────
 
 function AgreementsTab({ origin }: { origin: string }) {
@@ -1159,6 +1182,7 @@ function AgreementsTab({ origin }: { origin: string }) {
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Progress</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Sent</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Expires</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">PIP</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
@@ -1230,6 +1254,13 @@ function AgreementsTab({ origin }: { origin: string }) {
                   </td>
                   <td className="px-4 py-3 text-gray-500 text-xs">
                     {row.agreement.expiresAt ? new Date(row.agreement.expiresAt).toLocaleDateString() : "—"}
+                  </td>
+                  <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                    {row.agreement.pipElected ? (
+                      <PipInvoicedToggle agreementId={row.agreement.id} invoiced={row.agreement.pipInvoiced ?? false} onToggle={refetch} />
+                    ) : (
+                      <span className="text-xs text-gray-300">—</span>
+                    )}
                   </td>
                   <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                     <div className="flex items-center gap-2">
@@ -1463,16 +1494,19 @@ export default function AdminDashboard() {
             <span className="text-white/40 text-sm hidden sm:block">Agreement Admin</span>
           </div>
           <div className="flex items-center gap-3">
-            {/* Member Portal toggle — visible on all screen sizes */}
+            {/* Agent Demo Walkthrough — prefilled test agreement for agents */}
             <a
-              href="/agreement"
-              title="Switch to Member Portal"
+              href="/agreement?mode=demo&prefill=1"
+              title="Walk through the member agreement as a customer would"
+              target="_blank"
+              rel="noopener noreferrer"
               className="flex items-center gap-1.5 bg-[#FF6A00] hover:bg-[#e55f00] text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors shadow-sm"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
-              <span className="hidden sm:inline">Member Portal</span>
+              <span className="hidden sm:inline">Agent Demo</span>
             </a>
             <span className="text-white/60 text-sm hidden sm:block">{user?.name ?? user?.email}</span>
             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${

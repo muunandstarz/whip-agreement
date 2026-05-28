@@ -342,7 +342,7 @@ export function buildViewerHTML(
 </head>
 <body>
   <div id="viewer-toolbar">
-    <div class="toolbar-title"><span>whip</span> · Member Agreement</div>
+    <div class="toolbar-title"><img src="${LOGO}" alt="Whip" style="height:26px;width:auto;vertical-align:middle;margin-right:8px;"> Member Agreement</div>
     <button onclick="window.print()">&#128438; Print / Save PDF</button>
   </div>
   <div id="doc-pages">

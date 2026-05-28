@@ -597,6 +597,16 @@ export const adminRouter = router({
         return { ok: true };
       }),
 
+    markPipInvoiced: protectedProcedure
+      .input(z.object({ agreementId: z.number(), invoiced: z.boolean() }))
+      .mutation(async ({ ctx, input }) => {
+        requireManagerOrAbove(ctx.user.role);
+        await updateAgreement(input.agreementId, { pipInvoiced: input.invoiced });
+        const agreement2 = await getAgreementById(input.agreementId);
+        if (agreement2) await logEvent({ agreementId: input.agreementId, memberId: agreement2.memberId, eventType: "pdf_generated", performedBy: ctx.user.id, metadata: { pipInvoiced: input.invoiced, note: 'PIP invoice marked' } });
+        return { ok: true };
+      }),
+
     runExpiry: protectedProcedure.mutation(async ({ ctx }) => {
       requireAdmin(ctx.user.role);
       const expired = await expireAgreements();
@@ -844,6 +854,7 @@ export const adminRouter = router({
         memberEmail: z.string().optional(),
         memberAddress: z.string().optional(),
         memberCityStateZip: z.string().optional(),
+        pipElected: z.boolean().optional(),
       }))
       .mutation(async ({ input }) => {
         const agreement = await getAgreementByToken(input.token);
@@ -857,6 +868,7 @@ export const adminRouter = router({
           ipAddress: input.ipAddress,
           userAgent: input.userAgent,
           addonsSigned: input.addonsSigned ?? [],
+          pipElected: input.pipElected ?? false,
         });
 
         // Update member contact fields if provided (use correct column names)

@@ -231,3 +231,13 @@
 ## Active Bugs
 - [ ] Fix signing not registering as completed in admin dashboard (status stays "Verified" after member signs)
 - [ ] Fix PDF page layout — content not filling full page height on pages 1 and 2 (footer appears mid-page, blank pages generated)
+
+## Member Portal & PIP Improvements (May 28, 2026)
+- [x] Done screen: show "Enter Member Portal" CTA after agreement completion (not just in agreement-only/demo mode)
+- [x] PDF print screens: add Whip logo (replace plain text header)
+- [x] PIP selection: update coverage wording to "up to $2,500 per person per accident"
+- [x] PIP selection: add confirmation dialog "Are you sure? +$50/week" before accepting full PIP
+- [x] PIP selection: post-confirmation screen advises invoice for PIP coverage will be sent shortly
+- [x] DB: add pipElected (boolean) + pipInvoiced (boolean) columns to agreements table
+- [x] Admin agreements tracker: show PIP Elected column + "Mark Invoiced" toggle for full PIP rows
+- [x] Admin: Member Agreement button becomes prefilled agent demo walkthrough (demo mode with sample data)
