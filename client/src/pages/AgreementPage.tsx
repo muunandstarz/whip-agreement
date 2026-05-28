@@ -984,28 +984,35 @@ function AgreementStep({ fields, stateData, acksChecked, setAcksChecked, expande
 
       {/* Acknowledgments */}
       <div style={{ marginTop: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--foreground)', margin: 0 }}>Important Acknowledgments</h3>
-          <span style={{ fontSize: 12, color: 'var(--muted-foreground)', fontWeight: 500 }}>
-            {acksChecked.filter(Boolean).length}/{ACK_ITEMS.length}
-          </span>
-        </div>
+        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--foreground)', margin: 0, marginBottom: 12 }}>Important Acknowledgments</h3>
         <p style={{ fontSize: 13, color: 'var(--muted-foreground)', marginBottom: 12 }}>
-          Please review and acknowledge the following terms.
+          Please review the following terms before acknowledging.
         </p>
-        <div className="screen-card">
+        {/* Read-only list of all ack items */}
+        <div className="screen-card" style={{ marginBottom: 16 }}>
           {ACK_ITEMS.map((item, i) => (
-            <div key={i} className={`ack-item ${acksChecked[i] ? 'checked' : ''}`} onClick={() => toggleAck(i)}>
-              <div className={`ack-checkbox ${acksChecked[i] ? 'checked' : ''}`}>
-                {acksChecked[i] && <Check size={12} />}
-              </div>
-              <span className="ack-item-text">{item}</span>
+            <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 14px', borderBottom: i < ACK_ITEMS.length - 1 ? '1px solid var(--border)' : 'none' }}>
+              <span style={{ flexShrink: 0, width: 20, height: 20, borderRadius: '50%', background: 'var(--muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: 'var(--muted-foreground)', marginTop: 1 }}>{i + 1}</span>
+              <span style={{ fontSize: 13, color: 'var(--foreground)', lineHeight: 1.55 }}>{item}</span>
             </div>
           ))}
         </div>
+        {/* Single agree-all checkbox */}
+        <div
+          className={`ack-item ${allChecked ? 'checked' : ''}`}
+          onClick={() => setAcksChecked(Array(ACK_ITEMS.length).fill(!allChecked))}
+          style={{ cursor: 'pointer', borderRadius: 10, padding: '14px 16px', background: allChecked ? '#f0fdf4' : 'var(--card)', border: allChecked ? '1.5px solid #86efac' : '1.5px solid var(--border)', display: 'flex', alignItems: 'center', gap: 12 }}
+        >
+          <div className={`ack-checkbox ${allChecked ? 'checked' : ''}`} style={{ flexShrink: 0 }}>
+            {allChecked && <Check size={12} />}
+          </div>
+          <span style={{ fontSize: 14, fontWeight: 600, color: allChecked ? '#15803d' : 'var(--foreground)' }}>
+            I agree to all of the above acknowledgments
+          </span>
+        </div>
         {!allChecked && (
           <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--muted-foreground)', marginTop: 10 }}>
-            Check all {ACK_ITEMS.length} acknowledgments to continue.
+            Check the box above to continue.
           </p>
         )}
       </div>
