@@ -1083,6 +1083,53 @@ function SignStep({ fields, setField, canvasRef, hasSig, startDraw, draw, endDra
   );
 }
 
+// ── GA UM REJECTION CARD ─────────────────────────────────────────────────────
+function GaUmRejectionCard() {
+  const [rejected, setRejected] = useState(false);
+
+  return (
+    <div className="screen-card">
+      <div className="screen-card-header">
+        <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 4px' }}>Uninsured Motorist (UM) Coverage Rejection</h3>
+        <p style={{ fontSize: 13, color: 'var(--muted-foreground)', margin: 0 }}>Required by Georgia Law (O.C.G.A. § 33-7-11)</p>
+      </div>
+      <div className="screen-card-body" style={{ paddingTop: 16 }}>
+        {/* Explanation */}
+        <div style={{ background: '#fffbeb', border: '1.5px solid #fcd34d', borderRadius: 10, padding: '14px 16px', marginBottom: 16 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#92400e', marginBottom: 6 }}>Why This Is Required</div>
+          <p style={{ fontSize: 13, color: '#78350f', lineHeight: 1.6, margin: 0 }}>
+            Georgia law requires every vehicle owner to either purchase Uninsured Motorist (UM) coverage or formally reject it in writing. <strong>To participate in the Whip program, you must reject UM coverage</strong> — Whip's fleet insurance policy does not include UM, and Georgia law requires your written rejection before we can complete your enrollment.
+          </p>
+        </div>
+        <p style={{ fontSize: 14, color: 'var(--foreground)', marginBottom: 16, lineHeight: 1.55 }}>
+          By clicking the button below, you are confirming that you understand and voluntarily reject Uninsured Motorist coverage for this vehicle. A signed rejection form will be included in your agreement package.
+        </p>
+        {!rejected ? (
+          <button
+            onClick={() => setRejected(true)}
+            style={{
+              width: '100%', padding: '14px', borderRadius: 10,
+              background: '#171b31', color: 'white',
+              fontWeight: 700, fontSize: 15, border: 'none', cursor: 'pointer',
+              letterSpacing: '0.01em',
+            }}
+          >
+            I Reject UM Coverage
+          </button>
+        ) : (
+          <div style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: 10, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <CheckCircle size={20} color="#16a34a" />
+            <div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#15803d' }}>UM Coverage Rejected</div>
+              <div style={{ fontSize: 13, color: '#166534', marginTop: 2 }}>Your signed rejection form will be included in your agreement package.</div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ── ADDONS ───────────────────────────────────────────────────────────────────
 function AddonsStep({ stateData, pipElection, setPipElection }: {
   stateData: StateData; pipElection: PipElection; setPipElection: (v: PipElection) => void;
@@ -1186,21 +1233,7 @@ function AddonsStep({ stateData, pipElection, setPipElection }: {
       )}
 
       {stateData.addons.includes('ga-um') && (
-        <div className="screen-card">
-          <div className="screen-card-header">
-            <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 4px' }}>UM Coverage Selection</h3>
-            <p style={{ fontSize: 13, color: 'var(--muted-foreground)', margin: 0 }}>Required by Georgia Law (O.C.G.A. § 33-7-11)</p>
-          </div>
-          <div className="screen-card-body" style={{ paddingTop: 16 }}>
-            <p style={{ fontSize: 14, color: 'var(--foreground)', marginBottom: 12, lineHeight: 1.55 }}>
-              Per your lease terms, Uninsured Motorist (UM) coverage is being rejected for this vehicle. A signed rejection form will be included in your agreement.
-            </p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: 8 }}>
-              <CheckCircle size={18} color="#16a34a" />
-              <span style={{ fontSize: 14, color: '#15803d', fontWeight: 500 }}>UM Rejection form will be included in your package</span>
-            </div>
-          </div>
-        </div>
+        <GaUmRejectionCard />
       )}
 
       {stateData.addons.includes('fl-um') && (
