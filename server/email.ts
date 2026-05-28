@@ -6,7 +6,7 @@
 import nodemailer from "nodemailer";
 
 const LOGO_URL = "https://whipagree-3narmaq7.manus.space/manus-storage/whip-logo_215524ca.png";
-const FROM_NAME = "Whip Support";
+const FROM_NAME = "Whip Contracts";
 
 function getTransporter() {
   const host = process.env.SMTP_HOST;
