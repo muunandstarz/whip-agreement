@@ -1081,21 +1081,23 @@ export default function MemberPortal({ fields, onPrint, onPrintAddon, addons, pi
           <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--muted-foreground)' }}>
             {TAB_LABELS[tab]}
           </span>
-          {/* Admin shield — only visible to admin/manager roles */}
+          {/* Admin link — only visible to admin/manager roles */}
           {isAdmin && (
             <a
               href="/admin"
               title="Admin Dashboard"
               style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                width: 32, height: 32, borderRadius: 8,
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '5px 12px', borderRadius: 8,
                 background: 'rgba(255,106,0,0.12)', border: '1px solid rgba(255,106,0,0.3)',
                 color: '#ff6221', textDecoration: 'none', flexShrink: 0,
+                fontSize: 13, fontWeight: 600,
               }}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
               </svg>
+              <span>Admin</span>
             </a>
           )}
         </div>

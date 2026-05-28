@@ -9,6 +9,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { processWebhook } from "../chargeover";
+import { sendReminderHandler } from "../reminderHandler";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -37,6 +38,11 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   registerStorageProxy(app);
   registerOAuthRoutes(app);
+
+  // ── Scheduled Reminder Handler ─────────────────────────────────────────────
+  // Called by Manus Heartbeat cron at 24h/48h/72h after agreement is sent.
+  // The cron is created per-agreement in admin.agreements.send procedure.
+  app.post("/api/scheduled/sendReminder", sendReminderHandler);
 
   // ── ChargeOver Webhook ──────────────────────────────────────────────────────
   // ChargeOver sends POST /api/webhooks/chargeover for invoice.created/updated/paid events.

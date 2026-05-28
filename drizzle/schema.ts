@@ -135,6 +135,9 @@ export const agreements = mysqlTable("agreements", {
   hasException: boolean("hasException").default(false).notNull(),
   exceptionReason: text("exceptionReason"),
 
+  // Scheduled reminder cron job (heartbeat)
+  scheduleCronTaskUid: varchar("scheduleCronTaskUid", { length: 65 }),
+
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

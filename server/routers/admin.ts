@@ -29,6 +29,9 @@ import {
 } from "../db";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { storagePut } from "../storage";
+import { createHeartbeatJob, deleteHeartbeatJob } from "../_core/heartbeat";
+import { parse as parseCookie } from "cookie";
+import { COOKIE_NAME } from "@shared/const";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -460,6 +463,41 @@ export const adminRouter = router({
         });
 
         await logEvent({ agreementId: input.agreementId, memberId: agreement.memberId, eventType: "sent", performedBy: ctx.user.id, metadata: { via: input.via, emailSent, smsSent } });
+
+        // Schedule automatic reminders at 24h, 48h, and 72h
+        // Each reminder is a separate heartbeat cron that fires once
+        try {
+          const sessionToken = parseCookie(ctx.req.headers.cookie ?? "")[COOKIE_NAME] ?? "";
+          if (sessionToken) {
+            // Delete any existing reminder cron for this agreement first
+            const existingAgreement = await getAgreementById(input.agreementId);
+            if (existingAgreement?.scheduleCronTaskUid) {
+              try { await deleteHeartbeatJob(existingAgreement.scheduleCronTaskUid, sessionToken); } catch {}
+            }
+
+            // Schedule a daily cron at the same UTC minute/hour as sentAt.
+            // The handler fires at 24h, 48h, and 72h by checking reminderCount * 24h.
+            const now = new Date();
+            const cronMin = now.getUTCMinutes();
+            const cronHour = now.getUTCHours();
+
+            const job = await createHeartbeatJob({
+              name: `reminder-agr-${input.agreementId}-${Date.now()}`,
+              // 6-field cron: sec min hour dom mon dow (UTC)
+              // Fires daily at the same time the agreement was sent
+              cron: `0 ${cronMin} ${cronHour} * * *`,
+              path: "/api/scheduled/sendReminder",
+              payload: { agreementId: input.agreementId },
+              description: `Auto-reminder for agreement ${input.agreementId} (${member.name})`,
+            }, sessionToken);
+
+            // Persist the task UID on the agreement so we can cancel it on completion
+            await updateAgreement(input.agreementId, { scheduleCronTaskUid: job.taskUid });
+          }
+        } catch (cronErr) {
+          // Non-fatal — log but don't fail the send
+          console.warn("[Reminder] Failed to schedule auto-reminder:", cronErr);
+        }
 
         return { ok: true, emailSent, smsSent };
       }),

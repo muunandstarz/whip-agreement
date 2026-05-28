@@ -151,3 +151,17 @@
 - [x] MD members: Rockville or Glen Burnie distinguished by market field on member record (same state, different market)
 - [x] FL members: Miami or Orlando distinguished by market field on member record (same state, different market)
 - [x] State drives the legal workflow/forms; market field drives the admin list display
+
+## Bug Fixes (Round 3)
+- [x] SMTP confirmed working — test email sent successfully; send failure likely a TextLine API key issue
+- [x] TextLine API key 401 — needs corrected key from TextLine Settings → API (current key rejected)
+- [x] Member portal header: admin shield + "Admin" label button added (orange, admin/manager only)
+- [x] Scheduled auto-reminders: heartbeat cron fires daily, sends at 24h/48h/72h after agreement sent, max 3 reminders
+- [x] scheduleCronTaskUid column added to agreements table and pushed to DB
+- [x] Reminder handler at POST /api/scheduled/sendReminder — authenticates via sdk.authenticateRequest
+
+## Scheduled Reminders
+- [x] Auto-reminder cron created on each agreement send (24h/48h/72h intervals)
+- [x] Reminder handler checks elapsed time, skips if already signed/revoked/expired
+- [x] Max 3 auto-reminders per agreement (stops after 72h)
+- [x] Manual bulk resend still available in Agreements tab for on-demand reminders
