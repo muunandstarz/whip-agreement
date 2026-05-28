@@ -99,22 +99,51 @@ export const adminRouter = router({
       }),
 
     create: protectedProcedure
-      .input(memberInputSchema)
+      .input(memberInputSchema.extend({ origin: z.string().optional() }))
       .mutation(async ({ ctx, input }) => {
         requireManagerOrAbove(ctx.user.role);
-        const id = await createMember({ ...input, importedBy: ctx.user.id });
-        return { id };
+        const { origin, ...memberFields } = input;
+        const id = await createMember({ ...memberFields, importedBy: ctx.user.id });
+
+        // Auto-generate agreement link immediately
+        const token = generateToken();
+        const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000);
+        const agreementId = await createAgreement({
+          memberId: id,
+          token,
+          expiresAt,
+          agreementState: input.agreementState,
+          status: "not_sent",
+        });
+        await logEvent({ agreementId, memberId: id, eventType: "created", performedBy: ctx.user.id });
+
+        const resolvedOrigin = origin ?? "https://whipagree-3narmaq7.manus.space";
+        const link = `${resolvedOrigin}/agreement/${token}`;
+        return { id, agreementId, token, link, expiresAt };
       }),
 
     bulkImport: protectedProcedure
-      .input(z.object({ rows: z.array(memberInputSchema) }))
+      .input(z.object({ rows: z.array(memberInputSchema), origin: z.string().optional() }))
       .mutation(async ({ ctx, input }) => {
         requireManagerOrAbove(ctx.user.role);
-        const results: { index: number; id?: number; error?: string }[] = [];
+        const origin = input.origin ?? "https://whipagree-3narmaq7.manus.space";
+        const results: { index: number; id?: number; agreementId?: number; link?: string; error?: string }[] = [];
         for (let i = 0; i < input.rows.length; i++) {
           try {
             const id = await createMember({ ...input.rows[i], importedBy: ctx.user.id, importSource: "csv" });
-            results.push({ index: i, id });
+            // Auto-generate agreement link for each imported member
+            const token = generateToken();
+            const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000);
+            const agreementId = await createAgreement({
+              memberId: id,
+              token,
+              expiresAt,
+              agreementState: input.rows[i].agreementState,
+              status: "not_sent",
+            });
+            await logEvent({ agreementId, memberId: id, eventType: "created", performedBy: ctx.user.id });
+            const link = `${origin}/agreement/${token}`;
+            results.push({ index: i, id, agreementId, link });
           } catch (e) {
             results.push({ index: i, error: String(e) });
           }
@@ -501,6 +530,104 @@ export const adminRouter = router({
       const expired = await expireAgreements();
       return { expired };
     }),
+
+    // Send to specific members by member ID — auto-generates link if needed, then sends
+    sendToMembers: protectedProcedure
+      .input(z.object({
+        memberIds: z.array(z.number()).min(1),
+        via: z.enum(["email", "sms", "both"]),
+        expiresInHours: z.number().default(72),
+        origin: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        requireManagerOrAbove(ctx.user.role);
+        const origin = input.origin ?? "https://whipagree-3narmaq7.manus.space";
+        const members = await getMembersByIds(input.memberIds);
+
+        // Find existing active agreements for these members
+        const existingAgreements = await getAgreementsByMemberIds(input.memberIds);
+        const activeStatuses = new Set(["not_sent", "sent", "delivered", "opened", "verified", "in_progress"]);
+        const memberAgreementMap = new Map<number, { id: number; token: string; status: string }>();
+        for (const a of existingAgreements) {
+          if (activeStatuses.has(a.status) && !a.revokedAt) {
+            memberAgreementMap.set(a.memberId, { id: a.id, token: a.token, status: a.status });
+          }
+        }
+
+        const results: { memberId: number; agreementId?: number; emailSent?: boolean; smsSent?: boolean; action?: string; error?: string }[] = [];
+        const expiresInMs = input.expiresInHours * 60 * 60 * 1000;
+
+        for (const member of members) {
+          try {
+            let agreementId: number;
+            let token: string;
+            let action: string;
+
+            const existing = memberAgreementMap.get(member.id);
+            if (existing) {
+              // Reuse existing agreement — just resend
+              agreementId = existing.id;
+              token = existing.token;
+              action = "resent";
+              // Extend expiry if expired
+              await updateAgreement(agreementId, { expiresAt: new Date(Date.now() + expiresInMs) });
+            } else {
+              // Generate new agreement link
+              token = generateToken();
+              const expiresAt = new Date(Date.now() + expiresInMs);
+              agreementId = await createAgreement({
+                memberId: member.id,
+                token,
+                expiresAt,
+                agreementState: member.agreementState,
+                status: "not_sent",
+              });
+              await logEvent({ agreementId, memberId: member.id, eventType: "created", performedBy: ctx.user.id });
+              action = "generated_and_sent";
+            }
+
+            const link = `${origin}/agreement/${token}`;
+            let emailSent = false;
+            let smsSent = false;
+
+            if (input.via === "email" || input.via === "both") {
+              const { subject, html } = buildAgreementEmail({
+                firstName: member.name.split(" ")[0],
+                vehicle: member.vehicle,
+                reservationId: member.reservationId,
+                agreementState: member.agreementState,
+                link,
+              });
+              emailSent = await sendEmail({ to: member.email, subject, html });
+            }
+
+            if (input.via === "sms" || input.via === "both") {
+              smsSent = await sendSms({
+                to: member.phone,
+                message: buildAgreementSms({ firstName: member.name.split(" ")[0], link }),
+              });
+            }
+
+            await updateAgreement(agreementId, {
+              status: "sent",
+              sentAt: new Date(),
+              sentBy: ctx.user.id,
+              sentVia: input.via,
+            });
+
+            await logEvent({ agreementId, memberId: member.id, eventType: "sent", performedBy: ctx.user.id, metadata: { via: input.via, emailSent, smsSent, action } });
+            results.push({ memberId: member.id, agreementId, emailSent, smsSent, action });
+          } catch (e) {
+            results.push({ memberId: member.id, error: String(e) });
+          }
+
+          await new Promise(r => setTimeout(r, 150));
+        }
+
+        const sent = results.filter(r => !r.error).length;
+        const failed = results.filter(r => r.error).length;
+        return { total: members.length, sent, failed, results };
+      }),
   }),
 
   // ── Verification (public — called from agreement page) ────────────────────

@@ -130,3 +130,17 @@
 ## UI Fixes
 - [x] Trip history: vehicle-type-aware silhouette icons (sedan/SUV/truck/van/motorcycle)
 - [x] Insurance card: "File a Claim" text on back is now a clickable link → https://drivewhip.com/file-a-claim
+
+## Workflow Fixes
+- [x] Auto-generate agreement link when member is created (single add) or bulk imported
+- [x] Agreements tab: Send button on each row auto-generates link if none exists, then sends
+- [x] Agreements tab: multi-select checkboxes + "Send Selected" action bar (email/SMS/both)
+- [x] Admin dashboard header: prominent orange Member Portal button (visible on all screen sizes)
+- [x] Generate Link tab still available for manual use; no longer required for normal send flow
+
+## Bug Fixes (Round 2)
+- [x] Member list: Market column added (derived from agreementState via getMarketForState)
+- [x] Verification gate: real Whip image logo on gate, error, and loading screens
+- [x] Agreement form: pre-fill fixed — member data passed directly as props after verification
+- [x] Admin dashboard: prominent orange Member Portal toggle button in header
+- [x] Agreements tab: multi-select checkboxes + Send to Selected action bar

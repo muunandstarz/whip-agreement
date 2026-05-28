@@ -61,8 +61,8 @@ function VerificationGate({
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8">
         {/* Logo */}
         <div className="text-center mb-8">
-          <span className="text-4xl font-bold italic text-[#FF6A00]">whip</span>
-          <p className="text-gray-500 text-sm mt-1">Member Agreement Portal</p>
+          <img src="/manus-storage/whip-logo_215524ca.png" alt="Whip" className="h-14 w-auto mx-auto" />
+          <p className="text-gray-500 text-sm mt-2">Member Agreement Portal</p>
         </div>
 
         {memberName && (
@@ -151,7 +151,7 @@ function AgreementError({ message }: { message: string }) {
   return (
     <div className="min-h-screen bg-[#0b1228] flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 text-center">
-        <span className="text-4xl font-bold italic text-[#FF6A00]">whip</span>
+        <img src="/manus-storage/whip-logo_215524ca.png" alt="Whip" className="h-12 w-auto mx-auto" />
         <div className="mt-8 mb-4">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -175,7 +175,7 @@ function AgreementLoading() {
   return (
     <div className="min-h-screen bg-[#0b1228] flex items-center justify-center">
       <div className="text-center">
-        <span className="text-4xl font-bold italic text-[#FF6A00]">whip</span>
+        <img src="/manus-storage/whip-logo_215524ca.png" alt="Whip" className="h-12 w-auto mx-auto" />
         <div className="mt-6 flex justify-center">
           <div className="w-8 h-8 border-4 border-[#FF6A00] border-t-transparent rounded-full animate-spin" />
         </div>
@@ -230,16 +230,22 @@ export default function TokenAgreementPage() {
     );
   }
 
-  // Build URL params from verified member data so AgreementPage can pre-fill
+  // Pass member data directly as props — no URL manipulation needed
   if (!memberData) return <AgreementLoading />;
 
-  const searchParams = new URLSearchParams({
-    mode: "agreement",
-    name: memberData.name ?? "",
-    dob: memberData.dob ?? "",
+  const toISODate = (v: string | null | undefined) => {
+    if (!v) return "";
+    const m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (m) return `${m[3]}-${m[1].padStart(2, "0")}-${m[2].padStart(2, "0")}`;
+    return v;
+  };
+
+  const initialFields = {
+    memberName: memberData.name ?? "",
+    dob: toISODate(memberData.dob),
     phone: memberData.phone ?? "",
     email: memberData.email ?? "",
-    dl: memberData.driverLicense ?? "",
+    dlNumber: memberData.driverLicense ?? "",
     licenseState: memberData.licenseState ?? "",
     address: memberData.address ?? "",
     cityStateZip: memberData.cityStateZip ?? "",
@@ -247,27 +253,25 @@ export default function TokenAgreementPage() {
     reservationId: memberData.reservationId ?? "",
     vehicle: memberData.vehicle ?? "",
     vin: memberData.vin ?? "",
-    weekly: memberData.weeklyRate ?? "",
+    weeklyFee: memberData.weeklyRate ?? "",
     deposit: memberData.deposit ?? "",
-    state: memberData.agreementState ?? "",
-    start: memberData.startDate ?? "",
-    end: memberData.endDate ?? "",
-    _token: token,
-  });
+    agreementState: memberData.agreementState ?? "",
+    startDate: toISODate(memberData.startDate),
+    endDate: toISODate(memberData.endDate),
+  };
 
-  // Temporarily update the URL search so AgreementPage can read params
-  const fakeUrl = `/?${searchParams.toString()}`;
-  // We render AgreementPage with the params injected via a key-forced remount
-  return <AgreementPageWithParams url={fakeUrl} />;
-}
+  const initialPrefilled = new Set(
+    Object.entries(initialFields)
+      .filter(([, v]) => v !== "")
+      .map(([k]) => k)
+  );
 
-function AgreementPageWithParams({ url }: { url: string }) {
-  // Parse params and inject them into the window location search temporarily
-  useEffect(() => {
-    const parsed = new URL(url, window.location.origin);
-    // Replace current URL search without navigation
-    window.history.replaceState({}, "", parsed.search);
-  }, [url]);
-
-  return <AgreementPage />;
+  return (
+    <AgreementPage
+      initialFields={initialFields}
+      initialPrefilled={initialPrefilled}
+      tokenMode={true}
+      agreementToken={token}
+    />
+  );
 }

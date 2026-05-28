@@ -141,23 +141,36 @@ const AGREEMENT_SECTIONS = [
 ];
 
 // ── MAIN COMPONENT ───────────────────────────────────────────────────────────
-export default function AgreementPage() {
+export default function AgreementPage({
+  initialFields,
+  initialPrefilled,
+  tokenMode,
+  agreementToken,
+}: {
+  initialFields?: Partial<MemberFields>;
+  initialPrefilled?: Set<string>;
+  tokenMode?: boolean;
+  agreementToken?: string;
+} = {}) {
   const { theme, toggleTheme } = useTheme();
   // mode=agreement hides the portal — shows only the agreement flow + done screen
-  const agreementOnly = new URLSearchParams(window.location.search).get('mode') === 'agreement';
+  const agreementOnly = tokenMode || new URLSearchParams(window.location.search).get('mode') === 'agreement';
   // mode=demo locks all fields except DOB/phone/email/address, hides portal + account creation
   const demoMode = new URLSearchParams(window.location.search).get('mode') === 'demo';
 
-  const [prefilled, setPrefilled] = useState<Set<string>>(new Set());
+  const [prefilled, setPrefilled] = useState<Set<string>>(initialPrefilled ?? new Set());
   const [fields, setFields] = useState<MemberFields>({
     memberName: '', dob: '', phone: '', email: '',
     dlNumber: '', licenseState: '', address: '', cityStateZip: '',
     customerId: '', reservationId: '', vehicle: '', vin: '',
     weeklyFee: '', deposit: '', startDate: '', endDate: '',
     agreementState: '', printedName: '', dateSigned: '',
+    ...(initialFields ?? {}),
   });
 
   useEffect(() => {
+    // If initialFields were passed directly (token mode), skip URL parsing
+    if (initialFields && Object.keys(initialFields).length > 0) return;
     const params = new URLSearchParams(window.location.search);
     const next = { ...fields };
     const pf = new Set<string>();

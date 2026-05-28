@@ -17,7 +17,7 @@ function Router() {
       <Route path="/" component={AdminDashboard} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/:rest*" component={AdminDashboard} />
-      <Route path="/agreement" component={AgreementPage} />
+      <Route path="/agreement">{() => <AgreementPage />}</Route>
       <Route path="/agreement/:token" component={TokenAgreementPage} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

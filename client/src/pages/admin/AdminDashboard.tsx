@@ -13,6 +13,7 @@ import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { toast } from "sonner";
+import { MARKETS } from "@/lib/agreementData";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -383,6 +384,7 @@ function MembersTab() {
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Customer ID</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Reservation</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Vehicle</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Market</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">State</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Status</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Actions</th>
@@ -390,12 +392,14 @@ function MembersTab() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {isLoading && (
-                <tr><td colSpan={8} className="text-center py-8 text-gray-400">Loading...</td></tr>
+                <tr><td colSpan={9} className="text-center py-8 text-gray-400">Loading...</td></tr>
               )}
               {!isLoading && (data?.rows?.length ?? 0) === 0 && (
-                <tr><td colSpan={8} className="text-center py-8 text-gray-400">No members found</td></tr>
+                <tr><td colSpan={9} className="text-center py-8 text-gray-400">No members found</td></tr>
               )}
-              {data?.rows?.map(member => (
+              {data?.rows?.map(member => {
+                const marketName = MARKETS.find(m => m.states.includes(member.agreementState ?? ''))?.name ?? '—';
+                return (
                 <tr key={member.id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-3 text-gray-400 text-xs font-mono">#{member.id}</td>
                   <td className="px-4 py-3">
@@ -405,6 +409,9 @@ function MembersTab() {
                   <td className="px-4 py-3 text-gray-600">{member.customerId}</td>
                   <td className="px-4 py-3 text-gray-600 text-xs">{member.reservationId}</td>
                   <td className="px-4 py-3 text-gray-600">{member.vehicle}</td>
+                  <td className="px-4 py-3">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-[#171b31] text-white">{marketName}</span>
+                  </td>
                   <td className="px-4 py-3 text-gray-600">{member.agreementState}</td>
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -424,7 +431,8 @@ function MembersTab() {
                     </button>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -680,6 +688,13 @@ function AgreementsTab({ origin }: { origin: string }) {
   const [bulkVia, setBulkVia] = useState<"email" | "sms" | "both">("email");
   const [showBulkSend, setShowBulkSend] = useState(false);
   const [showBulkResend, setShowBulkResend] = useState(false);
+  // Multi-select for targeted send
+  const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
+  const [showSendSelected, setShowSendSelected] = useState(false);
+  const [sendSelectedProgress, setSendSelectedProgress] = useState<{
+    title: string; total: number; sent: number; failed: number; running: boolean;
+  } | null>(null);
+  const sendToMembersMutation = trpc.admin.agreements.sendToMembers.useMutation();
   const [bulkProgress, setBulkProgress] = useState<{
     title: string; total: number; sent: number; failed: number; skipped?: number; running: boolean;
   } | null>(null);
@@ -803,12 +818,89 @@ function AgreementsTab({ origin }: { origin: string }) {
         </div>
       )}
 
+      {/* Send Selected bar */}
+      {selectedRows.size > 0 && (
+        <div className="flex items-center gap-3 bg-[#0b1228] text-white px-4 py-3 rounded-xl">
+          <span className="text-sm font-medium">{selectedRows.size} selected</span>
+          <select
+            value={bulkVia}
+            onChange={e => setBulkVia(e.target.value as "email" | "sms" | "both")}
+            className="bg-white/10 border border-white/20 text-white text-xs rounded-lg px-2 py-1.5 focus:outline-none"
+          >
+            <option value="email">Email</option>
+            <option value="sms">SMS</option>
+            <option value="both">Email + SMS</option>
+          </select>
+          <button
+            onClick={() => setShowSendSelected(true)}
+            className="bg-[#FF6A00] hover:bg-[#e55f00] text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+          >
+            Send to Selected
+          </button>
+          <button
+            onClick={() => setSelectedRows(new Set())}
+            className="text-white/50 hover:text-white text-xs ml-auto"
+          >
+            Clear
+          </button>
+        </div>
+      )}
+
+      {/* Send Selected confirm */}
+      {showSendSelected && (
+        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
+          <p className="text-sm font-medium text-orange-900 mb-3">
+            Send agreement links to {selectedRows.size} selected member{selectedRows.size !== 1 ? "s" : ""} via {bulkVia === "both" ? "Email + SMS" : bulkVia.toUpperCase()}?
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={async () => {
+                setShowSendSelected(false);
+                setSendSelectedProgress({ title: "Sending to Selected", total: selectedRows.size, sent: 0, failed: 0, running: true });
+                try {
+                  if (!sendToMembersMutation) { toast.error("sendToMembers not available"); return; }
+                  const result = await sendToMembersMutation.mutateAsync({
+                    memberIds: Array.from(selectedRows),
+                    via: bulkVia,
+                    origin,
+                  });
+                  setSendSelectedProgress({ title: "Send Complete", total: result.total, sent: result.sent, failed: result.failed, running: false });
+                  setSelectedRows(new Set());
+                  refetch();
+                } catch (err) {
+                  toast.error("Send failed: " + (err instanceof Error ? err.message : String(err)));
+                  setSendSelectedProgress(null);
+                }
+              }}
+              className="bg-[#FF6A00] text-white text-sm px-4 py-2 rounded-lg hover:bg-[#e55f00]"
+            >
+              Confirm Send
+            </button>
+            <button onClick={() => setShowSendSelected(false)} className="text-sm px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50">Cancel</button>
+          </div>
+        </div>
+      )}
+
       {/* Table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
+                <th className="w-10 px-4 py-3">
+                  <input
+                    type="checkbox"
+                    className="rounded border-gray-300"
+                    checked={selectedRows.size > 0 && selectedRows.size === (data?.rows?.length ?? 0)}
+                    onChange={e => {
+                      if (e.target.checked) {
+                        setSelectedRows(new Set(data?.rows?.map(r => r.agreement.memberId) ?? []));
+                      } else {
+                        setSelectedRows(new Set());
+                      }
+                    }}
+                  />
+                </th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Member</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Reservation</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">State</th>
@@ -820,17 +912,30 @@ function AgreementsTab({ origin }: { origin: string }) {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {isLoading && (
-                <tr><td colSpan={7} className="text-center py-8 text-gray-400">Loading...</td></tr>
+                <tr><td colSpan={8} className="text-center py-8 text-gray-400">Loading...</td></tr>
               )}
               {!isLoading && (data?.rows?.length ?? 0) === 0 && (
-                <tr><td colSpan={7} className="text-center py-8 text-gray-400">No agreements found</td></tr>
+                <tr><td colSpan={8} className="text-center py-8 text-gray-400">No agreements found</td></tr>
               )}
               {data?.rows?.map(row => (
                 <tr
                   key={row.agreement.id}
-                  className="hover:bg-gray-50 transition-colors cursor-pointer"
+                  className={`hover:bg-gray-50 transition-colors cursor-pointer ${selectedRows.has(row.agreement.memberId) ? "bg-orange-50" : ""}`}
                   onClick={() => setSelectedId(row.agreement.id)}
                 >
+                  <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      className="rounded border-gray-300"
+                      checked={selectedRows.has(row.agreement.memberId)}
+                      onChange={e => {
+                        const next = new Set(selectedRows);
+                        if (e.target.checked) next.add(row.agreement.memberId);
+                        else next.delete(row.agreement.memberId);
+                        setSelectedRows(next);
+                      }}
+                    />
+                  </td>
                   <td className="px-4 py-3">
                     <p className="font-medium text-[#0b1228]">{row.member?.name ?? "—"}</p>
                     <p className="text-xs text-gray-500">{row.member?.email}</p>
@@ -885,6 +990,12 @@ function AgreementsTab({ origin }: { origin: string }) {
         <BulkProgressModal
           {...bulkProgress}
           onClose={() => setBulkProgress(null)}
+        />
+      )}
+      {sendSelectedProgress && (
+        <BulkProgressModal
+          {...sendSelectedProgress}
+          onClose={() => setSendSelectedProgress(null)}
         />
       )}
     </div>
@@ -1064,15 +1175,16 @@ export default function AdminDashboard() {
             <span className="text-white/40 text-sm hidden sm:block">Agreement Admin</span>
           </div>
           <div className="flex items-center gap-3">
-            {/* Member Portal quick-link */}
+            {/* Member Portal toggle — visible on all screen sizes */}
             <a
               href="/agreement"
-              className="hidden sm:flex items-center gap-1.5 text-white/60 hover:text-white text-xs px-3 py-1.5 rounded-lg border border-white/10 hover:border-white/30 transition-colors"
+              title="Switch to Member Portal"
+              className="flex items-center gap-1.5 bg-[#FF6A00] hover:bg-[#e55f00] text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors shadow-sm"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
-              Member Portal
+              <span className="hidden sm:inline">Member Portal</span>
             </a>
             <span className="text-white/60 text-sm hidden sm:block">{user?.name ?? user?.email}</span>
             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
