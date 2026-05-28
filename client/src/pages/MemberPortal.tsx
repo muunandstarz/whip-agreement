@@ -35,13 +35,7 @@ const DashIcon = () => (
     <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
   </svg>
 );
-const CarIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="1" y="3" width="15" height="13" rx="2"/>
-    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
-    <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
-  </svg>
-);
+const CarIcon = () => <img src="/manus-storage/car-front_a218ed62.png" width={22} height={22} alt="Vehicle" style={{ objectFit: 'contain', display: 'block' }} />;
 const HistoryIcon = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="1 4 1 10 7 10"/>
@@ -128,79 +122,25 @@ function last6(vin: string) {
   return vin ? vin.slice(-6).toUpperCase() : '——————';
 }
 
-/** Sedan silhouette — default car icon */
-function SedanIcon({ size = 'md', color = 'currentColor' }: { size?: 'sm' | 'md' | 'lg'; color?: string }) {
+const CAR_FRONT_URL = '/manus-storage/car-front_a218ed62.png';
+const CAR_SIDE_URL = '/manus-storage/car-side_8878d2ff.png';
+
+/** Sedan silhouette — uses Whip branded icon */
+function SedanIcon({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
   const dims = size === 'sm' ? { w: 56, h: 26 } : size === 'lg' ? { w: 160, h: 70 } : { w: 110, h: 48 };
-  return (
-    <svg viewBox="0 0 220 88" width={dims.w} height={dims.h} xmlns="http://www.w3.org/2000/svg" fill="none" stroke={color} strokeWidth="5" strokeLinecap="round" strokeLinejoin="round">
-      {/* Body */}
-      <path d="M18 57 L18 42 Q18 36 24 36 L58 36 L78 16 L142 16 L162 36 L196 36 Q202 36 202 42 L202 57 Z" />
-      {/* Roof cabin */}
-      <path d="M80 36 L92 18 L128 18 L140 36" />
-      {/* Door divider */}
-      <line x1="110" y1="36" x2="110" y2="57" />
-      {/* Wheel arches */}
-      <path d="M38 57 Q38 72 56 72 Q74 72 74 57" />
-      <path d="M146 57 Q146 72 164 72 Q182 72 182 57" />
-      {/* Bumpers */}
-      <line x1="18" y1="50" x2="8" y2="50" />
-      <line x1="202" y1="50" x2="212" y2="50" />
-      {/* Mirror */}
-      <path d="M162 36 L170 31 L175 36" />
-      {/* Headlight */}
-      <line x1="18" y1="40" x2="10" y2="38" />
-      {/* Taillight */}
-      <line x1="202" y1="40" x2="210" y2="38" />
-    </svg>
-  );
+  return <img src={CAR_SIDE_URL} width={dims.w} height={dims.h} alt="Vehicle" style={{ objectFit: 'contain', display: 'block' }} />;
 }
 
-/** SUV / truck silhouette */
-function SuvIcon({ size = 'md', color = 'currentColor' }: { size?: 'sm' | 'md' | 'lg'; color?: string }) {
+/** SUV / truck silhouette — uses Whip branded icon */
+function SuvIcon({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
   const dims = size === 'sm' ? { w: 56, h: 26 } : size === 'lg' ? { w: 160, h: 70 } : { w: 110, h: 48 };
-  return (
-    <svg viewBox="0 0 220 88" width={dims.w} height={dims.h} xmlns="http://www.w3.org/2000/svg" fill="none" stroke={color} strokeWidth="5" strokeLinecap="round" strokeLinejoin="round">
-      {/* Boxy body */}
-      <rect x="18" y="28" width="184" height="30" rx="4" />
-      {/* Tall cabin roof */}
-      <rect x="30" y="12" width="160" height="18" rx="4" />
-      {/* Wheel arches */}
-      <path d="M38 58 Q38 74 56 74 Q74 74 74 58" />
-      <path d="M146 58 Q146 74 164 74 Q182 74 182 58" />
-      {/* Bumpers */}
-      <line x1="18" y1="46" x2="8" y2="46" />
-      <line x1="202" y1="46" x2="212" y2="46" />
-      {/* Windshield */}
-      <line x1="30" y1="28" x2="30" y2="12" />
-      <line x1="190" y1="28" x2="190" y2="12" />
-      {/* Door divider */}
-      <line x1="110" y1="28" x2="110" y2="58" />
-      {/* Roof rack */}
-      <line x1="50" y1="12" x2="170" y2="12" />
-    </svg>
-  );
+  return <img src={CAR_SIDE_URL} width={dims.w} height={dims.h} alt="Vehicle" style={{ objectFit: 'contain', display: 'block' }} />;
 }
 
-/** Minivan silhouette */
-function VanIcon({ size = 'md', color = 'currentColor' }: { size?: 'sm' | 'md' | 'lg'; color?: string }) {
+/** Minivan silhouette — uses Whip branded icon */
+function VanIcon({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
   const dims = size === 'sm' ? { w: 56, h: 26 } : size === 'lg' ? { w: 160, h: 70 } : { w: 110, h: 48 };
-  return (
-    <svg viewBox="0 0 220 88" width={dims.w} height={dims.h} xmlns="http://www.w3.org/2000/svg" fill="none" stroke={color} strokeWidth="5" strokeLinecap="round" strokeLinejoin="round">
-      {/* Long boxy body */}
-      <path d="M18 58 L18 30 Q18 24 24 24 L196 24 Q202 24 202 30 L202 58 Z" />
-      {/* Cab section (front) */}
-      <path d="M18 24 L18 14 Q18 10 24 10 L80 10 L90 24" />
-      {/* Wheel arches */}
-      <path d="M34 58 Q34 74 52 74 Q70 74 70 58" />
-      <path d="M150 58 Q150 74 168 74 Q186 74 186 58" />
-      {/* Sliding door line */}
-      <line x1="100" y1="24" x2="100" y2="58" />
-      <line x1="140" y1="24" x2="140" y2="58" />
-      {/* Bumpers */}
-      <line x1="18" y1="48" x2="8" y2="48" />
-      <line x1="202" y1="48" x2="212" y2="48" />
-    </svg>
-  );
+  return <img src={CAR_SIDE_URL} width={dims.w} height={dims.h} alt="Vehicle" style={{ objectFit: 'contain', display: 'block' }} />;
 }
 
 /** Detect vehicle body type from make/model string */
@@ -211,17 +151,21 @@ function detectBodyType(vehicle: string): 'suv' | 'van' | 'sedan' {
   return 'sedan';
 }
 
-/** Unified vehicle icon — picks the right silhouette based on vehicle string */
-function VehicleIcon({ vehicle, size = 'md', color = 'currentColor' }: { vehicle?: string; size?: 'sm' | 'md' | 'lg'; color?: string }) {
-  const type = detectBodyType(vehicle ?? '');
-  if (type === 'suv') return <SuvIcon size={size} color={color} />;
-  if (type === 'van') return <VanIcon size={size} color={color} />;
-  return <SedanIcon size={size} color={color} />;
+/** Unified vehicle icon — always uses Whip branded side-profile icon */
+function VehicleIcon({ vehicle, size = 'md' }: { vehicle?: string; size?: 'sm' | 'md' | 'lg' }) {
+  const dims = size === 'sm' ? { w: 56, h: 26 } : size === 'lg' ? { w: 160, h: 70 } : { w: 110, h: 48 };
+  void vehicle; // kept for API compatibility
+  return <img src={CAR_SIDE_URL} width={dims.w} height={dims.h} alt="Vehicle" style={{ objectFit: 'contain', display: 'block' }} />;
 }
 
 // Legacy alias used in PoiCard
 function CarSilhouette({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
   return <SedanIcon size={size} />;
+}
+
+/** Front-view icon for nav/dashboard use */
+function CarFrontIcon({ size = 22 }: { size?: number }) {
+  return <img src={CAR_FRONT_URL} width={size} height={size} alt="Vehicle" style={{ objectFit: 'contain', display: 'block' }} />;
 }
 
 // Outline silhouette — no fill colors needed
@@ -576,7 +520,7 @@ function TripCard({ trip, isActive }: { trip: TripRecord; isActive: boolean }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
         {/* Vehicle silhouette — type-aware (sedan / SUV / van) */}
         <div style={{ background: 'var(--muted)', borderRadius: 8, padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <VehicleIcon vehicle={trip.vehicle} size="sm" color={isActive ? '#ff6221' : 'var(--muted-foreground)'} />
+          <VehicleIcon vehicle={trip.vehicle} size="sm" />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--foreground)', lineHeight: 1.2 }}>{year} {make} {model}</div>
@@ -641,7 +585,7 @@ function TripHistoryPage({ fields }: { fields: MemberFields }) {
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   boxShadow: isActive ? '0 0 0 4px rgba(255,98,33,0.15)' : 'none',
                 }}>
-                  <VehicleIcon vehicle={trip.vehicle} size="sm" color={isActive ? 'white' : cfg.color} />
+                  <VehicleIcon vehicle={trip.vehicle} size="sm" />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <TripCard trip={trip} isActive={isActive} />
