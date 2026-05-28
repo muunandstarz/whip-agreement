@@ -16,6 +16,9 @@ import {
   getDocumentsByAgreement,
   getEventsByAgreement,
   getMemberById,
+  getMembersByIds,
+  getAllMembersForBulk,
+  getAgreementsByMemberIds,
   incrementEmailCodeAttempts,
   listAgreements,
   listMembers,
@@ -126,6 +129,36 @@ export const adminRouter = router({
         await updateMember(input.id, { matchStatus: input.matchStatus, matchNotes: input.matchNotes });
         return { ok: true };
       }),
+
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().min(1).optional(),
+        dob: z.string().optional(),
+        phone: z.string().optional(),
+        email: z.string().email().optional(),
+        driverLicense: z.string().optional(),
+        licenseState: z.string().optional(),
+        address: z.string().optional(),
+        cityStateZip: z.string().optional(),
+        customerId: z.string().optional(),
+        reservationId: z.string().optional(),
+        vehicle: z.string().optional(),
+        vin: z.string().optional(),
+        weeklyRate: z.string().optional(),
+        deposit: z.string().optional(),
+        agreementState: z.string().optional(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        requireManagerOrAbove(ctx.user.role);
+        const { id, ...fields } = input;
+        const member = await getMemberById(id);
+        if (!member) throw new TRPCError({ code: "NOT_FOUND", message: "Member not found" });
+        await updateMember(id, fields);
+        return { ok: true };
+      }),
   }),
 
   // ── Agreements ────────────────────────────────────────────────────────────
@@ -168,11 +201,12 @@ export const adminRouter = router({
       .input(z.object({
         memberId: z.number(),
         expiresInHours: z.number().default(72),
+        origin: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         requireManagerOrAbove(ctx.user.role);
         const member = await getMemberById(input.memberId);
-        if (!member) throw new TRPCError({ code: "NOT_FOUND", message: "Member not found" });
+        if (!member) throw new TRPCError({ code: "NOT_FOUND", message: `Member #${input.memberId} not found. Please check the Member ID in the Members tab.` });
 
         const token = generateToken();
         const expiresAt = new Date(Date.now() + input.expiresInHours * 60 * 60 * 1000);
@@ -187,8 +221,170 @@ export const adminRouter = router({
 
         await logEvent({ agreementId: id, memberId: input.memberId, eventType: "created", performedBy: ctx.user.id });
 
-        const link = `${process.env.VITE_FRONTEND_FORGE_API_URL ? "" : ""}/agreement/${token}`;
-        return { id, token, link, expiresAt };
+        const origin = input.origin ?? "https://whipagree-3narmaq7.manus.space";
+        const link = `${origin}/agreement/${token}`;
+        return { id, token, link, expiresAt, memberName: member.name };
+      }),
+
+    bulkSend: protectedProcedure
+      .input(z.object({
+        memberIds: z.array(z.number()).optional(), // if omitted → all members without active agreement
+        via: z.enum(["email", "sms", "both"]),
+        expiresInHours: z.number().default(72),
+        origin: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        requireManagerOrAbove(ctx.user.role);
+        const origin = input.origin ?? "https://whipagree-3narmaq7.manus.space";
+
+        // Resolve target members
+        let targetMembers;
+        if (input.memberIds && input.memberIds.length > 0) {
+          targetMembers = await getMembersByIds(input.memberIds);
+        } else {
+          targetMembers = await getAllMembersForBulk();
+        }
+
+        // Find members who already have a non-expired active agreement
+        const existingAgreements = await getAgreementsByMemberIds(targetMembers.map(m => m.id));
+        const activeStatuses = new Set(["not_sent", "sent", "delivered", "opened", "verified", "in_progress", "completed"]);
+        const membersWithActive = new Set(
+          existingAgreements
+            .filter(a => activeStatuses.has(a.status) && !a.revokedAt)
+            .map(a => a.memberId)
+        );
+
+        // Only send to members without an active agreement
+        const toSend = targetMembers.filter(m => !membersWithActive.has(m.id));
+
+        const results: { memberId: number; agreementId?: number; emailSent?: boolean; smsSent?: boolean; error?: string }[] = [];
+        const expiresInMs = input.expiresInHours * 60 * 60 * 1000;
+
+        for (const member of toSend) {
+          try {
+            const token = generateToken();
+            const expiresAt = new Date(Date.now() + expiresInMs);
+            const agreementId = await createAgreement({
+              memberId: member.id,
+              token,
+              expiresAt,
+              agreementState: member.agreementState,
+              status: "not_sent",
+            });
+
+            const link = `${origin}/agreement/${token}`;
+            let emailSent = false;
+            let smsSent = false;
+
+            if (input.via === "email" || input.via === "both") {
+              const { subject, html } = buildAgreementEmail({
+                firstName: member.name.split(" ")[0],
+                vehicle: member.vehicle,
+                reservationId: member.reservationId,
+                agreementState: member.agreementState,
+                link,
+              });
+              emailSent = await sendEmail({ to: member.email, subject, html });
+            }
+
+            if (input.via === "sms" || input.via === "both") {
+              smsSent = await sendSms({
+                to: member.phone,
+                message: buildAgreementSms({ firstName: member.name.split(" ")[0], link }),
+              });
+            }
+
+            await updateAgreement(agreementId, {
+              status: "sent",
+              sentAt: new Date(),
+              sentBy: ctx.user.id,
+              sentVia: input.via,
+            });
+
+            await logEvent({ agreementId, memberId: member.id, eventType: "sent", performedBy: ctx.user.id, metadata: { via: input.via, emailSent, smsSent, bulk: true } });
+
+            results.push({ memberId: member.id, agreementId, emailSent, smsSent });
+          } catch (e) {
+            results.push({ memberId: member.id, error: String(e) });
+          }
+
+          // Stagger sends: 200ms delay per member to avoid SMTP/TextLine throttling
+          await new Promise(r => setTimeout(r, 200));
+        }
+
+        const sent = results.filter(r => !r.error).length;
+        const failed = results.filter(r => r.error).length;
+        const skipped = targetMembers.length - toSend.length;
+        return { total: targetMembers.length, sent, failed, skipped, results };
+      }),
+
+    bulkResend: protectedProcedure
+      .input(z.object({
+        statuses: z.array(z.string()).default(["sent", "expired"]), // which statuses to resend to
+        via: z.enum(["email", "sms", "both"]).optional(), // override channel; if omitted uses original
+        origin: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        requireManagerOrAbove(ctx.user.role);
+        const origin = input.origin ?? "https://whipagree-3narmaq7.manus.space";
+
+        // Fetch all agreements in the target statuses
+        const { rows } = await listAgreements({ status: input.statuses, limit: 2000, offset: 0 });
+
+        const results: { agreementId: number; memberId: number; emailSent?: boolean; smsSent?: boolean; error?: string }[] = [];
+
+        for (const row of rows) {
+          const agreement = row.agreement;
+          try {
+            const member = await getMemberById(agreement.memberId);
+            if (!member) { results.push({ agreementId: agreement.id, memberId: agreement.memberId, error: "Member not found" }); continue; }
+
+            // Extend expiry if expired
+            if (agreement.status === "expired" || (agreement.expiresAt && agreement.expiresAt < new Date())) {
+              await updateAgreement(agreement.id, {
+                status: "sent",
+                expiresAt: new Date(Date.now() + 72 * 60 * 60 * 1000),
+              });
+            }
+
+            await updateAgreement(agreement.id, {
+              reminderCount: (agreement.reminderCount ?? 0) + 1,
+              lastReminderAt: new Date(),
+            });
+
+            const link = `${origin}/agreement/${agreement.token}`;
+            const via = input.via ?? agreement.sentVia ?? "email";
+            let emailSent = false;
+            let smsSent = false;
+
+            if (via === "email" || via === "both") {
+              const { subject, html } = buildReminderEmail({
+                firstName: member.name.split(" ")[0],
+                vehicle: member.vehicle,
+                link,
+                reminderCount: (agreement.reminderCount ?? 0) + 1,
+              });
+              emailSent = await sendEmail({ to: member.email, subject, html });
+            }
+
+            if (via === "sms" || via === "both") {
+              smsSent = await sendSms({ to: member.phone, message: buildReminderSms({ firstName: member.name.split(" ")[0], link }) });
+            }
+
+            await logEvent({ agreementId: agreement.id, memberId: agreement.memberId, eventType: "resent", performedBy: ctx.user.id, metadata: { via, emailSent, smsSent, bulk: true } });
+
+            results.push({ agreementId: agreement.id, memberId: agreement.memberId, emailSent, smsSent });
+          } catch (e) {
+            results.push({ agreementId: agreement.id, memberId: agreement.memberId, error: String(e) });
+          }
+
+          // Stagger sends
+          await new Promise(r => setTimeout(r, 200));
+        }
+
+        const sent = results.filter(r => !r.error).length;
+        const failed = results.filter(r => r.error).length;
+        return { total: rows.length, sent, failed, results };
       }),
 
     send: protectedProcedure

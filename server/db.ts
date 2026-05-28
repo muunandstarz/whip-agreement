@@ -370,3 +370,23 @@ export async function expireAgreements(): Promise<number> {
     );
   return (result[0] as { affectedRows: number }).affectedRows ?? 0;
 }
+
+export async function getAllMembersForBulk(): Promise<Member[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(members).orderBy(members.id);
+}
+
+export async function getMembersByIds(ids: number[]): Promise<Member[]> {
+  if (!ids.length) return [];
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(members).where(inArray(members.id, ids));
+}
+
+export async function getAgreementsByMemberIds(memberIds: number[]): Promise<Agreement[]> {
+  if (!memberIds.length) return [];
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(agreements).where(inArray(agreements.memberId, memberIds));
+}

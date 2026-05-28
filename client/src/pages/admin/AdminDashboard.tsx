@@ -1,11 +1,11 @@
-/**
+/*
  * AdminDashboard — Whip Agreement Back-Office Platform
  *
  * Tabs:
- *  Overview  — metrics cards + exception queue + recent activity
- *  Members   — import (CSV / manual) + member list
- *  Agreements — pipeline board + search + detail drawer
- *  Settings  — (placeholder)
+ *  Overview    — metrics cards + exception queue
+ *  Members     — import (CSV / manual) + member list + edit member
+ *  Agreements  — pipeline board + bulk send/resend + detail drawer
+ *  Generate    — generate a link for a specific member (search by name/email/ID)
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -80,7 +80,6 @@ function OverviewTab() {
 
   return (
     <div className="space-y-6">
-      {/* Metrics */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <MetricCard label="Total Agreements" value={m?.total ?? 0} />
         <MetricCard label="Completion Rate" value={`${m?.completionRate ?? 0}%`} accent />
@@ -88,7 +87,6 @@ function OverviewTab() {
         <MetricCard label="Open Exceptions" value={m?.exceptions ?? 0} sub="need review" />
       </div>
 
-      {/* Status pipeline */}
       <div className="bg-white rounded-xl border border-gray-200 p-5">
         <h3 className="font-semibold text-[#0b1228] mb-4">Agreement Pipeline</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
@@ -103,7 +101,6 @@ function OverviewTab() {
         </div>
       </div>
 
-      {/* Exception queue */}
       {(exceptions?.rows?.length ?? 0) > 0 && (
         <div className="bg-white rounded-xl border border-red-200 p-5">
           <h3 className="font-semibold text-red-700 mb-4 flex items-center gap-2">
@@ -127,6 +124,94 @@ function OverviewTab() {
   );
 }
 
+// ─── Member Edit Drawer ───────────────────────────────────────────────────────
+
+const MEMBER_FIELDS: { key: string; label: string; type?: string }[] = [
+  { key: "name", label: "Full Name" },
+  { key: "dob", label: "Date of Birth", type: "date" },
+  { key: "phone", label: "Phone" },
+  { key: "email", label: "Email", type: "email" },
+  { key: "driverLicense", label: "Driver License #" },
+  { key: "licenseState", label: "License State" },
+  { key: "address", label: "Address" },
+  { key: "cityStateZip", label: "City, State ZIP" },
+  { key: "customerId", label: "Customer ID" },
+  { key: "reservationId", label: "Reservation ID" },
+  { key: "vehicle", label: "Vehicle" },
+  { key: "vin", label: "VIN" },
+  { key: "weeklyRate", label: "Weekly Rate" },
+  { key: "deposit", label: "Deposit" },
+  { key: "agreementState", label: "Agreement State" },
+  { key: "startDate", label: "Start Date", type: "date" },
+  { key: "endDate", label: "End Date", type: "date" },
+];
+
+type MemberRecord = Record<string, string | number | Date | null | undefined>;
+
+function EditMemberDrawer({ member, onClose, onSaved }: { member: MemberRecord; onClose: () => void; onSaved: () => void }) {
+  const [form, setForm] = useState<Record<string, string>>(() => {
+    const f: Record<string, string> = {};
+    for (const { key } of MEMBER_FIELDS) {
+      const v = member[key];
+      f[key] = v != null ? String(v) : "";
+    }
+    return f;
+  });
+
+  const updateMutation = trpc.admin.members.update.useMutation();
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await updateMutation.mutateAsync({ id: member.id as number, ...form });
+      toast.success("Member updated");
+      onSaved();
+      onClose();
+    } catch (err) {
+      toast.error("Update failed: " + (err instanceof Error ? err.message : String(err)));
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex">
+      <div className="flex-1 bg-black/40" onClick={onClose} />
+      <div className="w-full max-w-xl bg-white shadow-2xl overflow-y-auto flex flex-col">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-[#0b1228]">
+          <h2 className="font-semibold text-white">Edit Member</h2>
+          <button onClick={onClose} className="text-white/60 hover:text-white text-xl">×</button>
+        </div>
+        <form onSubmit={handleSave} className="flex-1 p-6 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {MEMBER_FIELDS.map(({ key, label, type }) => (
+              <div key={key}>
+                <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
+                <input
+                  type={type ?? "text"}
+                  value={form[key] ?? ""}
+                  onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
+                />
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-2 pt-2">
+            <button
+              type="submit"
+              disabled={updateMutation.isPending}
+              className="bg-[#FF6A00] text-white text-sm px-5 py-2 rounded-lg hover:bg-[#e55f00] disabled:opacity-50"
+            >
+              {updateMutation.isPending ? "Saving..." : "Save Changes"}
+            </button>
+            <button type="button" onClick={onClose} className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ─── Members Tab ──────────────────────────────────────────────────────────────
 
 const MEMBER_CSV_HEADERS = [
@@ -139,6 +224,7 @@ function MembersTab() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [showManual, setShowManual] = useState(false);
+  const [editMember, setEditMember] = useState<MemberRecord | null>(null);
   const [csvRows, setCsvRows] = useState<Record<string, string>[]>([]);
   const [importing, setImporting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -292,30 +378,32 @@ function MembersTab() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">ID</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Name</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Customer ID</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Reservation</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Vehicle</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">State</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Added</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {isLoading && (
-                <tr><td colSpan={7} className="text-center py-8 text-gray-400">Loading...</td></tr>
+                <tr><td colSpan={8} className="text-center py-8 text-gray-400">Loading...</td></tr>
               )}
               {!isLoading && (data?.rows?.length ?? 0) === 0 && (
-                <tr><td colSpan={7} className="text-center py-8 text-gray-400">No members found</td></tr>
+                <tr><td colSpan={8} className="text-center py-8 text-gray-400">No members found</td></tr>
               )}
               {data?.rows?.map(member => (
                 <tr key={member.id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3 text-gray-400 text-xs font-mono">#{member.id}</td>
                   <td className="px-4 py-3">
                     <p className="font-medium text-[#0b1228]">{member.name}</p>
                     <p className="text-xs text-gray-500">{member.email}</p>
                   </td>
                   <td className="px-4 py-3 text-gray-600">{member.customerId}</td>
-                  <td className="px-4 py-3 text-gray-600">{member.reservationId}</td>
+                  <td className="px-4 py-3 text-gray-600 text-xs">{member.reservationId}</td>
                   <td className="px-4 py-3 text-gray-600">{member.vehicle}</td>
                   <td className="px-4 py-3 text-gray-600">{member.agreementState}</td>
                   <td className="px-4 py-3">
@@ -327,15 +415,19 @@ function MembersTab() {
                       {member.matchStatus}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-gray-500 text-xs">
-                    {member.createdAt ? new Date(member.createdAt).toLocaleDateString() : "—"}
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={() => setEditMember(member as unknown as MemberRecord)}
+                      className="text-xs text-[#FF6A00] hover:underline"
+                    >
+                      Edit
+                    </button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        {/* Pagination */}
         {(data?.total ?? 0) > 20 && (
           <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
             <span>Showing {page * 20 + 1}–{Math.min((page + 1) * 20, data?.total ?? 0)} of {data?.total}</span>
@@ -346,6 +438,14 @@ function MembersTab() {
           </div>
         )}
       </div>
+
+      {editMember && (
+        <EditMemberDrawer
+          member={editMember}
+          onClose={() => setEditMember(null)}
+          onSaved={refetch}
+        />
+      )}
     </div>
   );
 }
@@ -365,7 +465,6 @@ function AgreementDetailDrawer({
   const sendMutation = trpc.admin.agreements.send.useMutation();
   const resendMutation = trpc.admin.agreements.resend.useMutation();
   const revokeMutation = trpc.admin.agreements.revoke.useMutation();
-  const generateMutation = trpc.admin.agreements.generate.useMutation();
 
   const [sending, setSending] = useState(false);
 
@@ -409,7 +508,6 @@ function AgreementDetailDrawer({
     <div className="fixed inset-0 z-50 flex">
       <div className="flex-1 bg-black/40" onClick={onClose} />
       <div className="w-full max-w-xl bg-white shadow-2xl overflow-y-auto flex flex-col">
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-[#0b1228]">
           <h2 className="font-semibold text-white">Agreement #{agreementId}</h2>
           <button onClick={onClose} className="text-white/60 hover:text-white text-xl">×</button>
@@ -419,7 +517,6 @@ function AgreementDetailDrawer({
 
         {data && (
           <div className="flex-1 p-6 space-y-5">
-            {/* Status */}
             <div className="flex items-center gap-3">
               <StatusBadge status={data.agreement.status} />
               {data.agreement.hasException && (
@@ -427,7 +524,6 @@ function AgreementDetailDrawer({
               )}
             </div>
 
-            {/* Member info */}
             {data.member && (
               <div className="bg-gray-50 rounded-xl p-4 space-y-1">
                 <p className="font-semibold text-[#0b1228]">{data.member.name}</p>
@@ -437,82 +533,67 @@ function AgreementDetailDrawer({
               </div>
             )}
 
-            {/* Agreement link */}
-            <div>
-              <p className="text-xs font-medium text-gray-500 mb-1">Agreement Link</p>
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-gray-500 uppercase">Agreement Link</p>
               <div className="flex gap-2">
-                <input
-                  readOnly
-                  value={agreementLink}
-                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-xs bg-gray-50 text-gray-700"
-                />
+                <input readOnly value={agreementLink} className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-xs bg-gray-50 text-gray-700" />
                 <button
-                  onClick={() => { navigator.clipboard.writeText(agreementLink); toast.success("Link copied"); }}
-                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs px-3 py-2 rounded-lg"
+                  onClick={() => { navigator.clipboard.writeText(agreementLink); toast.success("Copied!"); }}
+                  className="bg-[#0b1228] text-white text-xs px-3 py-2 rounded-lg hover:bg-[#1a2540]"
                 >
                   Copy
                 </button>
               </div>
+              {data.agreement.expiresAt && (
+                <p className="text-xs text-gray-400">Expires: {new Date(data.agreement.expiresAt).toLocaleString()}</p>
+              )}
             </div>
 
-            {/* Actions */}
-            <div>
-              <p className="text-xs font-medium text-gray-500 mb-2">Actions</p>
-              <div className="flex flex-wrap gap-2">
-                {["not_sent", "expired"].includes(data.agreement.status) ? (
-                  <>
-                    <button onClick={() => handleSend("email")} disabled={sending} className="bg-[#FF6A00] text-white text-sm px-3 py-2 rounded-lg hover:bg-[#e55f00] disabled:opacity-50">
-                      Send via Email
+            {data.agreement.status === "not_sent" && (
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-gray-500 uppercase">Send Agreement</p>
+                <div className="flex gap-2">
+                  {(["email", "sms", "both"] as const).map(via => (
+                    <button
+                      key={via}
+                      onClick={() => handleSend(via)}
+                      disabled={sending}
+                      className="flex-1 bg-[#FF6A00] text-white text-xs py-2 rounded-lg hover:bg-[#e55f00] disabled:opacity-50 capitalize"
+                    >
+                      {via === "both" ? "Email + SMS" : via.toUpperCase()}
                     </button>
-                    <button onClick={() => handleSend("sms")} disabled={sending} className="bg-[#0b1228] text-white text-sm px-3 py-2 rounded-lg hover:bg-[#1a2540] disabled:opacity-50">
-                      Send via SMS
-                    </button>
-                    <button onClick={() => handleSend("both")} disabled={sending} className="bg-white border border-gray-300 text-gray-700 text-sm px-3 py-2 rounded-lg hover:bg-gray-50 disabled:opacity-50">
-                      Send Both
-                    </button>
-                  </>
-                ) : ["sent", "delivered", "opened", "verified", "in_progress"].includes(data.agreement.status) ? (
-                  <button onClick={handleResend} disabled={resendMutation.isPending} className="bg-[#FF6A00] text-white text-sm px-3 py-2 rounded-lg hover:bg-[#e55f00] disabled:opacity-50">
-                    Send Reminder
-                  </button>
-                ) : null}
-
-                {!["completed", "failed"].includes(data.agreement.status) && (
-                  <button onClick={handleRevoke} disabled={revokeMutation.isPending} className="bg-red-50 text-red-700 border border-red-200 text-sm px-3 py-2 rounded-lg hover:bg-red-100 disabled:opacity-50">
-                    Revoke
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Timeline */}
-            {data.events && data.events.length > 0 && (
-              <div>
-                <p className="text-xs font-medium text-gray-500 mb-2">Audit Log</p>
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {[...data.events].reverse().map(ev => (
-                    <div key={ev.id} className="flex gap-3 text-xs">
-                      <div className="w-2 h-2 bg-[#FF6A00] rounded-full mt-1 shrink-0" />
-                      <div>
-                        <span className="font-medium text-[#0b1228]">{ev.eventType.replace(/_/g, " ")}</span>
-                        <span className="text-gray-400 ml-2">{new Date(ev.createdAt).toLocaleString()}</span>
-                        {ev.ipAddress && <span className="text-gray-400 ml-2">· {ev.ipAddress}</span>}
-                      </div>
-                    </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Documents */}
-            {data.documents && data.documents.length > 0 && (
-              <div>
-                <p className="text-xs font-medium text-gray-500 mb-2">Documents</p>
-                <div className="space-y-1">
-                  {data.documents.map(doc => (
-                    <div key={doc.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg text-xs">
-                      <span className="text-gray-700">{doc.documentType.replace(/_/g, " ")}</span>
-                      <a href={doc.s3Url} target="_blank" rel="noreferrer" className="text-[#FF6A00] hover:underline">View</a>
+            {["sent", "delivered", "opened", "expired"].includes(data.agreement.status) && (
+              <button
+                onClick={handleResend}
+                disabled={resendMutation.isPending}
+                className="w-full border border-[#FF6A00] text-[#FF6A00] text-sm py-2 rounded-lg hover:bg-orange-50 disabled:opacity-50"
+              >
+                {resendMutation.isPending ? "Sending..." : "Send Reminder"}
+              </button>
+            )}
+
+            {!["completed", "failed"].includes(data.agreement.status) && (
+              <button
+                onClick={handleRevoke}
+                className="w-full border border-red-300 text-red-600 text-sm py-2 rounded-lg hover:bg-red-50"
+              >
+                Revoke Agreement
+              </button>
+            )}
+
+            {data.events.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-gray-500 uppercase">Audit Log</p>
+                <div className="space-y-1 max-h-48 overflow-y-auto">
+                  {data.events.map(ev => (
+                    <div key={ev.id} className="flex items-start gap-2 text-xs text-gray-600 py-1 border-b border-gray-100">
+                      <span className="text-gray-400 whitespace-nowrap">{new Date(ev.createdAt).toLocaleString()}</span>
+                      <span className="font-medium capitalize">{ev.eventType}</span>
                     </div>
                   ))}
                 </div>
@@ -525,13 +606,83 @@ function AgreementDetailDrawer({
   );
 }
 
+// ─── Bulk Progress Modal ──────────────────────────────────────────────────────
+
+function BulkProgressModal({
+  title,
+  total,
+  sent,
+  failed,
+  skipped,
+  running,
+  onClose,
+}: {
+  title: string;
+  total: number;
+  sent: number;
+  failed: number;
+  skipped?: number;
+  running: boolean;
+  onClose: () => void;
+}) {
+  const pct = total > 0 ? Math.round(((sent + failed) / total) * 100) : 0;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50" />
+      <div className="relative bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+        <h3 className="font-semibold text-[#0b1228] mb-4">{title}</h3>
+        <div className="space-y-3">
+          <div className="w-full bg-gray-100 rounded-full h-2">
+            <div
+              className="bg-[#FF6A00] h-2 rounded-full transition-all duration-300"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          <div className="grid grid-cols-3 gap-2 text-center text-sm">
+            <div className="bg-green-50 rounded-lg p-2">
+              <p className="text-xl font-bold text-green-700">{sent}</p>
+              <p className="text-xs text-green-600">Sent</p>
+            </div>
+            <div className="bg-red-50 rounded-lg p-2">
+              <p className="text-xl font-bold text-red-700">{failed}</p>
+              <p className="text-xs text-red-600">Failed</p>
+            </div>
+            {skipped !== undefined && (
+              <div className="bg-gray-50 rounded-lg p-2">
+                <p className="text-xl font-bold text-gray-700">{skipped}</p>
+                <p className="text-xs text-gray-600">Skipped</p>
+              </div>
+            )}
+          </div>
+          {running && (
+            <p className="text-xs text-gray-400 text-center">Processing {total} members — please wait…</p>
+          )}
+        </div>
+        {!running && (
+          <button
+            onClick={onClose}
+            className="mt-4 w-full bg-[#0b1228] text-white text-sm py-2 rounded-lg hover:bg-[#1a2540]"
+          >
+            Done
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Agreements Tab ───────────────────────────────────────────────────────────
 
 function AgreementsTab({ origin }: { origin: string }) {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [page, setPage] = useState(0);
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [generating, setGenerating] = useState<number | null>(null);
+  const [bulkVia, setBulkVia] = useState<"email" | "sms" | "both">("email");
+  const [showBulkSend, setShowBulkSend] = useState(false);
+  const [showBulkResend, setShowBulkResend] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState<{
+    title: string; total: number; sent: number; failed: number; skipped?: number; running: boolean;
+  } | null>(null);
 
   const { data, isLoading, refetch } = trpc.admin.agreements.list.useQuery({
     status: statusFilter || undefined,
@@ -539,38 +690,118 @@ function AgreementsTab({ origin }: { origin: string }) {
     offset: page * 20,
   });
 
-  const generateMutation = trpc.admin.agreements.generate.useMutation();
+  const bulkSendMutation = trpc.admin.agreements.bulkSend.useMutation();
+  const bulkResendMutation = trpc.admin.agreements.bulkResend.useMutation();
 
-  const handleGenerate = async (memberId: number) => {
-    setGenerating(memberId);
+  const handleBulkSend = async () => {
+    setShowBulkSend(false);
+    setBulkProgress({ title: "Sending Agreements", total: 0, sent: 0, failed: 0, skipped: 0, running: true });
     try {
-      const result = await generateMutation.mutateAsync({ memberId });
-      toast.success("Agreement link generated");
+      const result = await bulkSendMutation.mutateAsync({ via: bulkVia, origin });
+      setBulkProgress({ title: "Bulk Send Complete", total: result.total, sent: result.sent, failed: result.failed, skipped: result.skipped, running: false });
       refetch();
-      setSelectedId(result.id);
     } catch (err) {
-      toast.error("Failed: " + (err instanceof Error ? err.message : String(err)));
-    } finally {
-      setGenerating(null);
+      toast.error("Bulk send failed: " + (err instanceof Error ? err.message : String(err)));
+      setBulkProgress(null);
+    }
+  };
+
+  const handleBulkResend = async () => {
+    setShowBulkResend(false);
+    setBulkProgress({ title: "Sending Reminders", total: 0, sent: 0, failed: 0, running: true });
+    try {
+      const result = await bulkResendMutation.mutateAsync({
+        statuses: ["sent", "expired"],
+        via: bulkVia,
+        origin,
+      });
+      setBulkProgress({ title: "Bulk Resend Complete", total: result.total, sent: result.sent, failed: result.failed, running: false });
+      refetch();
+    } catch (err) {
+      toast.error("Bulk resend failed: " + (err instanceof Error ? err.message : String(err)));
+      setBulkProgress(null);
     }
   };
 
   return (
     <div className="space-y-5">
-      {/* Filter bar */}
-      <div className="flex flex-wrap gap-3 items-center">
-        <select
-          value={statusFilter}
-          onChange={e => { setStatusFilter(e.target.value); setPage(0); }}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
-        >
-          <option value="">All Statuses</option>
-          {(Object.keys(STATUS_LABELS) as AgreementStatus[]).map(s => (
-            <option key={s} value={s}>{STATUS_LABELS[s]}</option>
-          ))}
-        </select>
-        <button onClick={() => refetch()} className="text-sm text-gray-500 hover:text-gray-700">Refresh</button>
+      {/* Action bar */}
+      <div className="flex flex-wrap gap-3 items-center justify-between">
+        <div className="flex gap-2 items-center">
+          <select
+            value={statusFilter}
+            onChange={e => { setStatusFilter(e.target.value); setPage(0); }}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
+          >
+            <option value="">All Statuses</option>
+            {(Object.keys(STATUS_LABELS) as AgreementStatus[]).map(s => (
+              <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+            ))}
+          </select>
+          <button onClick={() => refetch()} className="text-sm text-gray-500 hover:text-gray-700">Refresh</button>
+        </div>
+
+        {/* Bulk actions */}
+        <div className="flex gap-2 items-center">
+          <select
+            value={bulkVia}
+            onChange={e => setBulkVia(e.target.value as "email" | "sms" | "both")}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
+          >
+            <option value="email">Email</option>
+            <option value="sms">SMS</option>
+            <option value="both">Email + SMS</option>
+          </select>
+          <button
+            onClick={() => setShowBulkSend(true)}
+            className="bg-[#FF6A00] text-white text-sm px-4 py-2 rounded-lg hover:bg-[#e55f00] transition-colors"
+          >
+            Bulk Send
+          </button>
+          <button
+            onClick={() => setShowBulkResend(true)}
+            className="bg-[#0b1228] text-white text-sm px-4 py-2 rounded-lg hover:bg-[#1a2540] transition-colors"
+          >
+            Bulk Resend
+          </button>
+        </div>
       </div>
+
+      {/* Bulk Send confirm */}
+      {showBulkSend && (
+        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
+          <p className="text-sm font-semibold text-orange-800 mb-1">Confirm Bulk Send</p>
+          <p className="text-xs text-orange-700 mb-3">
+            This will generate and send agreements to <strong>all members who don't already have an active agreement</strong> via <strong>{bulkVia === "both" ? "Email + SMS" : bulkVia.toUpperCase()}</strong>. This cannot be undone.
+          </p>
+          <div className="flex gap-2">
+            <button onClick={handleBulkSend} className="bg-[#FF6A00] text-white text-sm px-4 py-2 rounded-lg hover:bg-[#e55f00]">
+              Confirm — Send All
+            </button>
+            <button onClick={() => setShowBulkSend(false)} className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Resend confirm */}
+      {showBulkResend && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+          <p className="text-sm font-semibold text-blue-800 mb-1">Confirm Bulk Resend</p>
+          <p className="text-xs text-blue-700 mb-3">
+            This will send a reminder to all members with <strong>Sent</strong> or <strong>Expired</strong> agreements via <strong>{bulkVia === "both" ? "Email + SMS" : bulkVia.toUpperCase()}</strong>. Expired agreements will be extended 72 hours.
+          </p>
+          <div className="flex gap-2">
+            <button onClick={handleBulkResend} className="bg-[#0b1228] text-white text-sm px-4 py-2 rounded-lg hover:bg-[#1a2540]">
+              Confirm — Resend All
+            </button>
+            <button onClick={() => setShowBulkResend(false)} className="text-sm text-gray-600 hover:text-gray-900 px-3 py-2">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -604,7 +835,7 @@ function AgreementsTab({ origin }: { origin: string }) {
                     <p className="font-medium text-[#0b1228]">{row.member?.name ?? "—"}</p>
                     <p className="text-xs text-gray-500">{row.member?.email}</p>
                   </td>
-                  <td className="px-4 py-3 text-gray-600">{row.member?.reservationId ?? "—"}</td>
+                  <td className="px-4 py-3 text-gray-600 text-xs">{row.member?.reservationId ?? "—"}</td>
                   <td className="px-4 py-3 text-gray-600">{row.agreement.agreementState}</td>
                   <td className="px-4 py-3">
                     <StatusBadge status={row.agreement.status} />
@@ -642,7 +873,6 @@ function AgreementsTab({ origin }: { origin: string }) {
         )}
       </div>
 
-      {/* Detail drawer */}
       {selectedId !== null && (
         <AgreementDetailDrawer
           agreementId={selectedId}
@@ -650,25 +880,39 @@ function AgreementsTab({ origin }: { origin: string }) {
           origin={origin}
         />
       )}
+
+      {bulkProgress && (
+        <BulkProgressModal
+          {...bulkProgress}
+          onClose={() => setBulkProgress(null)}
+        />
+      )}
     </div>
   );
 }
 
-// ─── Generate Agreement Panel ─────────────────────────────────────────────────
+// ─── Generate Agreement Tab ───────────────────────────────────────────────────
 
 function GenerateTab({ origin }: { origin: string }) {
-  const [memberId, setMemberId] = useState("");
-  const [result, setResult] = useState<{ id: number; token: string; link: string; expiresAt: Date } | null>(null);
+  const [search, setSearch] = useState("");
+  const [selectedMember, setSelectedMember] = useState<{ id: number; name: string; email: string; reservationId: string } | null>(null);
+  const [result, setResult] = useState<{ id: number; token: string; link: string; expiresAt: Date; memberName: string } | null>(null);
+  const [expiresInHours, setExpiresInHours] = useState(72);
+
+  const { data: members, isLoading: searching } = trpc.admin.members.list.useQuery(
+    { search: search || undefined, limit: 8, offset: 0 },
+    { enabled: search.length >= 2 }
+  );
+
   const generateMutation = trpc.admin.agreements.generate.useMutation();
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
-    const id = parseInt(memberId);
-    if (!id) return;
+    if (!selectedMember) return;
     try {
-      const r = await generateMutation.mutateAsync({ memberId: id });
+      const r = await generateMutation.mutateAsync({ memberId: selectedMember.id, expiresInHours, origin });
       setResult({ ...r, link: `${origin}/agreement/${r.token}` });
-      toast.success("Agreement link generated");
+      toast.success(`Agreement link generated for ${r.memberName}`);
     } catch (err) {
       toast.error("Failed: " + (err instanceof Error ? err.message : String(err)));
     }
@@ -679,22 +923,59 @@ function GenerateTab({ origin }: { origin: string }) {
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="font-semibold text-[#0b1228] mb-4">Generate Agreement Link</h3>
         <form onSubmit={handleGenerate} className="space-y-4">
+          {/* Member search */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Member ID</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Search Member</label>
             <input
-              type="number"
-              value={memberId}
-              onChange={e => setMemberId(e.target.value)}
-              placeholder="e.g. 42"
+              type="text"
+              value={selectedMember ? `${selectedMember.name} — ${selectedMember.reservationId}` : search}
+              onChange={e => { setSearch(e.target.value); setSelectedMember(null); setResult(null); }}
+              placeholder="Type name, email, or reservation ID..."
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
               required
             />
-            <p className="text-xs text-gray-400 mt-1">Find the member ID in the Members tab</p>
+            {/* Dropdown results */}
+            {!selectedMember && search.length >= 2 && (
+              <div className="mt-1 border border-gray-200 rounded-lg bg-white shadow-lg overflow-hidden">
+                {searching && <p className="px-3 py-2 text-xs text-gray-400">Searching...</p>}
+                {!searching && (members?.rows?.length ?? 0) === 0 && (
+                  <p className="px-3 py-2 text-xs text-gray-400">No members found</p>
+                )}
+                {members?.rows?.map(m => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => { setSelectedMember({ id: m.id, name: m.name, email: m.email, reservationId: m.reservationId }); setSearch(""); }}
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-orange-50 border-b border-gray-100 last:border-0"
+                  >
+                    <span className="font-medium text-[#0b1228]">{m.name}</span>
+                    <span className="text-gray-400 text-xs ml-2">#{m.id} · {m.reservationId}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
+
+          {/* Expiry */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Link Expiry</label>
+            <select
+              value={expiresInHours}
+              onChange={e => setExpiresInHours(parseInt(e.target.value))}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
+            >
+              <option value={24}>24 hours</option>
+              <option value={48}>48 hours</option>
+              <option value={72}>72 hours (default)</option>
+              <option value={168}>7 days</option>
+              <option value={336}>14 days</option>
+            </select>
+          </div>
+
           <button
             type="submit"
-            disabled={generateMutation.isPending}
-            className="w-full bg-[#FF6A00] text-white font-semibold py-2 rounded-lg hover:bg-[#e55f00] disabled:opacity-50"
+            disabled={!selectedMember || generateMutation.isPending}
+            className="w-full bg-[#FF6A00] text-white font-semibold py-2 rounded-lg hover:bg-[#e55f00] disabled:opacity-50 transition-colors"
           >
             {generateMutation.isPending ? "Generating..." : "Generate Link"}
           </button>
@@ -703,8 +984,9 @@ function GenerateTab({ origin }: { origin: string }) {
 
       {result && (
         <div className="bg-green-50 border border-green-200 rounded-xl p-5">
-          <p className="text-sm font-semibold text-green-800 mb-3">Agreement link ready</p>
-          <div className="flex gap-2 mb-3">
+          <p className="text-sm font-semibold text-green-800 mb-1">Agreement link ready for {result.memberName}</p>
+          <p className="text-xs text-green-600 mb-3">Expires: {new Date(result.expiresAt).toLocaleString()}</p>
+          <div className="flex gap-2">
             <input
               readOnly
               value={result.link}
@@ -717,7 +999,9 @@ function GenerateTab({ origin }: { origin: string }) {
               Copy
             </button>
           </div>
-          <p className="text-xs text-green-700">Expires: {new Date(result.expiresAt).toLocaleString()}</p>
+          <p className="text-xs text-green-600 mt-3">
+            Go to the <strong>Agreements</strong> tab to send this link via email or SMS.
+          </p>
         </div>
       )}
     </div>

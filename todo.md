@@ -90,3 +90,17 @@
 ## Data Format Notes
 - Reservation ID format: [member number]-[last 6 of VIN]-[mmddyyyy of pickup] e.g. 1042-N09186-05012026
 - [ ] Parse and display reservation ID components (member #, VIN suffix, pickup date) in member detail and agreement views
+
+## Bug Fixes
+- [x] Fix "Member not found" error — Generate tab now uses live member search dropdown; origin passed correctly from browser
+
+## Bulk Operations
+- [x] tRPC: admin.agreements.bulkSend — generate + send to all members without active agreement
+- [x] tRPC: admin.agreements.bulkResend — reminder to all Sent/Expired agreements
+- [x] UI: Bulk Send button in Agreements tab with channel selector (Email/SMS/Both) + confirmation step
+- [x] UI: Bulk Resend button with same confirmation + progress modal showing sent/failed/skipped
+- [x] Rate limiting: 200ms stagger between sends (safe for 1,400 members ~5 min total)
+
+## Member Management
+- [x] tRPC: admin.members.update — edit any field on an existing member
+- [x] UI: Edit Member button/drawer in Members tab with pre-filled form for all 17 fields
