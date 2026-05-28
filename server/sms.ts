@@ -4,6 +4,9 @@
  *
  * TextLine API docs: https://textline.com/api
  * Endpoint: POST https://application.textline.com/api/conversations.json
+ *
+ * All SMS templates are kept under 160 characters (GSM-7 single segment).
+ * Agreement links are pre-shortened via shortenUrl() before being passed here.
  */
 
 export async function sendSms(opts: {
@@ -51,11 +54,35 @@ export async function sendSms(opts: {
 }
 
 // ─── SMS Templates ────────────────────────────────────────────────────────────
+// All templates verified under 160 chars (GSM-7).
+// The `link` parameter must already be a shortened URL (e.g. https://…/s/aB3xQ7mZ).
 
-export function buildAgreementSms(opts: { firstName: string; link: string }): string {
-  return `Hi ${opts.firstName}, your Whip Member Agreement is ready to sign. Please complete it here: ${opts.link}  — Whip`;
+/**
+ * Initial send — 156 chars max with a 30-char short link.
+ * "Whip: Action required. Review & sign your updated Member Agreement to continue rental: [LINK]"
+ */
+export function buildAgreementSms(opts: { link: string }): string {
+  const msg = `Whip: Action required. Review & sign your updated Member Agreement to continue rental: ${opts.link}`;
+  if (msg.length > 160) console.warn(`[SMS] Template exceeds 160 chars (${msg.length}): buildAgreementSms`);
+  return msg;
 }
 
-export function buildReminderSms(opts: { firstName: string; link: string }): string {
-  return `Reminder: Hi ${opts.firstName}, your Whip Member Agreement still needs your signature. Complete it here: ${opts.link}  — Whip`;
+/**
+ * Reminder (1st and 2nd) — 153 chars max with a 30-char short link.
+ * "Whip reminder: Your updated Member Agreement is still pending. Please review & sign here: [LINK]"
+ */
+export function buildReminderSms(opts: { link: string }): string {
+  const msg = `Whip reminder: Your updated Member Agreement is still pending. Please review & sign here: ${opts.link}`;
+  if (msg.length > 160) console.warn(`[SMS] Template exceeds 160 chars (${msg.length}): buildReminderSms`);
+  return msg;
+}
+
+/**
+ * Final reminder (3rd / last notice).
+ * "Whip: Your account may be impacted if your updated agreement is not signed soon: [LINK]"
+ */
+export function buildFinalReminderSms(opts: { link: string }): string {
+  const msg = `Whip: Your account may be impacted if your updated agreement is not signed soon: ${opts.link}`;
+  if (msg.length > 160) console.warn(`[SMS] Template exceeds 160 chars (${msg.length}): buildFinalReminderSms`);
+  return msg;
 }

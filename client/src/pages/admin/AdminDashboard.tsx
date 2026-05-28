@@ -14,6 +14,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { toast } from "sonner";
 import { MARKETS } from "@/lib/agreementData";
+import { buildReservationId } from "@shared/reservationId";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -236,6 +237,19 @@ function EditMemberDrawer({ member, onClose, onSaved }: { member: MemberRecord; 
 
   const updateMutation = trpc.admin.members.update.useMutation();
 
+  // Auto-compute reservationId when customerId, vin, or startDate changes.
+  // Clears reservationId when any source field is incomplete.
+  const handleFieldChange = (key: string, value: string) => {
+    setForm(f => {
+      const next = { ...f, [key]: value };
+      if (["customerId", "vin", "startDate"].includes(key)) {
+        const computed = buildReservationId(next.customerId, next.vin, next.startDate);
+        next.reservationId = computed; // empty string when any source field is missing
+      }
+      return next;
+    });
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -264,9 +278,11 @@ function EditMemberDrawer({ member, onClose, onSaved }: { member: MemberRecord; 
                 <input
                   type={type ?? "text"}
                   value={form[key] ?? ""}
-                  onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
+                  onChange={e => handleFieldChange(key, e.target.value)}
+                  readOnly={key === "reservationId"}
+                  className={`w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF6A00] ${key === "reservationId" ? "bg-gray-50 text-gray-500 cursor-default" : ""}`}
                 />
+                {key === "reservationId" && <p className="text-xs text-gray-400 mt-0.5">Auto-computed from Customer ID, VIN &amp; Start Date</p>}
               </div>
             ))}
           </div>
@@ -354,6 +370,19 @@ function MembersTab() {
     }
   };
 
+  // Auto-compute reservationId when customerId, vin, or startDate changes.
+  // Clears reservationId when any source field is incomplete.
+  const handleFormFieldChange = (field: string, value: string) => {
+    setForm(f => {
+      const next = { ...f, [field]: value };
+      if (["customerId", "vin", "startDate"].includes(field)) {
+        const computed = buildReservationId(next.customerId, next.vin, next.startDate);
+        next.reservationId = computed; // empty string when any source field is missing
+      }
+      return next;
+    });
+  };
+
   const handleManualCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -430,9 +459,10 @@ function MembersTab() {
                 <input
                   type={field === "dob" || field === "startDate" || field === "endDate" ? "date" : "text"}
                   value={form[field] ?? ""}
-                  onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
-                  required
+                  onChange={e => handleFormFieldChange(field, e.target.value)}
+                  readOnly={field === "reservationId"}
+                  className={`w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF6A00] ${field === "reservationId" ? "bg-gray-50 text-gray-500 cursor-default" : ""}`}
+                  required={field !== "reservationId"}
                 />
               </div>
             ))}

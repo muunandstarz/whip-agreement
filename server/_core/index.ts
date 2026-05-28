@@ -10,6 +10,9 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { processWebhook } from "../chargeover";
 import { sendReminderHandler } from "../reminderHandler";
+import { eq } from "drizzle-orm";
+import { getDb } from "../db";
+import { shortLinks } from "../../drizzle/schema";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -38,6 +41,33 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   registerStorageProxy(app);
   registerOAuthRoutes(app);
+
+  // ── Short-link Redirect ────────────────────────────────────────────────────
+  // GET /s/:slug → 302 to the stored targetUrl (increments click counter)
+  app.get("/s/:slug", async (req, res) => {
+    try {
+      const db = await getDb();
+      if (!db) return res.status(503).send("Service unavailable");
+      const [link] = await db
+        .select()
+        .from(shortLinks)
+        .where(eq(shortLinks.slug, req.params.slug))
+        .limit(1);
+      if (!link) return res.status(404).send("Link not found");
+      if (link.expiresAt && link.expiresAt < new Date()) {
+        return res.status(410).send("Link expired");
+      }
+      // Increment click counter (fire-and-forget)
+      db.update(shortLinks)
+        .set({ clicks: (link.clicks ?? 0) + 1 })
+        .where(eq(shortLinks.id, link.id))
+        .catch(() => {});
+      return res.redirect(302, link.targetUrl);
+    } catch (err) {
+      console.error("[ShortLink] Redirect error:", err);
+      return res.status(500).send("Internal error");
+    }
+  });
 
   // ── Scheduled Reminder Handler ─────────────────────────────────────────────
   // Called by Manus Heartbeat cron at 24h/48h/72h after agreement is sent.

@@ -30,7 +30,7 @@ import {
   buildReminderEmail,
   buildVerificationCodeEmail,
 } from "./email";
-import { sendSms, buildAgreementSms, buildReminderSms } from "./sms";
+import { sendSms, buildAgreementSms, buildReminderSms, buildFinalReminderSms } from "./sms";
 
 // ─── Email tests ──────────────────────────────────────────────────────────────
 
@@ -81,28 +81,42 @@ describe("sendEmail", () => {
 });
 
 describe("Email template builders", () => {
-  it("buildAgreementEmail returns correct subject and contains member info", () => {
+  it("buildAgreementEmail returns approved subject and contains link", () => {
     const { subject, html } = buildAgreementEmail({
       firstName: "Jordan",
       vehicle: "2024 Tesla Model Y",
       reservationId: "1042-N09186-05012026",
       agreementState: "MD",
-      link: "https://whipagree-3narmaq7.manus.space/agreement/abc123",
+      link: "https://whipagree-3narmaq7.manus.space/s/aB3xQ7mZ",
     });
-    expect(subject).toContain("Ready to Sign");
+    expect(subject).toBe("Action Required: Updated Whip Member Agreement");
     expect(html).toContain("Jordan");
-    expect(html).toContain("2024 Tesla Model Y");
-    expect(html).toContain("1042-N09186-05012026");
-    expect(html).toContain("MD");
-    expect(html).toContain("abc123");
+    expect(html).toContain("aB3xQ7mZ");
+    expect(html).toContain("Whip");
   });
 
-  it("buildReminderEmail marks final reminder when reminderCount >= 2", () => {
-    const { subject: s1 } = buildReminderEmail({ firstName: "Jordan", vehicle: "Tesla", link: "http://x", reminderCount: 1 });
-    const { subject: s2, html: h2 } = buildReminderEmail({ firstName: "Jordan", vehicle: "Tesla", link: "http://x", reminderCount: 2 });
-    expect(s1).not.toContain("Final");
-    expect(s2).toContain("Final");
-    expect(h2).toContain("final reminder");
+  it("buildReminderEmail uses 'Reminder' subject for count < 3", () => {
+    const { subject, html } = buildReminderEmail({
+      firstName: "Jordan",
+      vehicle: "Tesla",
+      link: "https://example.com/s/abc",
+      reminderCount: 1,
+    });
+    expect(subject).toBe("Reminder: Updated Whip Agreement Still Pending");
+    expect(html).toContain("Jordan");
+    expect(html).toContain("abc");
+  });
+
+  it("buildReminderEmail uses 'Final Notice' subject for count >= 3", () => {
+    const { subject, html } = buildReminderEmail({
+      firstName: "Jordan",
+      vehicle: "Tesla",
+      link: "https://example.com/s/xyz",
+      reminderCount: 3,
+    });
+    expect(subject).toBe("Final Notice: Updated Whip Agreement Still Pending");
+    expect(html).toContain("Jordan");
+    expect(html).toContain("xyz");
   });
 
   it("buildVerificationCodeEmail contains the code prominently", () => {
@@ -138,7 +152,7 @@ describe("sendSms", () => {
 
   it("sends POST to TextLine with correct headers and body", async () => {
     mockFetch.mockResolvedValueOnce({ ok: true, json: async () => ({ id: "conv-1" }) });
-    const result = await sendSms({ to: "301-555-0192", message: "Sign your agreement: https://example.com/abc" });
+    const result = await sendSms({ to: "301-555-0192", message: "Sign your agreement: https://example.com/s/abc" });
     expect(result).toBe(true);
     expect(mockFetch).toHaveBeenCalledOnce();
     const [url, opts] = mockFetch.mock.calls[0];
@@ -158,16 +172,30 @@ describe("sendSms", () => {
 });
 
 describe("SMS template builders", () => {
-  it("buildAgreementSms includes name and link", () => {
-    const msg = buildAgreementSms({ firstName: "Jordan", link: "https://example.com/abc" });
-    expect(msg).toContain("Jordan");
-    expect(msg).toContain("https://example.com/abc");
+  const SHORT_LINK = "https://whipagree-3narmaq7.manus.space/s/aB3xQ7mZ";
+
+  it("buildAgreementSms uses approved copy and stays under 160 chars", () => {
+    const msg = buildAgreementSms({ link: SHORT_LINK });
+    expect(msg).toContain("Action required");
+    expect(msg).toContain("Member Agreement");
+    expect(msg).toContain(SHORT_LINK);
     expect(msg).toContain("Whip");
+    expect(msg.length).toBeLessThanOrEqual(160);
   });
 
-  it("buildReminderSms includes name and link", () => {
-    const msg = buildReminderSms({ firstName: "Jordan", link: "https://example.com/abc" });
-    expect(msg).toContain("Jordan");
-    expect(msg).toContain("https://example.com/abc");
+  it("buildReminderSms uses approved copy and stays under 160 chars", () => {
+    const msg = buildReminderSms({ link: SHORT_LINK });
+    expect(msg).toContain("pending");
+    expect(msg).toContain(SHORT_LINK);
+    expect(msg).toContain("Whip");
+    expect(msg.length).toBeLessThanOrEqual(160);
+  });
+
+  it("buildFinalReminderSms uses approved copy and stays under 160 chars", () => {
+    const msg = buildFinalReminderSms({ link: SHORT_LINK });
+    expect(msg).toContain("account may be impacted");
+    expect(msg).toContain(SHORT_LINK);
+    expect(msg).toContain("Whip");
+    expect(msg.length).toBeLessThanOrEqual(160);
   });
 });

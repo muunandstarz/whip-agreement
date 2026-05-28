@@ -178,7 +178,22 @@
 - [ ] Live end-to-end send test with real member (add member → send → confirm receipt)
 
 ## Reservation ID Auto-Generation
-- [ ] Manual add member form: auto-compute reservationId when memberId + VIN + startDate are all filled
-- [ ] Edit member drawer: same auto-compute logic on field change
-- [ ] Bulk CSV import: compute reservationId server-side after upload if not already present in CSV
-- [ ] Server-side helper: buildReservationId(memberId, vin, startDate) → "[memberId]-[last6VIN]-[mmddyyyy]"
+- [x] Manual add member form: auto-compute reservationId when memberId + VIN + startDate are all filled
+- [x] Edit member drawer: same auto-compute logic on field change
+- [x] Bulk CSV import: compute reservationId server-side after upload if not already present in CSV
+- [x] Server-side helper: buildReservationId(memberId, vin, startDate) → "[memberId]-[last6VIN]-[mmddyyyy]"
+
+## Branding & Template Updates (May 28, 2026)
+- [x] Update agreement email with approved copy (subject: "Action Required: Updated Whip Member Agreement")
+- [x] Update reminder email with approved copy (subject: "Reminder: Updated Whip Agreement Still Pending")
+- [x] Add final reminder email (3rd notice, subject: "Final Notice: Updated Whip Agreement Still Pending")
+- [x] Update SMS templates: initial, reminder, final reminder (all under 160 chars, approved copy)
+- [x] Whip logo in email header (all 3 email templates via LOGO_URL)
+- [x] Short-link system: short_links DB table + /s/:slug redirect route + shortenUrl() helper
+- [x] All send paths (send, sendToMembers, bulkSend, bulkResend, manual resend, reminderHandler) use shortened URLs
+- [x] SMS char count verified: all 3 templates ≤ 160 chars (tested in vitest with 30-char sample link)
+- [x] 21 tests passing (3 test files)
+- [x] Reservation ID auto-generation: buildReservationId helper in shared/reservationId.ts
+- [x] Reservation ID auto-generation: manual add form auto-compute onChange
+- [x] Reservation ID auto-generation: edit member drawer auto-compute onChange
+- [x] Reservation ID auto-generation: bulk CSV import server-side compute if missing

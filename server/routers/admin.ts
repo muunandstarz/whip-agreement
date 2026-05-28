@@ -2,7 +2,9 @@ import { TRPCError } from "@trpc/server";
 import { randomBytes, randomUUID } from "crypto";
 import { z } from "zod";
 import { sendEmail, buildAgreementEmail, buildReminderEmail, buildVerificationCodeEmail } from "../email";
-import { sendSms, buildAgreementSms, buildReminderSms } from "../sms";
+import { sendSms, buildAgreementSms, buildReminderSms, buildFinalReminderSms } from "../sms";
+import { shortenUrl } from "../shortLink";
+import { buildReservationId } from "../../shared/reservationId";
 import {
   createAgreement,
   createDocument,
@@ -32,6 +34,12 @@ import { storagePut } from "../storage";
 import { createHeartbeatJob, deleteHeartbeatJob } from "../_core/heartbeat";
 import { parse as parseCookie } from "cookie";
 import { COOKIE_NAME } from "@shared/const";
+
+// ─── Short-link helper ────────────────────────────────────────────────────────
+// Returns a short URL for SMS; falls back to the full URL if shortening fails.
+async function getShortLink(fullUrl: string, agreementId: number, origin: string): Promise<string> {
+  return shortenUrl({ targetUrl: fullUrl, agreementId, baseUrl: origin });
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -133,7 +141,13 @@ export const adminRouter = router({
         const results: { index: number; id?: number; agreementId?: number; link?: string; error?: string }[] = [];
         for (let i = 0; i < input.rows.length; i++) {
           try {
-            const id = await createMember({ ...input.rows[i], importedBy: ctx.user.id, importSource: "csv" });
+            const row = input.rows[i];
+            // Auto-compute reservationId if not provided in CSV
+            if (!row.reservationId || row.reservationId.trim() === "") {
+              const computed = buildReservationId(row.customerId, row.vin, row.startDate);
+              if (computed) (row as Record<string, string>).reservationId = computed;
+            }
+            const id = await createMember({ ...row, importedBy: ctx.user.id, importSource: "csv" });
             // Auto-generate agreement link for each imported member
             const token = generateToken();
             const expiresAt = new Date(Date.now() + 72 * 60 * 60 * 1000);
@@ -305,6 +319,7 @@ export const adminRouter = router({
             });
 
             const link = `${origin}/agreement/${token}`;
+            const shortLink = await getShortLink(link, agreementId, origin);
             let emailSent = false;
             let smsSent = false;
 
@@ -314,7 +329,7 @@ export const adminRouter = router({
                 vehicle: member.vehicle,
                 reservationId: member.reservationId,
                 agreementState: member.agreementState,
-                link,
+                link: shortLink,
               });
               emailSent = await sendEmail({ to: member.email, subject, html });
             }
@@ -322,7 +337,7 @@ export const adminRouter = router({
             if (input.via === "sms" || input.via === "both") {
               smsSent = await sendSms({
                 to: member.phone,
-                message: buildAgreementSms({ firstName: member.name.split(" ")[0], link }),
+                message: buildAgreementSms({ link: shortLink }),
               });
             }
 
@@ -385,7 +400,9 @@ export const adminRouter = router({
             });
 
             const link = `${origin}/agreement/${agreement.token}`;
+            const shortLink = await getShortLink(link, agreement.id, origin);
             const via = input.via ?? agreement.sentVia ?? "email";
+            const reminderNum = (agreement.reminderCount ?? 0) + 1;
             let emailSent = false;
             let smsSent = false;
 
@@ -393,14 +410,17 @@ export const adminRouter = router({
               const { subject, html } = buildReminderEmail({
                 firstName: member.name.split(" ")[0],
                 vehicle: member.vehicle,
-                link,
-                reminderCount: (agreement.reminderCount ?? 0) + 1,
+                link: shortLink,
+                reminderCount: reminderNum,
               });
               emailSent = await sendEmail({ to: member.email, subject, html });
             }
 
             if (via === "sms" || via === "both") {
-              smsSent = await sendSms({ to: member.phone, message: buildReminderSms({ firstName: member.name.split(" ")[0], link }) });
+              const smsBody = reminderNum >= 3
+                ? buildFinalReminderSms({ link: shortLink })
+                : buildReminderSms({ link: shortLink });
+              smsSent = await sendSms({ to: member.phone, message: smsBody });
             }
 
             await logEvent({ agreementId: agreement.id, memberId: agreement.memberId, eventType: "resent", performedBy: ctx.user.id, metadata: { via, emailSent, smsSent, bulk: true } });
@@ -435,6 +455,7 @@ export const adminRouter = router({
 
         const origin = input.origin ?? "https://whipagree-3narmaq7.manus.space";
         const link = `${origin}/agreement/${agreement.token}`;
+        const shortLink = await getShortLink(link, input.agreementId, origin);
         let emailSent = false;
         let smsSent = false;
 
@@ -445,7 +466,7 @@ export const adminRouter = router({
             vehicle: member.vehicle,
             reservationId: member.reservationId,
             agreementState: member.agreementState,
-            link,
+            link: shortLink,
           });
           emailSent = await sendEmail({ to: member.email, subject, html });
           console.log(`[Send] Email result: ${emailSent}`);
@@ -455,7 +476,7 @@ export const adminRouter = router({
           console.log(`[Send] Sending SMS to ${member.phone}`);
           smsSent = await sendSms({
             to: member.phone,
-            message: buildAgreementSms({ firstName: member.name.split(" ")[0], link }),
+            message: buildAgreementSms({ link: shortLink }),
           });
           console.log(`[Send] SMS result: ${smsSent}`);
         }
@@ -536,16 +557,21 @@ export const adminRouter = router({
         if (!member) throw new TRPCError({ code: "NOT_FOUND" });
         const origin = input.origin ?? "https://whipagree-3narmaq7.manus.space";
         const link = `${origin}/agreement/${agreement.token}`;
+        const shortLink = await getShortLink(link, input.agreementId, origin);
+        const reminderNum = (agreement.reminderCount ?? 0) + 1;
         const { subject: remSubject, html: remHtml } = buildReminderEmail({
           firstName: member.name.split(" ")[0],
           vehicle: member.vehicle,
-          link,
-          reminderCount: (agreement.reminderCount ?? 0) + 1,
+          link: shortLink,
+          reminderCount: reminderNum,
         });
         await sendEmail({ to: member.email, subject: remSubject, html: remHtml });
         // Also send SMS reminder if original was sent via SMS or both
         if (agreement.sentVia === "sms" || agreement.sentVia === "both") {
-          await sendSms({ to: member.phone, message: buildReminderSms({ firstName: member.name.split(" ")[0], link }) });
+          const smsBody = reminderNum >= 3
+            ? buildFinalReminderSms({ link: shortLink })
+            : buildReminderSms({ link: shortLink });
+          await sendSms({ to: member.phone, message: smsBody });
         }
 
         return { ok: true };
@@ -632,6 +658,7 @@ export const adminRouter = router({
             }
 
             const link = `${origin}/agreement/${token}`;
+            const shortLink = await getShortLink(link, agreementId, origin);
             let emailSent = false;
             let smsSent = false;
 
@@ -642,7 +669,7 @@ export const adminRouter = router({
                 vehicle: member.vehicle,
                 reservationId: member.reservationId,
                 agreementState: member.agreementState,
-                link,
+                link: shortLink,
               });
               emailSent = await sendEmail({ to: member.email, subject, html });
               console.log(`[SendToMembers] Email result: ${emailSent} for memberId=${member.id}`);
@@ -652,7 +679,7 @@ export const adminRouter = router({
               console.log(`[SendToMembers] Sending SMS to ${member.phone} (memberId=${member.id})`);
               smsSent = await sendSms({
                 to: member.phone,
-                message: buildAgreementSms({ firstName: member.name.split(" ")[0], link }),
+                message: buildAgreementSms({ link: shortLink }),
               });
               console.log(`[SendToMembers] SMS result: ${smsSent} for memberId=${member.id}`);
             }

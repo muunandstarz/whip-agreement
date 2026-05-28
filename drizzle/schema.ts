@@ -339,3 +339,20 @@ export const chargeoverWebhookEvents = mysqlTable("chargeover_webhook_events", {
 
 export type ChargeoverWebhookEvent = typeof chargeoverWebhookEvents.$inferSelect;
 export type InsertChargeoverWebhookEvent = typeof chargeoverWebhookEvents.$inferInsert;
+
+// ─── Short Links ──────────────────────────────────────────────────────────────
+// Maps a short 8-char slug to a full URL. Used to keep SMS messages under 160 chars.
+// Redirect handled by GET /s/:slug → 302 to targetUrl.
+
+export const shortLinks = mysqlTable("short_links", {
+  id: int("id").autoincrement().primaryKey(),
+  slug: varchar("slug", { length: 16 }).notNull().unique(),   // e.g. "aB3xQ7mZ"
+  targetUrl: varchar("targetUrl", { length: 2048 }).notNull(),
+  agreementId: int("agreementId"),                             // optional FK → agreements.id
+  clicks: int("clicks").default(0).notNull(),
+  expiresAt: timestamp("expiresAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ShortLink = typeof shortLinks.$inferSelect;
+export type InsertShortLink = typeof shortLinks.$inferInsert;

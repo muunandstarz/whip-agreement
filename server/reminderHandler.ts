@@ -13,7 +13,8 @@ import { sdk } from "./_core/sdk";
 import { getDb } from "./db";
 import { agreements, members } from "../drizzle/schema";
 import { sendEmail, buildReminderEmail } from "./email";
-import { sendSms, buildReminderSms } from "./sms";
+import { sendSms, buildReminderSms, buildFinalReminderSms } from "./sms";
+import { shortenUrl } from "./shortLink";
 
 // Statuses where a reminder is still meaningful
 const REMINDER_ELIGIBLE_STATUSES = ["sent", "delivered", "opened", "verified", "in_progress"];
@@ -86,6 +87,7 @@ export async function sendReminderHandler(req: Request, res: Response) {
     // Build the agreement link
     const baseUrl = process.env.SITE_URL || "https://whipagree-3narmaq7.manus.space";
     const link = `${baseUrl}/agreement/${agreement.token}`;
+    const shortLink = await shortenUrl({ targetUrl: link, agreementId: agreement.id, baseUrl });
     const firstName = member.name.split(" ")[0];
     const reminderNum = reminderCount + 1;
 
@@ -98,7 +100,7 @@ export async function sendReminderHandler(req: Request, res: Response) {
       const { subject, html } = buildReminderEmail({
         firstName,
         vehicle: member.vehicle,
-        link,
+        link: shortLink,
         reminderCount: reminderNum,
       });
       emailOk = await sendEmail({ to: member.email, subject, html });
@@ -106,7 +108,9 @@ export async function sendReminderHandler(req: Request, res: Response) {
 
     // Send SMS reminder
     if (sentVia === "sms" || sentVia === "both") {
-      const message = buildReminderSms({ firstName, link });
+      const message = reminderNum >= 3
+        ? buildFinalReminderSms({ link: shortLink })
+        : buildReminderSms({ link: shortLink });
       smsOk = await sendSms({ to: member.phone, message });
     }
 
