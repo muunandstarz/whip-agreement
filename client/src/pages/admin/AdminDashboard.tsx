@@ -630,11 +630,43 @@ function AgreementDetailDrawer({
 
         {data && (
           <div className="flex-1 p-6 space-y-5">
+            {/* Status + exception */}
             <div className="flex items-center gap-3">
               <StatusBadge status={data.agreement.status} />
               {data.agreement.hasException && (
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">Exception</span>
               )}
+            </div>
+
+            {/* Visual checkpoint timeline */}
+            <div className="bg-gray-50 rounded-xl p-4">
+              <p className="text-xs font-medium text-gray-500 uppercase mb-3">Agreement Progress</p>
+              <div className="flex items-start justify-between">
+                {([
+                  { key: "sent",     label: "Sent",     ts: data.agreement.sentAt,     statuses: ["sent","delivered","opened","verified","in_progress","completed","expired"] as string[] },
+                  { key: "opened",   label: "Opened",   ts: null,                       statuses: ["opened","verified","in_progress","completed"] as string[] },
+                  { key: "verified", label: "Verified", ts: data.agreement.verifiedAt,  statuses: ["verified","in_progress","completed"] as string[] },
+                  { key: "signed",   label: "Signed",   ts: data.agreement.signedAt,    statuses: ["completed"] as string[] },
+                ]).map((step, i, arr) => {
+                  const done = step.statuses.includes(data.agreement.status);
+                  return (
+                    <div key={step.key} className="flex-1 flex flex-col items-center relative">
+                      {i < arr.length - 1 && (
+                        <div className={`absolute top-3 left-1/2 w-full h-0.5 ${done ? "bg-[#FF6A00]" : "bg-gray-200"}`} />
+                      )}
+                      <div className={`relative z-10 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold border-2 ${
+                        done ? "bg-[#FF6A00] border-[#FF6A00] text-white" : "bg-white border-gray-300 text-gray-300"
+                      }`}>
+                        {done ? "✓" : ""}
+                      </div>
+                      <p className={`mt-1 text-xs font-semibold ${done ? "text-[#FF6A00]" : "text-gray-400"}`}>{step.label}</p>
+                      {step.ts && (
+                        <p className="text-[9px] text-gray-400 text-center">{new Date(step.ts).toLocaleDateString()}</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
             {data.member && (
@@ -661,6 +693,45 @@ function AgreementDetailDrawer({
                 <p className="text-xs text-gray-400">Expires: {new Date(data.agreement.expiresAt).toLocaleString()}</p>
               )}
             </div>
+
+            {/* Signed document link */}
+            {data.documents && data.documents.length > 0 && (() => {
+              const signedDoc = data.documents.find(d => d.documentType === "combined_pdf") ??
+                                data.documents.find(d => d.documentType === "member_agreement") ??
+                                data.documents[data.documents.length - 1];
+              return (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-gray-500 uppercase">Signed Document</p>
+                  <a
+                    href={signedDoc.s3Url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 w-full bg-green-50 border border-green-200 text-green-800 text-sm py-2 px-4 rounded-lg hover:bg-green-100 transition-colors"
+                  >
+                    <span className="text-base">📄</span>
+                    <span className="flex-1 font-medium">View Signed Agreement</span>
+                    <span className="text-xs text-green-600">↗</span>
+                  </a>
+                  {data.documents.length > 1 && (
+                    <div className="space-y-1">
+                      {data.documents.map(doc => (
+                        <a
+                          key={doc.id}
+                          href={doc.s3Url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-xs text-gray-500 hover:text-[#FF6A00] py-0.5"
+                        >
+                          <span>📎</span>
+                          <span className="capitalize">{doc.documentType.replace(/_/g, " ")}</span>
+                          <span className="text-gray-400">— {new Date(doc.generatedAt).toLocaleDateString()}</span>
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {data.agreement.status === "not_sent" && (
               <div className="space-y-2">
@@ -812,6 +883,22 @@ function AgreementsTab({ origin }: { origin: string }) {
 
   const bulkSendMutation = trpc.admin.agreements.bulkSend.useMutation();
   const bulkResendMutation = trpc.admin.agreements.bulkResend.useMutation();
+  const rowResendMutation = trpc.admin.agreements.resend.useMutation();
+  const [remindingId, setRemindingId] = useState<number | null>(null);
+
+  const handleRowRemind = async (agreementId: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setRemindingId(agreementId);
+    try {
+      await rowResendMutation.mutateAsync({ agreementId, origin });
+      toast.success("Reminder sent");
+      refetch();
+    } catch (err) {
+      toast.error("Reminder failed: " + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setRemindingId(null);
+    }
+  };
 
   const handleBulkSend = async () => {
     setShowBulkSend(false);
@@ -1009,7 +1096,7 @@ function AgreementsTab({ origin }: { origin: string }) {
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Member</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Reservation</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">State</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Progress</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Sent</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Expires</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-gray-500 uppercase">Actions</th>
@@ -1048,9 +1135,34 @@ function AgreementsTab({ origin }: { origin: string }) {
                   <td className="px-4 py-3 text-gray-600 text-xs">{row.member?.reservationId ?? "—"}</td>
                   <td className="px-4 py-3 text-gray-600">{row.agreement.agreementState}</td>
                   <td className="px-4 py-3">
-                    <StatusBadge status={row.agreement.status} />
+                    {/* Status timeline checkpoints */}
+                    <div className="flex items-center gap-1">
+                      {([
+                        { key: "sent",     label: "Sent",     statuses: ["sent","delivered","opened","verified","in_progress","completed","expired"] as string[] },
+                        { key: "opened",   label: "Opened",   statuses: ["opened","verified","in_progress","completed"] as string[] },
+                        { key: "verified", label: "Verified", statuses: ["verified","in_progress","completed"] as string[] },
+                        { key: "signed",   label: "Signed",   statuses: ["completed"] as string[] },
+                      ]).map((step, i) => {
+                        const done = step.statuses.includes(row.agreement.status);
+                        return (
+                          <div key={step.key} className="flex items-center">
+                            {i > 0 && <div className={`w-4 h-px ${done ? "bg-[#FF6A00]" : "bg-gray-200"}`} />}
+                            <div className="flex flex-col items-center gap-0.5">
+                              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors ${
+                                done
+                                  ? "bg-[#FF6A00] border-[#FF6A00] text-white"
+                                  : "bg-white border-gray-300 text-gray-300"
+                              }`}>
+                                {done ? "✓" : ""}
+                              </div>
+                              <span className={`text-[9px] font-medium leading-none ${done ? "text-[#FF6A00]" : "text-gray-300"}`}>{step.label}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                     {row.agreement.hasException && (
-                      <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-red-100 text-red-600">!</span>
+                      <span className="mt-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-red-100 text-red-600">! Exception</span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-gray-500 text-xs">
@@ -1060,12 +1172,23 @@ function AgreementsTab({ origin }: { origin: string }) {
                     {row.agreement.expiresAt ? new Date(row.agreement.expiresAt).toLocaleDateString() : "—"}
                   </td>
                   <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                    <button
-                      onClick={() => setSelectedId(row.agreement.id)}
-                      className="text-xs text-[#FF6A00] hover:underline"
-                    >
-                      View
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setSelectedId(row.agreement.id)}
+                        className="text-xs text-[#FF6A00] hover:underline"
+                      >
+                        View
+                      </button>
+                      {["sent","delivered","opened","expired"].includes(row.agreement.status) && (
+                        <button
+                          onClick={e => handleRowRemind(row.agreement.id, e)}
+                          disabled={remindingId === row.agreement.id}
+                          className="text-xs text-gray-500 hover:text-[#0b1228] border border-gray-300 rounded px-2 py-0.5 hover:border-[#0b1228] disabled:opacity-50 whitespace-nowrap"
+                        >
+                          {remindingId === row.agreement.id ? "Sending…" : "Remind"}
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

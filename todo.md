@@ -197,3 +197,12 @@
 - [x] Reservation ID auto-generation: manual add form auto-compute onChange
 - [x] Reservation ID auto-generation: edit member drawer auto-compute onChange
 - [x] Reservation ID auto-generation: bulk CSV import server-side compute if missing
+
+## Agreements Tab Improvements (May 28, 2026)
+- [x] Status timeline checkpoints (Sent → Opened → Verified → Signed) in table rows with orange filled circles
+- [x] Per-row "Remind" button in Actions column for sent/delivered/opened/expired agreements
+- [x] Detail drawer: visual Agreement Progress stepper with dates
+- [x] Detail drawer: "View Signed Agreement" button linking to S3 URL when documents exist
+- [x] Detail drawer: expandable list of all documents when multiple exist
+- [x] 21 tests passing, 0 TypeScript errors
+- [ ] Fix blank agreement form page (short-link redirect lands on blank page after redirect)
