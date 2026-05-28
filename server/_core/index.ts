@@ -8,6 +8,7 @@ import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { processWebhook } from "../chargeover";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -36,6 +37,21 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
   registerStorageProxy(app);
   registerOAuthRoutes(app);
+
+  // ── ChargeOver Webhook ──────────────────────────────────────────────────────
+  // ChargeOver sends POST /api/webhooks/chargeover for invoice.created/updated/paid events.
+  // Configure this URL in ChargeOver Settings → Webhooks.
+  // Optionally add a shared secret header check here before going to production.
+  app.post("/api/webhooks/chargeover", async (req, res) => {
+    try {
+      await processWebhook(req.body);
+      res.status(200).json({ received: true });
+    } catch (err) {
+      console.error("[ChargeOver Webhook] Error:", err);
+      // Return 500 so ChargeOver retries delivery
+      res.status(500).json({ error: "Processing failed" });
+    }
+  });
   // tRPC API
   app.use(
     "/api/trpc",

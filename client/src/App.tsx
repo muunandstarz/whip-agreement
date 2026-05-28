@@ -7,14 +7,18 @@ import AgreementPage from "./pages/AgreementPage";
 import TokenAgreementPage from "./pages/TokenAgreementPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import NotFound from "./pages/NotFound";
+
 function Router() {
-  // make sure to consider if you need authentication for certain routes
+  // Admin dashboard is the root. Member agreement is at /agreement.
+  // Token-based member agreement is at /agreement/:token.
+  // Member portal (post-sign) is embedded inside TokenAgreementPage after completion.
   return (
     <Switch>
-      <Route path="/" component={AgreementPage} />
-      <Route path="/agreement/:token" component={TokenAgreementPage} />
+      <Route path="/" component={AdminDashboard} />
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/:rest*" component={AdminDashboard} />
+      <Route path="/agreement" component={AgreementPage} />
+      <Route path="/agreement/:token" component={TokenAgreementPage} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

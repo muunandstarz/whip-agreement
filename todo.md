@@ -104,3 +104,29 @@
 ## Member Management
 - [x] tRPC: admin.members.update — edit any field on an existing member
 - [x] UI: Edit Member button/drawer in Members tab with pre-filled form for all 17 fields
+
+## UX Restructure
+- [x] Make admin dashboard the root route (/); member agreement at /agreement
+- [x] Add admin shield icon in member portal header (top-right, only visible to admin/manager role) linking to /admin
+- [x] Add "Member Portal" link in admin dashboard header linking to /agreement
+- [x] Fix contact support links: help desk phone + TextLine number on AgreementPage and MemberPortal support tab
+- [x] Post-sign member dashboard already exists (MemberPortal with Dashboard, Vehicle, Trips, Invoices, Support, Profile tabs)
+- [ ] Ensure login flow from drivewhip.com redirects to member portal after auth (requires drivewhip.com integration)
+
+## ChargeOver Integration
+- [x] DB: chargeover_customers, chargeover_invoices, chargeover_invoice_lines, chargeover_webhook_events tables
+- [x] DB: schema pushed to database
+- [x] Server: ChargeOver API client (server/chargeover.ts) — Basic auth, GET /invoice, GET /customer, upsertInvoice, syncMemberBilling, processWebhook
+- [x] tRPC: billing.getMyInvoices — member invoice list with sort/filter (date, status, amount, type)
+- [x] tRPC: billing.getInvoiceDetail — single invoice with line items
+- [x] tRPC: billing.syncMember / billing.syncAll — admin-triggered manual sync
+- [x] tRPC: billing.getAdminSummary — open/past_due/paid counts and balances
+- [x] tRPC: billing.linkMember — manually link member to ChargeOver customer ID
+- [x] Webhook: POST /api/webhooks/chargeover — receives invoice events, upserts DB
+- [x] Member portal: Invoices tab — live tRPC data, sort by date/status/amount, filter by type (weekly/ticket/toll/all)
+- [x] Member portal: Invoice detail drawer — line items, due date, balance, PDF link
+- [x] ENV: CHARGEOVER_BASE_URL, CHARGEOVER_USERNAME, CHARGEOVER_PASSWORD — documented for dev team handoff
+
+## UI Fixes
+- [x] Trip history: vehicle-type-aware silhouette icons (sedan/SUV/truck/van/motorcycle)
+- [x] Insurance card: "File a Claim" text on back is now a clickable link → https://drivewhip.com/file-a-claim

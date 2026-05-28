@@ -1064,6 +1064,16 @@ export default function AdminDashboard() {
             <span className="text-white/40 text-sm hidden sm:block">Agreement Admin</span>
           </div>
           <div className="flex items-center gap-3">
+            {/* Member Portal quick-link */}
+            <a
+              href="/agreement"
+              className="hidden sm:flex items-center gap-1.5 text-white/60 hover:text-white text-xs px-3 py-1.5 rounded-lg border border-white/10 hover:border-white/30 transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              Member Portal
+            </a>
             <span className="text-white/60 text-sm hidden sm:block">{user?.name ?? user?.email}</span>
             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
               role === "admin" ? "bg-[#FF6A00] text-white" :

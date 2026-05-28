@@ -237,3 +237,102 @@ export const emailVerificationCodes = mysqlTable("email_verification_codes", {
 
 export type EmailVerificationCode = typeof emailVerificationCodes.$inferSelect;
 export type InsertEmailVerificationCode = typeof emailVerificationCodes.$inferInsert;
+
+// ─── ChargeOver Integration ───────────────────────────────────────────────────
+// Mirrors data synced from ChargeOver billing system.
+// The dev team sets CHARGEOVER_BASE_URL, CHARGEOVER_USERNAME, CHARGEOVER_PASSWORD.
+// Sync happens via webhook (POST /api/webhooks/chargeover) or manual admin trigger.
+
+/** Links a Whip member to their ChargeOver customer record */
+export const chargeoverCustomers = mysqlTable("chargeover_customers", {
+  id: int("id").autoincrement().primaryKey(),
+  memberId: int("memberId").notNull().unique(),             // FK → members.id
+  coCustomerId: int("coCustomerId").notNull().unique(),     // ChargeOver customer.id
+  externalKey: varchar("externalKey", { length: 128 }),    // ChargeOver external_key (e.g. customer_id)
+  email: varchar("email", { length: 320 }),
+  name: varchar("name", { length: 255 }),
+  syncedAt: timestamp("syncedAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ChargeoverCustomer = typeof chargeoverCustomers.$inferSelect;
+export type InsertChargeoverCustomer = typeof chargeoverCustomers.$inferInsert;
+
+/**
+ * Invoice header — one row per ChargeOver invoice.
+ * status mirrors ChargeOver: draft | open | past_due | paid | void | written_off
+ */
+export const chargeoverInvoices = mysqlTable("chargeover_invoices", {
+  id: int("id").autoincrement().primaryKey(),
+  memberId: int("memberId").notNull(),                      // FK → members.id
+  coCustomerId: int("coCustomerId").notNull(),              // ChargeOver customer.id
+  coInvoiceId: int("coInvoiceId").notNull().unique(),       // ChargeOver invoice.id
+  invoiceNumber: varchar("invoiceNumber", { length: 64 }), // human-readable e.g. "INV-0042"
+  status: mysqlEnum("status", [
+    "draft", "open", "past_due", "paid", "void", "written_off",
+  ]).default("open").notNull(),
+  dueDate: varchar("dueDate", { length: 20 }),              // YYYY-MM-DD
+  invoiceDate: varchar("invoiceDate", { length: 20 }),      // YYYY-MM-DD
+  subtotal: int("subtotal").default(0).notNull(),           // cents
+  taxTotal: int("taxTotal").default(0).notNull(),           // cents
+  total: int("total").default(0).notNull(),                 // cents
+  balance: int("balance").default(0).notNull(),             // cents remaining
+  pdfUrl: varchar("pdfUrl", { length: 1024 }),              // ChargeOver hosted PDF
+  notes: text("notes"),
+  syncedAt: timestamp("syncedAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ChargeoverInvoice = typeof chargeoverInvoices.$inferSelect;
+export type InsertChargeoverInvoice = typeof chargeoverInvoices.$inferInsert;
+
+/**
+ * Invoice line items — one row per line on a ChargeOver invoice.
+ * type classifies the charge so the member portal can filter by category.
+ */
+export const chargeoverInvoiceLines = mysqlTable("chargeover_invoice_lines", {
+  id: int("id").autoincrement().primaryKey(),
+  invoiceId: int("invoiceId").notNull(),                    // FK → chargeover_invoices.id
+  memberId: int("memberId").notNull(),                      // FK → members.id (denormalized for fast queries)
+  coLineId: int("coLineId"),                               // ChargeOver line item id
+  description: varchar("description", { length: 512 }).notNull(),
+  /** Classifies the charge for member portal filtering */
+  lineType: mysqlEnum("lineType", [
+    "weekly_fee",
+    "ticket",
+    "toll",
+    "late_fee",
+    "deposit",
+    "credit",
+    "other",
+  ]).default("other").notNull(),
+  quantity: int("quantity").default(1).notNull(),
+  unitPrice: int("unitPrice").default(0).notNull(),         // cents
+  lineTotal: int("lineTotal").default(0).notNull(),         // cents
+  lineDate: varchar("lineDate", { length: 20 }),            // YYYY-MM-DD (incident date for tickets/tolls)
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ChargeoverInvoiceLine = typeof chargeoverInvoiceLines.$inferSelect;
+export type InsertChargeoverInvoiceLine = typeof chargeoverInvoiceLines.$inferInsert;
+
+/**
+ * Webhook event log — every inbound ChargeOver webhook is recorded here.
+ * Allows replay, deduplication, and debugging without data loss.
+ */
+export const chargeoverWebhookEvents = mysqlTable("chargeover_webhook_events", {
+  id: bigint("id", { mode: "number" }).autoincrement().primaryKey(),
+  eventType: varchar("eventType", { length: 128 }).notNull(), // e.g. "invoice.paid"
+  coObjectId: int("coObjectId"),                              // ChargeOver object id
+  coObjectType: varchar("coObjectType", { length: 64 }),      // "invoice" | "customer" etc.
+  payload: json("payload").notNull(),                         // full raw webhook body
+  processed: boolean("processed").default(false).notNull(),
+  processedAt: timestamp("processedAt"),
+  error: text("error"),
+  receivedAt: timestamp("receivedAt").defaultNow().notNull(),
+});
+
+export type ChargeoverWebhookEvent = typeof chargeoverWebhookEvents.$inferSelect;
+export type InsertChargeoverWebhookEvent = typeof chargeoverWebhookEvents.$inferInsert;

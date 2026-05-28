@@ -9,7 +9,8 @@ import { toast } from 'sonner';
 import { trpc } from '@/lib/trpc';
 import {
   STATE_DATA, STATE_OPTIONS, TOS_TEXT, ACK_ITEMS,
-  URL_PARAM_MAP, type StateData, getMarketForState
+  URL_PARAM_MAP, type StateData, getMarketForState,
+  HELP_DESK_PHONE, HELP_DESK_TEXT_LINE,
 } from '@/lib/agreementData';
 import { buildPrintHTML, buildAddonOnlyHTML, buildViewerHTML } from '@/lib/printBuilder';
 import MemberPortal from './MemberPortal';
@@ -613,7 +614,10 @@ function WelcomeStep({ fields, prefilled, onNext, setField }: {
 
       {/* Help link */}
       <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--muted-foreground)', marginTop: 4 }}>
-        Need help? <a href={`tel:${market.phone.replace(/\D/g, '')}`} style={{ color: '#ff6221', fontWeight: 600 }}>Contact Support</a>
+        Need help?{' '}
+        <a href={`tel:${HELP_DESK_PHONE.replace(/\D/g, '')}`} style={{ color: '#ff6221', fontWeight: 600 }}>Call {HELP_DESK_PHONE}</a>
+        {' or '}
+        <a href={`sms:${HELP_DESK_TEXT_LINE.replace(/\D/g, '')}`} style={{ color: '#ff6221', fontWeight: 600 }}>Text Us</a>
       </p>
     </div>
   );

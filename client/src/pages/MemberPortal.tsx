@@ -3,8 +3,10 @@
 // Design: Navy/orange Whip brand, card-based, mobile-first
 
 import { useState } from 'react';
+import { useAuth } from '@/_core/hooks/useAuth';
+import { trpc } from '@/lib/trpc';
 import {
-  getMarketForState, getCoverageForState, HELP_DESK_TEXT_LINE,
+  getMarketForState, getCoverageForState, HELP_DESK_PHONE, HELP_DESK_TEXT_LINE,
   buildDemoTripHistory, buildDemoInvoice,
   type TripRecord, type InvoiceLineItem, type PastInvoice,
 } from '@/lib/agreementData';
@@ -126,28 +128,100 @@ function last6(vin: string) {
   return vin ? vin.slice(-6).toUpperCase() : '——————';
 }
 
-function CarSilhouette({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
-  const dims = size === 'sm' ? { w: 64, h: 28 } : size === 'lg' ? { w: 160, h: 70 } : { w: 120, h: 52 };
+/** Sedan silhouette — default car icon */
+function SedanIcon({ size = 'md', color = 'currentColor' }: { size?: 'sm' | 'md' | 'lg'; color?: string }) {
+  const dims = size === 'sm' ? { w: 56, h: 26 } : size === 'lg' ? { w: 160, h: 70 } : { w: 110, h: 48 };
   return (
-    <svg viewBox="0 0 200 80" width={dims.w} height={dims.h} xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round">
-      {/* Main body */}
-      <path d="M16 52 L16 38 Q16 33 21 33 L52 33 L70 15 L130 15 L148 33 L179 33 Q184 33 184 38 L184 52 Z" />
-      {/* Cabin / roof */}
-      <path d="M72 33 L82 17 L118 17 L128 33" />
-      {/* Center door divider */}
-      <line x1="100" y1="33" x2="100" y2="52" />
-      {/* Front wheel arch */}
-      <path d="M34 52 Q34 65 50 65 Q66 65 66 52" />
-      {/* Rear wheel arch */}
-      <path d="M134 52 Q134 65 150 65 Q166 65 166 52" />
-      {/* Front bumper */}
-      <line x1="16" y1="45" x2="8" y2="45" />
-      {/* Rear bumper */}
-      <line x1="184" y1="45" x2="192" y2="45" />
-      {/* Side mirror */}
-      <path d="M148 33 L155 29 L159 33" />
+    <svg viewBox="0 0 220 88" width={dims.w} height={dims.h} xmlns="http://www.w3.org/2000/svg" fill="none" stroke={color} strokeWidth="5" strokeLinecap="round" strokeLinejoin="round">
+      {/* Body */}
+      <path d="M18 57 L18 42 Q18 36 24 36 L58 36 L78 16 L142 16 L162 36 L196 36 Q202 36 202 42 L202 57 Z" />
+      {/* Roof cabin */}
+      <path d="M80 36 L92 18 L128 18 L140 36" />
+      {/* Door divider */}
+      <line x1="110" y1="36" x2="110" y2="57" />
+      {/* Wheel arches */}
+      <path d="M38 57 Q38 72 56 72 Q74 72 74 57" />
+      <path d="M146 57 Q146 72 164 72 Q182 72 182 57" />
+      {/* Bumpers */}
+      <line x1="18" y1="50" x2="8" y2="50" />
+      <line x1="202" y1="50" x2="212" y2="50" />
+      {/* Mirror */}
+      <path d="M162 36 L170 31 L175 36" />
+      {/* Headlight */}
+      <line x1="18" y1="40" x2="10" y2="38" />
+      {/* Taillight */}
+      <line x1="202" y1="40" x2="210" y2="38" />
     </svg>
   );
+}
+
+/** SUV / truck silhouette */
+function SuvIcon({ size = 'md', color = 'currentColor' }: { size?: 'sm' | 'md' | 'lg'; color?: string }) {
+  const dims = size === 'sm' ? { w: 56, h: 26 } : size === 'lg' ? { w: 160, h: 70 } : { w: 110, h: 48 };
+  return (
+    <svg viewBox="0 0 220 88" width={dims.w} height={dims.h} xmlns="http://www.w3.org/2000/svg" fill="none" stroke={color} strokeWidth="5" strokeLinecap="round" strokeLinejoin="round">
+      {/* Boxy body */}
+      <rect x="18" y="28" width="184" height="30" rx="4" />
+      {/* Tall cabin roof */}
+      <rect x="30" y="12" width="160" height="18" rx="4" />
+      {/* Wheel arches */}
+      <path d="M38 58 Q38 74 56 74 Q74 74 74 58" />
+      <path d="M146 58 Q146 74 164 74 Q182 74 182 58" />
+      {/* Bumpers */}
+      <line x1="18" y1="46" x2="8" y2="46" />
+      <line x1="202" y1="46" x2="212" y2="46" />
+      {/* Windshield */}
+      <line x1="30" y1="28" x2="30" y2="12" />
+      <line x1="190" y1="28" x2="190" y2="12" />
+      {/* Door divider */}
+      <line x1="110" y1="28" x2="110" y2="58" />
+      {/* Roof rack */}
+      <line x1="50" y1="12" x2="170" y2="12" />
+    </svg>
+  );
+}
+
+/** Minivan silhouette */
+function VanIcon({ size = 'md', color = 'currentColor' }: { size?: 'sm' | 'md' | 'lg'; color?: string }) {
+  const dims = size === 'sm' ? { w: 56, h: 26 } : size === 'lg' ? { w: 160, h: 70 } : { w: 110, h: 48 };
+  return (
+    <svg viewBox="0 0 220 88" width={dims.w} height={dims.h} xmlns="http://www.w3.org/2000/svg" fill="none" stroke={color} strokeWidth="5" strokeLinecap="round" strokeLinejoin="round">
+      {/* Long boxy body */}
+      <path d="M18 58 L18 30 Q18 24 24 24 L196 24 Q202 24 202 30 L202 58 Z" />
+      {/* Cab section (front) */}
+      <path d="M18 24 L18 14 Q18 10 24 10 L80 10 L90 24" />
+      {/* Wheel arches */}
+      <path d="M34 58 Q34 74 52 74 Q70 74 70 58" />
+      <path d="M150 58 Q150 74 168 74 Q186 74 186 58" />
+      {/* Sliding door line */}
+      <line x1="100" y1="24" x2="100" y2="58" />
+      <line x1="140" y1="24" x2="140" y2="58" />
+      {/* Bumpers */}
+      <line x1="18" y1="48" x2="8" y2="48" />
+      <line x1="202" y1="48" x2="212" y2="48" />
+    </svg>
+  );
+}
+
+/** Detect vehicle body type from make/model string */
+function detectBodyType(vehicle: string): 'suv' | 'van' | 'sedan' {
+  const v = vehicle.toLowerCase();
+  if (/\b(suv|explorer|expedition|tahoe|suburban|yukon|navigator|escalade|pilot|highlander|4runner|pathfinder|murano|rogue|cr-v|crv|rav4|escape|edge|equinox|traverse|acadia|envoy|trailblazer|blazer|bronco|wrangler|cherokee|durango|commander|sorento|telluride|palisade|cx-5|cx5|cx-9|cx9|mdx|rdx|qx|gx|lx|rx|nx|ux|x3|x5|x6|x7|q3|q5|q7|q8|glc|gle|gls|glb|gla|gls|xc40|xc60|xc90|discovery|defender|range rover|sport|utility|crossover|4wd|awd)\b/.test(v)) return 'suv';
+  if (/\b(van|minivan|odyssey|sienna|caravan|pacifica|town.?country|transit|promaster|sprinter|express|savana|metris|quest|sedona|carnival)\b/.test(v)) return 'van';
+  return 'sedan';
+}
+
+/** Unified vehicle icon — picks the right silhouette based on vehicle string */
+function VehicleIcon({ vehicle, size = 'md', color = 'currentColor' }: { vehicle?: string; size?: 'sm' | 'md' | 'lg'; color?: string }) {
+  const type = detectBodyType(vehicle ?? '');
+  if (type === 'suv') return <SuvIcon size={size} color={color} />;
+  if (type === 'van') return <VanIcon size={size} color={color} />;
+  return <SedanIcon size={size} color={color} />;
+}
+
+// Legacy alias used in PoiCard
+function CarSilhouette({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
+  return <SedanIcon size={size} />;
 }
 
 // Outline silhouette — no fill colors needed
@@ -217,7 +291,7 @@ function PoiCard({ fields }: { fields: MemberFields }) {
             <div style={{ marginBottom: 6 }}><strong>2.</strong> Exchange insurance info with all parties</div>
             <div style={{ marginBottom: 6 }}><strong>3.</strong> Report to Whip within 24 hours:</div>
             <div style={{ paddingLeft: 16, marginBottom: 4 }}>📞 <strong>855-861-9401</strong></div>
-            <div style={{ paddingLeft: 16 }}>🌐 drivewhip.com → File a Claim</div>
+            <div style={{ paddingLeft: 16 }}>🌐 <a href="https://drivewhip.com/file-a-claim" target="_blank" rel="noopener noreferrer" style={{ color: '#93c5fd', fontWeight: 700, textDecoration: 'underline' }}>drivewhip.com → File a Claim</a></div>
           </div>
           <div style={{ marginTop: 'auto', fontSize: 10, color: 'rgba(255,255,255,0.6)', borderTop: '1px solid rgba(255,255,255,0.15)', paddingTop: 8 }}>
             Policy: {fields.reservationId || '—'} · Assurant · Metrocars Leasing Corp.
@@ -500,9 +574,9 @@ function TripCard({ trip, isActive }: { trip: TripRecord; isActive: boolean }) {
     }}>
       {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
-        {/* Car silhouette small */}
-        <div style={{ background: 'var(--muted)', borderRadius: 8, padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: isActive ? '#ff6221' : 'var(--muted-foreground)' }}>
-          <CarSilhouette size="sm" />
+        {/* Vehicle silhouette — type-aware (sedan / SUV / van) */}
+        <div style={{ background: 'var(--muted)', borderRadius: 8, padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <VehicleIcon vehicle={trip.vehicle} size="sm" color={isActive ? '#ff6221' : 'var(--muted-foreground)'} />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--foreground)', lineHeight: 1.2 }}>{year} {make} {model}</div>
@@ -567,11 +641,7 @@ function TripHistoryPage({ fields }: { fields: MemberFields }) {
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   boxShadow: isActive ? '0 0 0 4px rgba(255,98,33,0.15)' : 'none',
                 }}>
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke={isActive ? 'white' : cfg.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="1" y="3" width="15" height="13" rx="2"/>
-                    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
-                    <circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
-                  </svg>
+                  <VehicleIcon vehicle={trip.vehicle} size="sm" color={isActive ? 'white' : cfg.color} />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <TripCard trip={trip} isActive={isActive} />
@@ -603,95 +673,262 @@ function TripHistoryPage({ fields }: { fields: MemberFields }) {
 }
 
 // ── INVOICING PAGE ────────────────────────────────────────────────────────────
-const INVOICE_TYPE_COLORS: Record<string, { bg: string; color: string; label: string }> = {
-  weekly: { bg: '#eff6ff', color: '#1d4ed8', label: 'Weekly' },
-  ticket: { bg: '#fef2f2', color: '#dc2626', label: 'Ticket' },
-  toll:   { bg: '#fff7ed', color: '#c2410c', label: 'Toll' },
-  late:   { bg: '#fefce8', color: '#a16207', label: 'Late Fee' },
-  credit: { bg: '#f0fdf4', color: '#15803d', label: 'Credit' },
+const LINE_TYPE_CONFIG: Record<string, { bg: string; color: string; label: string; abbr: string }> = {
+  weekly_fee: { bg: '#eff6ff', color: '#1d4ed8', label: 'Weekly Fee', abbr: 'WKL' },
+  ticket:     { bg: '#fef2f2', color: '#dc2626', label: 'Ticket',     abbr: 'TKT' },
+  toll:       { bg: '#fff7ed', color: '#c2410c', label: 'Toll',       abbr: 'TOL' },
+  late_fee:   { bg: '#fefce8', color: '#a16207', label: 'Late Fee',   abbr: 'LTE' },
+  deposit:    { bg: '#f5f3ff', color: '#7c3aed', label: 'Deposit',    abbr: 'DEP' },
+  credit:     { bg: '#f0fdf4', color: '#15803d', label: 'Credit',     abbr: 'CRD' },
+  other:      { bg: '#f8fafc', color: '#64748b', label: 'Other',      abbr: 'OTH' },
 };
 
-function InvoicingPage({ fields }: { fields: MemberFields }) {
-  const invoice = buildDemoInvoice(fields.weeklyFee, fields.startDate);
-  const [expandedPast, setExpandedPast] = useState(false);
+const STATUS_CONFIG: Record<string, { bg: string; color: string; label: string }> = {
+  open:         { bg: '#eff6ff', color: '#1d4ed8', label: 'Open' },
+  past_due:     { bg: '#fef2f2', color: '#dc2626', label: 'Past Due' },
+  paid:         { bg: '#f0fdf4', color: '#15803d', label: 'Paid' },
+  draft:        { bg: '#f8fafc', color: '#64748b', label: 'Draft' },
+  void:         { bg: '#f8fafc', color: '#94a3b8', label: 'Void' },
+  written_off:  { bg: '#fef2f2', color: '#9f1239', label: 'Written Off' },
+};
 
-  const fmt = (n: number) => `$${n.toFixed(2)}`;
+function fmtCents(cents: number) {
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
+function fmtDate(d: string | null | undefined) {
+  if (!d) return '—';
+  try { return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+  catch { return d; }
+}
+
+function InvoicingPage({ fields }: { fields: MemberFields }) {
+  // Live data from ChargeOver sync
+  const [statusFilter, setStatusFilter] = useState<'all' | 'open' | 'past_due' | 'paid'>('all');
+  const [lineTypeFilter, setLineTypeFilter] = useState<'all' | 'weekly_fee' | 'ticket' | 'toll' | 'late_fee' | 'deposit' | 'credit' | 'other'>('all');
+  const [sortBy, setSortBy] = useState<'date_desc' | 'date_asc' | 'amount_desc' | 'amount_asc'>('date_desc');
+  const [expandedInvoice, setExpandedInvoice] = useState<number | null>(null);
+
+  const { data, isLoading } = trpc.billing.getMyInvoices.useQuery({
+    status: statusFilter as 'all',
+    lineType: lineTypeFilter as 'all',
+    sortBy,
+  });
+
+  const detailQuery = trpc.billing.getInvoiceDetail.useQuery(
+    { invoiceId: expandedInvoice! },
+    { enabled: expandedInvoice !== null }
+  );
+
+  // Fall back to demo data if ChargeOver is not yet configured or member not linked
+  const demoInvoice = buildDemoInvoice(fields.weeklyFee, fields.startDate);
+  const hasLiveData = (data?.invoices?.length ?? 0) > 0;
+  const isConfigured = data?.configured !== false;
+
+  // Summary totals from live data
+  const openBalance = data?.invoices
+    ?.filter(inv => inv.status === 'open' || inv.status === 'past_due')
+    .reduce((s, inv) => s + inv.balance, 0) ?? 0;
+  const pastDueCount = data?.invoices?.filter(inv => inv.status === 'past_due').length ?? 0;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 20, position: 'relative' }}>
-      {/* Current Balance Card */}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 20 }}>
+
+      {/* Balance summary header */}
       <div style={{ background: '#171b31', borderRadius: 12, padding: '24px 20px', textAlign: 'center' }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>Current Balance Due</div>
-        <div style={{ fontSize: 40, fontWeight: 900, color: '#ff6221', lineHeight: 1, marginBottom: 8 }}>{fmt(invoice.currentBalance)}</div>
-        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>Due {invoice.dueDate}</div>
-        <button style={{
-          marginTop: 16, padding: '12px 32px', borderRadius: 10, border: 'none',
-          background: '#ff6221', color: 'white', fontSize: 15, fontWeight: 700, cursor: 'pointer',
-          width: '100%',
-        }}>
-          Pay Now
-        </button>
+        <div style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>
+          {hasLiveData ? 'Outstanding Balance' : 'Billing'}
+        </div>
+        {hasLiveData ? (
+          <>
+            <div style={{ fontSize: 40, fontWeight: 900, color: pastDueCount > 0 ? '#ef4444' : '#ff6221', lineHeight: 1, marginBottom: 4 }}>
+              {fmtCents(openBalance)}
+            </div>
+            {pastDueCount > 0 && (
+              <div style={{ fontSize: 12, color: '#fca5a5', marginBottom: 8 }}>{pastDueCount} invoice{pastDueCount > 1 ? 's' : ''} past due</div>
+            )}
+          </>
+        ) : (
+          <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.6)', marginBottom: 8 }}>
+            {isLoading ? 'Loading…' : isConfigured ? 'No invoices on file yet' : 'Billing connected when ChargeOver is configured'}
+          </div>
+        )}
+        {!hasLiveData && !isLoading && (
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 4 }}>Showing sample data below</div>
+        )}
       </div>
 
-      {/* Line Items */}
-      <div>
-        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Current Charges</div>
-        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
-          {invoice.lineItems.map((item: InvoiceLineItem, i) => {
-            const cfg = INVOICE_TYPE_COLORS[item.type] ?? INVOICE_TYPE_COLORS.weekly;
+      {/* Filters & sort */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        {/* Status filter */}
+        <select
+          value={statusFilter}
+          onChange={e => setStatusFilter(e.target.value as typeof statusFilter)}
+          style={{ flex: '1 1 120px', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--foreground)', fontSize: 13 }}
+        >
+          <option value="all">All Statuses</option>
+          <option value="open">Open</option>
+          <option value="past_due">Past Due</option>
+          <option value="paid">Paid</option>
+        </select>
+        {/* Line type filter */}
+        <select
+          value={lineTypeFilter}
+          onChange={e => setLineTypeFilter(e.target.value as typeof lineTypeFilter)}
+          style={{ flex: '1 1 140px', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--foreground)', fontSize: 13 }}
+        >
+          <option value="all">All Charge Types</option>
+          <option value="weekly_fee">Weekly Fees</option>
+          <option value="ticket">Tickets</option>
+          <option value="toll">Tolls</option>
+          <option value="late_fee">Late Fees</option>
+          <option value="deposit">Deposits</option>
+          <option value="credit">Credits</option>
+        </select>
+        {/* Sort */}
+        <select
+          value={sortBy}
+          onChange={e => setSortBy(e.target.value as typeof sortBy)}
+          style={{ flex: '1 1 140px', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--foreground)', fontSize: 13 }}
+        >
+          <option value="date_desc">Newest First</option>
+          <option value="date_asc">Oldest First</option>
+          <option value="amount_desc">Highest Amount</option>
+          <option value="amount_asc">Lowest Amount</option>
+        </select>
+      </div>
+
+      {/* Invoice list — live data */}
+      {hasLiveData && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {data!.invoices.map(inv => {
+            const sc = STATUS_CONFIG[inv.status] ?? STATUS_CONFIG.open;
+            const isExpanded = expandedInvoice === inv.id;
             return (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', borderBottom: i < invoice.lineItems.length - 1 ? '1px solid var(--border)' : 'none' }}>
-                <div style={{ width: 34, height: 34, borderRadius: 8, background: cfg.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <span style={{ fontSize: 10, fontWeight: 800, color: cfg.color }}>{cfg.label.slice(0, 3).toUpperCase()}</span>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--foreground)' }}>{item.label}</div>
-                  {(item.date || item.note) && (
-                    <div style={{ fontSize: 11, color: 'var(--muted-foreground)' }}>
-                      {item.date}{item.date && item.note ? ' · ' : ''}{item.note}
+              <div key={inv.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+                {/* Invoice header row */}
+                <button
+                  onClick={() => setExpandedInvoice(isExpanded ? null : inv.id)}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                >
+                  <div style={{ width: 34, height: 34, borderRadius: 8, background: sc.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <span style={{ fontSize: 9, fontWeight: 800, color: sc.color }}>{sc.label.slice(0, 3).toUpperCase()}</span>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--foreground)', fontFamily: 'monospace' }}>
+                      {inv.invoiceNumber || `INV-${inv.coInvoiceId}`}
                     </div>
-                  )}
-                </div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: item.type === 'credit' ? '#16a34a' : 'var(--foreground)', flexShrink: 0 }}>
-                  {item.type === 'credit' ? '-' : ''}{fmt(item.amount)}
-                </div>
+                    <div style={{ fontSize: 11, color: 'var(--muted-foreground)' }}>
+                      {fmtDate(inv.invoiceDate)}{inv.dueDate ? ` · Due ${fmtDate(inv.dueDate)}` : ''}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: inv.status === 'past_due' ? '#dc2626' : 'var(--foreground)' }}>
+                      {fmtCents(inv.total)}
+                    </div>
+                    {inv.balance > 0 && inv.status !== 'paid' && (
+                      <div style={{ fontSize: 11, color: '#dc2626', fontWeight: 600 }}>Bal: {fmtCents(inv.balance)}</div>
+                    )}
+                  </div>
+                  <span style={{ fontSize: 16, color: 'var(--muted-foreground)', marginLeft: 4 }}>{isExpanded ? '▲' : '▼'}</span>
+                </button>
+
+                {/* Expanded line items */}
+                {isExpanded && (
+                  <div style={{ borderTop: '1px solid var(--border)', background: 'var(--muted)' }}>
+                    {detailQuery.isLoading ? (
+                      <div style={{ padding: '16px', textAlign: 'center', fontSize: 13, color: 'var(--muted-foreground)' }}>Loading…</div>
+                    ) : detailQuery.data?.lines.length ? (
+                      <>
+                        {detailQuery.data.lines.map((line, li) => {
+                          const lc = LINE_TYPE_CONFIG[line.lineType] ?? LINE_TYPE_CONFIG.other;
+                          return (
+                            <div key={line.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 16px', borderBottom: li < detailQuery.data!.lines.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                              <div style={{ width: 28, height: 28, borderRadius: 6, background: lc.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                <span style={{ fontSize: 8, fontWeight: 800, color: lc.color }}>{lc.abbr}</span>
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--foreground)' }}>{line.description}</div>
+                                {line.lineDate && <div style={{ fontSize: 10, color: 'var(--muted-foreground)' }}>{fmtDate(line.lineDate)}</div>}
+                              </div>
+                              <div style={{ fontSize: 13, fontWeight: 700, color: line.lineType === 'credit' ? '#16a34a' : 'var(--foreground)', flexShrink: 0 }}>
+                                {line.lineType === 'credit' ? '-' : ''}{fmtCents(line.lineTotal)}
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {/* Subtotal / total */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 16px', borderTop: '2px solid var(--border)' }}>
+                          <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--foreground)' }}>Total</span>
+                          <span style={{ fontSize: 14, fontWeight: 900, color: '#ff6221' }}>{fmtCents(inv.total)}</span>
+                        </div>
+                        {inv.pdfUrl && (
+                          <div style={{ padding: '0 16px 12px' }}>
+                            <a href={inv.pdfUrl} target="_blank" rel="noopener noreferrer"
+                              style={{ fontSize: 12, color: '#ff6221', fontWeight: 700, textDecoration: 'none' }}>
+                              ↓ Download PDF
+                            </a>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div style={{ padding: '14px 16px', fontSize: 12, color: 'var(--muted-foreground)' }}>No line items available.</div>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}
-          {/* Total row */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', background: 'var(--muted)', borderTop: '2px solid var(--border)' }}>
-            <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--foreground)' }}>Total Due</span>
-            <span style={{ fontSize: 18, fontWeight: 900, color: '#ff6221' }}>{fmt(invoice.currentBalance)}</span>
-          </div>
         </div>
-      </div>
+      )}
 
-      {/* Past Invoices */}
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>Invoice History</div>
-          <button onClick={() => setExpandedPast(e => !e)} style={{ fontSize: 12, color: '#ff6221', fontWeight: 700, background: 'none', border: 'none', cursor: 'pointer' }}>
-            {expandedPast ? 'Show Less' : 'Show All'}
-          </button>
-        </div>
-        <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
-          {(expandedPast ? invoice.pastInvoices : invoice.pastInvoices.slice(0, 3)).map((inv: PastInvoice, i, arr) => (
-            <div key={inv.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', borderBottom: i < arr.length - 1 ? '1px solid var(--border)' : 'none' }}>
-              <div style={{ width: 34, height: 34, borderRadius: 8, background: '#f0fdf4', border: '1px solid #bbf7d0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <CheckCircleIcon />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--foreground)', fontFamily: 'monospace' }}>{inv.id}</div>
-                <div style={{ fontSize: 11, color: 'var(--muted-foreground)' }}>{inv.period}</div>
-              </div>
-              <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--foreground)' }}>{fmt(inv.total)}</div>
-                <div style={{ fontSize: 11, color: '#16a34a', fontWeight: 600 }}>Paid {inv.date}</div>
+      {/* Demo fallback when ChargeOver not yet connected */}
+      {!hasLiveData && !isLoading && (
+        <>
+          <div style={{ background: 'var(--card)', border: '1px dashed var(--border)', borderRadius: 12, padding: '14px 16px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+            <span style={{ fontSize: 18 }}>ℹ️</span>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--foreground)', marginBottom: 2 }}>Sample billing data</div>
+              <div style={{ fontSize: 12, color: 'var(--muted-foreground)', lineHeight: 1.5 }}>
+                Your live invoices from ChargeOver will appear here once the billing integration is activated by your account manager.
               </div>
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
+
+          {/* Demo current charges */}
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Sample Charges</div>
+            <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
+              {demoInvoice.lineItems.map((item: InvoiceLineItem, i) => {
+                const typeKey = item.type === 'weekly' ? 'weekly_fee' : item.type === 'late' ? 'late_fee' : item.type;
+                const cfg = LINE_TYPE_CONFIG[typeKey] ?? LINE_TYPE_CONFIG.other;
+                return (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', borderBottom: i < demoInvoice.lineItems.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 8, background: cfg.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <span style={{ fontSize: 9, fontWeight: 800, color: cfg.color }}>{cfg.abbr}</span>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--foreground)' }}>{item.label}</div>
+                      {(item.date || item.note) && (
+                        <div style={{ fontSize: 11, color: 'var(--muted-foreground)' }}>
+                          {item.date}{item.date && item.note ? ' · ' : ''}{item.note}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: item.type === 'credit' ? '#16a34a' : 'var(--foreground)', flexShrink: 0 }}>
+                      {item.type === 'credit' ? '-' : ''}${item.amount.toFixed(2)}
+                    </div>
+                  </div>
+                );
+              })}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', background: 'var(--muted)', borderTop: '2px solid var(--border)' }}>
+                <span style={{ fontSize: 14, fontWeight: 800, color: 'var(--foreground)' }}>Sample Total</span>
+                <span style={{ fontSize: 18, fontWeight: 900, color: '#ff6221' }}>${demoInvoice.currentBalance.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -831,16 +1068,36 @@ export default function MemberPortal({ fields, onPrint, onPrintAddon, addons, pi
 
   const LOGO_URL = '/manus-storage/whip_logo_db5e4f39.png';
 
+  const { user } = useAuth();
+  const isAdmin = (user as { role?: string } | null)?.role === 'admin' || (user as { role?: string } | null)?.role === 'manager';
+
   return (
     <div className="app-shell">
       {/* TOP BAR */}
       <header className="top-bar">
         <img src={LOGO_URL} alt="Whip" className="top-bar-logo"
           onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-        <div className="top-bar-right">
+        <div className="top-bar-right" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--muted-foreground)' }}>
             {TAB_LABELS[tab]}
           </span>
+          {/* Admin shield — only visible to admin/manager roles */}
+          {isAdmin && (
+            <a
+              href="/admin"
+              title="Admin Dashboard"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: 32, height: 32, borderRadius: 8,
+                background: 'rgba(255,106,0,0.12)', border: '1px solid rgba(255,106,0,0.3)',
+                color: '#ff6221', textDecoration: 'none', flexShrink: 0,
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+            </a>
+          )}
         </div>
       </header>
 
@@ -863,6 +1120,21 @@ export default function MemberPortal({ fields, onPrint, onPrintAddon, addons, pi
             <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--foreground)', margin: '0 0 4px' }}>Support</h2>
             <p style={{ fontSize: 14, color: 'var(--muted-foreground)', margin: 0 }}>We're here to help.</p>
 
+            {/* Help Desk Phone */}
+            <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>Help Desk Phone</div>
+              <a href={`tel:${HELP_DESK_PHONE.replace(/\D/g, '')}`} style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none' }}>
+                <div style={{ width: 44, height: 44, borderRadius: 10, background: '#fff7f4', border: '1px solid #ffe4d9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#ff6221' }}>
+                  <PhoneIcon />
+                </div>
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: '#ff6221' }}>{HELP_DESK_PHONE}</div>
+                  <div style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>Call us · Mon–Sun</div>
+                </div>
+              </a>
+            </div>
+
+            {/* Help Desk Text Line */}
             <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, padding: '16px' }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--muted-foreground)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>Help Desk Text Line</div>
               <a href={`sms:${HELP_DESK_TEXT_LINE.replace(/\D/g, '')}`} style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none' }}>

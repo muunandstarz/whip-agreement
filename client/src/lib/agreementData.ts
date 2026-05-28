@@ -504,7 +504,8 @@ export function getCoverageForState(stateCode: string): CoverageInfo {
 }
 
 // ── HELP DESK ─────────────────────────────────────────────────────────────────
-export const HELP_DESK_TEXT_LINE = '855-861-9401';
+export const HELP_DESK_PHONE = '855-861-9401';       // help desk phone line (call)
+export const HELP_DESK_TEXT_LINE = '855-861-9401';   // help desk text line (SMS)
 
 // ── TRIP HISTORY (demo data) ──────────────────────────────────────────────────
 export type TripType = 'reservation' | 'swap' | 'loaner';
