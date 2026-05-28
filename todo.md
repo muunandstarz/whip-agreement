@@ -205,7 +205,7 @@
 - [x] Detail drawer: "View Signed Agreement" button linking to S3 URL when documents exist
 - [x] Detail drawer: expandable list of all documents when multiple exist
 - [x] 21 tests passing, 0 TypeScript errors
-- [ ] Fix blank agreement form page (short-link redirect lands on blank page after redirect)
+- [x] Fix blank agreement form page (short-link redirect lands on blank page after redirect)
 
 ## PDF Form Replacement (Exact Match Required)
 - [x] Extract exact content from all 9 PDFs: MD, FL, GA, PA, IL, TX, VA, MA, All Other States
@@ -222,6 +222,12 @@
 - [x] Verify PDF print output matches each official document exactly (63 vitest assertions pass)
 
 ## Confirm Info Step (Member Agreement Flow)
+- [x] Fix signing not registering in admin dashboard (verify.complete never called from frontend)
+- [x] Fix PDF page layout: content not filling full page height on pages 1 and 2
 - [ ] Add "Confirm Your Info" step after identity verification gate — member sees pre-filled phone/email/address and can edit before proceeding
 - [ ] Save updated phone/email/address back to the members DB record when member confirms
 - [ ] Updated values flow into the agreement fields (printed on the PDF)
+
+## Active Bugs
+- [ ] Fix signing not registering as completed in admin dashboard (status stays "Verified" after member signs)
+- [ ] Fix PDF page layout — content not filling full page height on pages 1 and 2 (footer appears mid-page, blank pages generated)

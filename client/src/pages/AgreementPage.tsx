@@ -213,7 +213,13 @@ export default function AgreementPage({
 
   const [pipElection, setPipElection] = useState<PipElection>(null);
   const [emailSent, setEmailSent] = useState(false);
+  const [completeSent, setCompleteSent] = useState(false);
   const [showDoneScreen, setShowDoneScreen] = useState(true); // shown first when step=complete
+
+  const completeAgreementMutation = trpc.admin.verify.complete.useMutation({
+    onSuccess: () => { setCompleteSent(true); },
+    onError: (err) => { console.warn('[Complete] Failed to mark agreement signed:', err.message); },
+  });
 
   const sendEmailMutation = trpc.agreement.sendEmail.useMutation({
     onSuccess: (data) => {
@@ -243,23 +249,39 @@ export default function AgreementPage({
     const nextIdx = stepIdx + 1;
     if (nextIdx < effectiveSteps.length) {
       const nextStep = effectiveSteps[nextIdx];
-      // Fire email when advancing to the complete step
-      if (nextStep?.id === 'complete' && !emailSent) {
-        const agreementHtml = buildPrintHTML(fields, stateData, sigDataURL, pipElection);
-        const addonHtmls = stateData.addons.map(key => ({
-          label: key === 'md-pip' ? 'Maryland_PIP_Waiver' : key === 'ga-um' ? 'Georgia_UM_Rejection' : key === 'fl-um' ? 'Florida_UM_Rejection' : 'PA_Coverage_Election',
-          html: buildAddonOnlyHTML(key, fields, stateData, sigDataURL, pipElection),
-        }));
-        sendEmailMutation.mutate({
-          memberName: fields.memberName || 'Member',
-          memberEmail: fields.email || undefined,
-          agreementHtml,
-          addonHtmls: addonHtmls.length > 0 ? addonHtmls : undefined,
-        });
+      // Fire complete + email when advancing to the complete step
+      if (nextStep?.id === 'complete') {
+        // Mark agreement as signed in DB (token mode only)
+        if (agreementToken && !completeSent) {
+          completeAgreementMutation.mutate({
+            token: agreementToken,
+            signatureData: sigDataURL || '',
+            addonsSigned: stateData.addons,
+            userAgent: navigator.userAgent,
+            memberPhone: fields.phone || undefined,
+            memberEmail: fields.email || undefined,
+            memberAddress: fields.address || undefined,
+            memberCityStateZip: fields.cityStateZip || undefined,
+          });
+        }
+        // Send email with signed agreement
+        if (!emailSent) {
+          const agreementHtml = buildPrintHTML(fields, stateData, sigDataURL, pipElection);
+          const addonHtmls = stateData.addons.map(key => ({
+            label: key === 'md-pip' ? 'Maryland_PIP_Waiver' : key === 'ga-um' ? 'Georgia_UM_Rejection' : key === 'fl-um' ? 'Florida_UM_Rejection' : 'PA_Coverage_Election',
+            html: buildAddonOnlyHTML(key, fields, stateData, sigDataURL, pipElection),
+          }));
+          sendEmailMutation.mutate({
+            memberName: fields.memberName || 'Member',
+            memberEmail: fields.email || undefined,
+            agreementHtml,
+            addonHtmls: addonHtmls.length > 0 ? addonHtmls : undefined,
+          });
+        }
       }
       goTo(nextIdx);
     }
-  }, [stepIdx, effectiveSteps, goTo, emailSent, fields, stateData, sigDataURL, pipElection, sendEmailMutation]);
+  }, [stepIdx, effectiveSteps, goTo, emailSent, completeSent, agreementToken, fields, stateData, sigDataURL, pipElection, sendEmailMutation, completeAgreementMutation]);
 
   const goBack = useCallback(() => {
     if (stepIdx > 0) goTo(stepIdx - 1);

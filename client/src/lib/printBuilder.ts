@@ -39,9 +39,20 @@ const SHARED_CSS = `
     line-height: 1.4;
     color: #000;
     page-break-after: always;
-    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 9.7in;
   }
   .agr-page-last { page-break-after: auto; }
+  .agr-page-content { flex: 1; }
+  .agr-page-footer-bar {
+    margin-top: auto;
+    padding-top: 8pt;
+    text-align: center;
+    font-size: 8pt;
+    color: #333;
+    border-top: 0.5pt solid #ccc;
+  }
 
   /* ── HEADER ── */
   .agr-hdr {
@@ -153,16 +164,7 @@ const SHARED_CSS = `
 
   /* ── PAGE FOOTER ── */
   .agr-page-footer {
-    position: absolute;
-    bottom: 0.5in;
-    left: 0.65in;
-    right: 0.65in;
-    display: flex;
-    justify-content: space-between;
-    font-size: 8pt;
-    color: #333;
-    border-top: 0.5pt solid #ccc;
-    padding-top: 3pt;
+    display: none; /* replaced by agr-page-footer-bar */
   }
 
   /* ── ADDENDUM BLOCK ── */
@@ -399,9 +401,9 @@ function buildMainPages(fields: Fields, sd: StateData, sigImg: string, today: st
   const govLawText = buildGoverningLawText(sd);
 
   // Page 1 footer
-  const footer1 = `<div style="text-align:center;font-size:8pt;color:#333;margin-top:10pt;">${CONFIDENTIAL_FOOTER}<br>Page 1</div>`;
-  const footer2 = `<div style="text-align:center;font-size:8pt;color:#333;margin-top:10pt;">${CONFIDENTIAL_FOOTER}<br>Page 2</div>`;
-  const footer3 = `<div style="text-align:center;font-size:8pt;color:#333;margin-top:10pt;">${CONFIDENTIAL_FOOTER}<br>Page 3</div>`;
+  const footer1 = `<div class="agr-page-footer-bar">${CONFIDENTIAL_FOOTER}<br>Page 1</div>`;
+  const footer2 = `<div class="agr-page-footer-bar">${CONFIDENTIAL_FOOTER}<br>Page 2</div>`;
+  const footer3 = `<div class="agr-page-footer-bar">${CONFIDENTIAL_FOOTER}<br>Page 3</div>`;
 
   // Parse vehicle field into make/model if possible
   const vehicleStr = fields.vehicle || '';
@@ -415,10 +417,10 @@ function buildMainPages(fields: Fields, sd: StateData, sigImg: string, today: st
   const endDateDisplay = formatDateDisplay(fields.endDate);
 
   return `
-  <!-- PAGE 1 -->
+    <!-- PAGE 1 -->
   <div class="agr-page">
+    <div class="agr-page-content">
     ${hdr}
-
     <div class="agr-doc-title">VEHICLE MEMBERSHIP AGREEMENT</div>
 
     <p class="agr-doc-intro">This Vehicle Membership Agreement and the Terms of Service (collectively the "Agreement") between Metrocars Leasing Corp. d/b/a Whip ("Whip") and the individual listed below ("Member") sets out the rights and obligations of the parties regarding the membership and the vehicle listed below, including its equipment, tools, tires, accessories, and contents ("Vehicle").</p>
@@ -464,21 +466,20 @@ function buildMainPages(fields: Fields, sd: StateData, sigImg: string, today: st
       </tr>
     </table>
 
-    <!-- Membership Terms section -->
+        <!-- Membership Terms section -->
     <div class="agr-sec">
       <span class="agr-sec-title">Membership Terms</span>
       <p>This Agreement commences on the Start Date stated below and continues for eighteen (18) months, renewing weekly until the Vehicle is in Whip's possession. Whip may terminate this Agreement at any time for cause, including violation of this Agreement, failure to maintain active TNC platform status, nonpayment, or any conduct placing the vehicle or third parties at risk. Member may be subject to legal action if Vehicle is not returned on or before the last paid-for date.</p>
     </div>
-
+    </div><!-- end agr-page-content -->
     ${footer1}
   </div>
 
-  <!-- PAGE 2 -->
+    <!-- PAGE 2 -->
   <div class="agr-page">
+    <div class="agr-page-content">
     ${hdr}
-
     ${addendumBlock}
-
     <div class="agr-sec">
       <span class="agr-sec-title">Protection Plan</span>
       <p>The Member's weekly lease payment includes the Protection Plan, under which Metrocars Leasing Corp. maintains physical damage coverage — comprehensive and collision — on the vehicle as the registered owner. In the event of damage to the vehicle during the Member's lease term, the Member is responsible for a Damage Fee of up to $1,000 per occurrence (the lesser of actual repair cost or $1,000). The Damage Fee is due and payable upon demand and may be charged to the payment method on file. The Protection Plan does not apply where damage results from intentional or reckless conduct, or where the vehicle is operated in violation of this Agreement or applicable law. In such cases, the Member may be held responsible for the full cost of repair or replacement. Operation of the vehicle by an unauthorized driver is a material breach of this Agreement; the Member remains financially liable for resulting damage and membership may be terminated.</p>
@@ -501,16 +502,16 @@ function buildMainPages(fields: Fields, sd: StateData, sigImg: string, today: st
 
     <div class="agr-sec">
       <span class="agr-sec-title">Subrogation</span>
-      <p>To the extent Whip makes any payment arising from a loss caused by a third party, the Member hereby assigns to Whip all rights of recovery against such third party. The Member agrees to cooperate with Whip's pursuit of any subrogation claim, including executing documents, providing information, and appearing as a witness as reasonably requested. The Member shall take no action that would impair Whip's subrogation rights.</p>
+            <p>To the extent Whip makes any payment arising from a loss caused by a third party, the Member hereby assigns to Whip all rights of recovery against such third party. The Member agrees to cooperate with Whip's pursuit of any subrogation claim, including executing documents, providing information, and appearing as a witness as reasonably requested. The Member shall take no action that would impair Whip's subrogation rights.</p>
     </div>
-
+    </div><!-- end agr-page-content -->
     ${footer2}
   </div>
 
-  <!-- PAGE 3 — SECTIONS CONT + ACK + SIGNATURE -->
-  <div class="agr-page">
+    <!-- PAGE 3 — SECTIONS CONT + ACK + SIGNATURE -->
+  <div class="agr-page agr-page-last">
+    <div class="agr-page-content">
     ${hdr}
-
     <div class="agr-sec">
       <span class="agr-sec-title">Return of Vehicle</span>
       <p>Upon termination of this Agreement, the Member shall return the vehicle to Whip immediately in the same condition as received, ordinary wear and tear excepted. The Member is not entitled to a replacement or substitute vehicle during any period in which the leased vehicle is out of service. Whip reserves the right to recover the vehicle without notice in the event of abandonment or material breach.${returnNote}</p>
@@ -565,9 +566,9 @@ function buildMainPages(fields: Fields, sd: StateData, sigImg: string, today: st
         <span class="agr-sig-label">Rental ID</span>
         <span class="agr-sig-line" style="min-height:24pt;">${fields.reservationId || ''}</span>
       </div>
-      <div class="agr-sig-field"></div>
+            <div class="agr-sig-field"></div>
     </div>
-
+    </div><!-- end agr-page-content -->
     ${footer3}
   </div>
   `;
