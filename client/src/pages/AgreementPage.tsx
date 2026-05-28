@@ -192,14 +192,16 @@ export default function AgreementPage({
         address: '4821 Elm Street',
         cityStateZip: 'Baltimore, MD 21201',
         customerId: 'DEMO-001',
-        reservationId: 'RES-DEMO-2026',
-        vehicle: '2023 Toyota Camry',
+        reservationId: '1001-N09186-05252026',
+        vehicle: '2023 Toyota Camry SE',
         vin: '4T1BF1FK5EU123456',
         weeklyFee: '299',
         deposit: '500',
         agreementState: 'MD',
         startDate: fmt(start),
         endDate: fmt(end),
+        printedName: 'Alex Johnson',
+        dateSigned: fmt(today),
       };
       Object.entries(demoData).forEach(([k, v]) => {
         (next as Record<string, string>)[k] = v as string;
@@ -502,6 +504,7 @@ export default function AgreementPage({
               fields={fields} setField={setField}
               canvasRef={canvasRef} hasSig={hasSig}
               startDraw={startDraw} draw={draw} endDraw={endDraw} clearSig={clearSig}
+              demoMode={demoMode}
             />
           )}
           {currentStep?.id === 'addons' && (
@@ -701,9 +704,9 @@ function InfoStep({ fields, prefilled, setField, demoMode }: {
   setField: (k: keyof MemberFields, v: string) => void;
   demoMode?: boolean;
 }) {
-  const pf = (k: string) => (prefilled.has(k) || (demoMode && !['dob','phone','email','address','cityStateZip'].includes(k))) ? 'prefilled' : '';
-  // In demo mode, lock everything except DOB, phone, email, address, cityStateZip
-  const locked = (k: string) => demoMode ? !['dob','phone','email','address','cityStateZip'].includes(k) : prefilled.has(k);
+  const pf = (k: string) => (prefilled.has(k) || demoMode) ? 'prefilled' : '';
+  // In demo mode, lock ALL fields — everything is pre-populated for the agent walkthrough
+  const locked = (k: string) => demoMode ? true : prefilled.has(k);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
@@ -1011,12 +1014,13 @@ function AgreementStep({ fields, stateData, acksChecked, setAcksChecked, expande
 }
 
 // ── SIGN ─────────────────────────────────────────────────────────────────────
-function SignStep({ fields, setField, canvasRef, hasSig, startDraw, draw, endDraw, clearSig }: {
+function SignStep({ fields, setField, canvasRef, hasSig, startDraw, draw, endDraw, clearSig, demoMode }: {
   fields: MemberFields; setField: (k: keyof MemberFields, v: string) => void;
   canvasRef: React.RefObject<HTMLCanvasElement | null>; hasSig: boolean;
   startDraw: (e: React.MouseEvent | React.TouchEvent) => void;
   draw: (e: React.MouseEvent | React.TouchEvent) => void;
   endDraw: () => void; clearSig: () => void;
+  demoMode?: boolean;
 }) {
   return (
     <div>
@@ -1056,8 +1060,9 @@ function SignStep({ fields, setField, canvasRef, hasSig, startDraw, draw, endDra
           <div style={{ height: 16 }} />
 
           <FI label="Type Your Full Name *">
-            <input className="field-input" value={fields.printedName}
+            <input className={`field-input${demoMode ? ' prefilled' : ''}`} value={fields.printedName}
               onChange={e => setField('printedName', e.target.value)}
+              readOnly={demoMode}
               placeholder="Type your full legal name" style={{ fontSize: 16 }} />
           </FI>
 
