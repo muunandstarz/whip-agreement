@@ -74,6 +74,33 @@ function MetricCard({ label, value, sub, accent }: { label: string; value: strin
 function OverviewTab() {
   const { data: metrics, isLoading } = trpc.admin.agreements.metrics.useQuery();
   const { data: exceptions } = trpc.admin.agreements.list.useQuery({ hasException: true, limit: 10, offset: 0 });
+  const testEmailMutation = trpc.admin.testEmail.useMutation();
+  const testSmsMutation = trpc.admin.testSms.useMutation();
+  const [testEmailTo, setTestEmailTo] = useState("");
+  const [testSmsTo, setTestSmsTo] = useState("");
+
+  const handleTestEmail = async () => {
+    if (!testEmailTo) { toast.error("Enter an email address"); return; }
+    try {
+      const r = await testEmailMutation.mutateAsync({ to: testEmailTo });
+      if (r.sent) toast.success(`Test email sent to ${testEmailTo} via ${r.smtpHost}`);
+      else toast.error("Email send returned false — check server logs for SMTP errors");
+    } catch (e) {
+      toast.error("Test email failed: " + (e instanceof Error ? e.message : String(e)));
+    }
+  };
+
+  const handleTestSms = async () => {
+    if (!testSmsTo) { toast.error("Enter a phone number"); return; }
+    try {
+      const r = await testSmsMutation.mutateAsync({ to: testSmsTo });
+      if (r.sent) toast.success(`Test SMS sent to ${testSmsTo}`);
+      else if (!r.hasKey) toast.error("TextLine API key not configured — SMS disabled");
+      else toast.error("SMS send returned false — check server logs (TextLine may be returning 401)");
+    } catch (e) {
+      toast.error("Test SMS failed: " + (e instanceof Error ? e.message : String(e)));
+    }
+  };
 
   if (isLoading) return <div className="p-8 text-center text-gray-400">Loading metrics...</div>;
 
@@ -121,6 +148,54 @@ function OverviewTab() {
           </div>
         </div>
       )}
+
+      {/* Delivery Test Panel */}
+      <div className="bg-white rounded-xl border border-gray-200 p-5">
+        <h3 className="font-semibold text-[#0b1228] mb-1">Delivery Test</h3>
+        <p className="text-xs text-gray-500 mb-4">Verify that email and SMS delivery are working without needing a member record.</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Test Email</label>
+            <div className="flex gap-2">
+              <input
+                type="email"
+                placeholder="recipient@example.com"
+                value={testEmailTo}
+                onChange={e => setTestEmailTo(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && handleTestEmail()}
+                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF6A00]/30"
+              />
+              <button
+                onClick={handleTestEmail}
+                disabled={testEmailMutation.isPending}
+                className="px-4 py-2 bg-[#0b1228] text-white rounded-lg text-sm font-medium hover:bg-[#1a2540] disabled:opacity-50 transition-colors"
+              >
+                {testEmailMutation.isPending ? "Sending..." : "Send Test"}
+              </button>
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Test SMS</label>
+            <div className="flex gap-2">
+              <input
+                type="tel"
+                placeholder="+15175551234"
+                value={testSmsTo}
+                onChange={e => setTestSmsTo(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && handleTestSms()}
+                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF6A00]/30"
+              />
+              <button
+                onClick={handleTestSms}
+                disabled={testSmsMutation.isPending}
+                className="px-4 py-2 bg-[#0b1228] text-white rounded-lg text-sm font-medium hover:bg-[#1a2540] disabled:opacity-50 transition-colors"
+              >
+                {testSmsMutation.isPending ? "Sending..." : "Send Test"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

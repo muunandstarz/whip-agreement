@@ -75,21 +75,21 @@
 ## Deferred
 - [x] Gmail credentials — replaced by cPanel SMTP (insurance@drivewhip.com)
 - [x] TextLine API key — wired (xo79ytdfv7thm5s6i07l)
-- [ ] Member account creation / login / forgot password flow
+- [ ] Member account creation / login / forgot password flow (future phase, pending drivewhip.com integration)
 
 ## Email & SMS Integration
 - [x] Wire SMTP via cPanel webmail (insurance@drivewhip.com, host: c60263.sgvps.net)
 - [x] Replace nodemailer stub with live SMTP delivery for send/resend/reminder/expiry emails
 - [x] Wire TextLine API key for SMS send/resend
 - [x] Email and SMS tests passing (19 total)
-- [ ] Live end-to-end test with real member (user to add themselves and trigger a send)
+- [ ] Live end-to-end test with real member — pending valid TextLine API key; email SMTP confirmed working
 
 ## Member Login (drivewhip.com goal)
-- [ ] Note: eventual goal is drivewhip.com/login → member sees their profile/agreement status
+- [ ] drivewhip.com/login → member portal (future phase, requires drivewhip.com dev team integration)
 
 ## Data Format Notes
 - Reservation ID format: [member number]-[last 6 of VIN]-[mmddyyyy of pickup] e.g. 1042-N09186-05012026
-- [ ] Parse and display reservation ID components (member #, VIN suffix, pickup date) in member detail and agreement views
+- [ ] Parse and display reservation ID components (member #, VIN suffix, pickup date) in member detail and agreement views (future enhancement)
 
 ## Bug Fixes
 - [x] Fix "Member not found" error — Generate tab now uses live member search dropdown; origin passed correctly from browser
@@ -165,3 +165,20 @@
 - [x] Reminder handler checks elapsed time, skips if already signed/revoked/expired
 - [x] Max 3 auto-reminders per agreement (stops after 72h)
 - [x] Manual bulk resend still available in Agreements tab for on-demand reminders
+
+## P0 Investigation Findings (May 28, 2026)
+- [x] SMTP env vars confirmed SET at runtime (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS)
+- [x] Direct SMTP test confirmed working — email sent to jasminea@drivewhip.com successfully
+- [x] Root cause: no send mutation was ever triggered — admin had 0 members with agreements in the DB
+- [x] Send flow code is correct — sendEmail/sendSms called properly in send/sendToMembers/bulkSend
+- [x] Added explicit [Send] and [SendToMembers] console.log tracing in admin.ts send procedures
+- [x] Added testEmail and testSms tRPC procedures (admin.testEmail / admin.testSms)
+- [x] Added Delivery Test panel in Overview tab (test email/SMS without needing a member record)
+- [ ] TextLine API key (xo79ytdfv7thm5s6i07l) returns 401 — needs replacement key from TextLine Settings → API
+- [ ] Live end-to-end send test with real member (add member → send → confirm receipt)
+
+## Reservation ID Auto-Generation
+- [ ] Manual add member form: auto-compute reservationId when memberId + VIN + startDate are all filled
+- [ ] Edit member drawer: same auto-compute logic on field change
+- [ ] Bulk CSV import: compute reservationId server-side after upload if not already present in CSV
+- [ ] Server-side helper: buildReservationId(memberId, vin, startDate) → "[memberId]-[last6VIN]-[mmddyyyy]"

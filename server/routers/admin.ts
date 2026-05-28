@@ -427,6 +427,7 @@ export const adminRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         requireManagerOrAbove(ctx.user.role);
+        console.log(`[Send] START agreementId=${input.agreementId} via=${input.via} by=${ctx.user.email}`);
         const agreement = await getAgreementById(input.agreementId);
         if (!agreement) throw new TRPCError({ code: "NOT_FOUND" });
         const member = await getMemberById(agreement.memberId);
@@ -438,6 +439,7 @@ export const adminRouter = router({
         let smsSent = false;
 
         if (input.via === "email" || input.via === "both") {
+          console.log(`[Send] Sending email to ${member.email}`);
           const { subject, html } = buildAgreementEmail({
             firstName: member.name.split(" ")[0],
             vehicle: member.vehicle,
@@ -446,13 +448,16 @@ export const adminRouter = router({
             link,
           });
           emailSent = await sendEmail({ to: member.email, subject, html });
+          console.log(`[Send] Email result: ${emailSent}`);
         }
 
         if (input.via === "sms" || input.via === "both") {
+          console.log(`[Send] Sending SMS to ${member.phone}`);
           smsSent = await sendSms({
             to: member.phone,
             message: buildAgreementSms({ firstName: member.name.split(" ")[0], link }),
           });
+          console.log(`[Send] SMS result: ${smsSent}`);
         }
 
         await updateAgreement(input.agreementId, {
@@ -462,6 +467,7 @@ export const adminRouter = router({
           sentVia: input.via,
         });
 
+        console.log(`[Send] DONE agreementId=${input.agreementId} emailSent=${emailSent} smsSent=${smsSent}`);
         await logEvent({ agreementId: input.agreementId, memberId: agreement.memberId, eventType: "sent", performedBy: ctx.user.id, metadata: { via: input.via, emailSent, smsSent } });
 
         // Schedule automatic reminders at 24h, 48h, and 72h
@@ -579,6 +585,7 @@ export const adminRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         requireManagerOrAbove(ctx.user.role);
+        console.log(`[SendToMembers] START memberIds=${JSON.stringify(input.memberIds)} via=${input.via} by=${ctx.user.email}`);
         const origin = input.origin ?? "https://whipagree-3narmaq7.manus.space";
         const members = await getMembersByIds(input.memberIds);
 
@@ -629,6 +636,7 @@ export const adminRouter = router({
             let smsSent = false;
 
             if (input.via === "email" || input.via === "both") {
+              console.log(`[SendToMembers] Sending email to ${member.email} (memberId=${member.id})`);
               const { subject, html } = buildAgreementEmail({
                 firstName: member.name.split(" ")[0],
                 vehicle: member.vehicle,
@@ -637,13 +645,16 @@ export const adminRouter = router({
                 link,
               });
               emailSent = await sendEmail({ to: member.email, subject, html });
+              console.log(`[SendToMembers] Email result: ${emailSent} for memberId=${member.id}`);
             }
 
             if (input.via === "sms" || input.via === "both") {
+              console.log(`[SendToMembers] Sending SMS to ${member.phone} (memberId=${member.id})`);
               smsSent = await sendSms({
                 to: member.phone,
                 message: buildAgreementSms({ firstName: member.name.split(" ")[0], link }),
               });
+              console.log(`[SendToMembers] SMS result: ${smsSent} for memberId=${member.id}`);
             }
 
             await updateAgreement(agreementId, {
@@ -656,6 +667,7 @@ export const adminRouter = router({
             await logEvent({ agreementId, memberId: member.id, eventType: "sent", performedBy: ctx.user.id, metadata: { via: input.via, emailSent, smsSent, action } });
             results.push({ memberId: member.id, agreementId, emailSent, smsSent, action });
           } catch (e) {
+            console.error(`[SendToMembers] Error for memberId=${member.id}:`, e);
             results.push({ memberId: member.id, error: String(e) });
           }
 
@@ -881,4 +893,41 @@ export const adminRouter = router({
         return { id: docId, url };
       }),
   }),
+
+  // ── Delivery Tests ────────────────────────────────────────────────────────
+
+  testEmail: protectedProcedure
+    .input(z.object({ to: z.string().email() }))
+    .mutation(async ({ ctx, input }) => {
+      requireManagerOrAbove(ctx.user.role);
+      console.log(`[TestEmail] Sending test email to ${input.to} by ${ctx.user.email}`);
+      const sent = await sendEmail({
+        to: input.to,
+        subject: `Whip Platform — Email Delivery Test (${new Date().toISOString()})`,
+        html: `<div style="font-family:Arial,sans-serif;padding:32px;max-width:600px;margin:0 auto">
+          <h2 style="color:#0b1228">Email Delivery Test</h2>
+          <p>This is a test email from the Whip Agreement Platform.</p>
+          <p>Sent by: <strong>${ctx.user.email}</strong></p>
+          <p>Time: <strong>${new Date().toISOString()}</strong></p>
+          <p>SMTP Host: <strong>${process.env.SMTP_HOST ?? "not set"}</strong></p>
+          <p style="color:#888;font-size:12px">If you received this, email delivery is working correctly.</p>
+        </div>`,
+      });
+      console.log(`[TestEmail] Result: ${sent}`);
+      return { sent, smtpHost: process.env.SMTP_HOST ?? null, smtpUser: process.env.SMTP_USER ?? null };
+    }),
+
+  testSms: protectedProcedure
+    .input(z.object({ to: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      requireManagerOrAbove(ctx.user.role);
+      console.log(`[TestSms] Sending test SMS to ${input.to} by ${ctx.user.email}`);
+      const sent = await sendSms({
+        to: input.to,
+        message: `Whip Platform SMS test — sent at ${new Date().toISOString()} by ${ctx.user.email}`,
+      });
+      console.log(`[TestSms] Result: ${sent}`);
+      const hasKey = !!process.env.TEXTLINE_API_KEY;
+      return { sent, hasKey };
+    }),
 });
