@@ -79,6 +79,7 @@ const memberInputSchema = z.object({
   weeklyRate: z.string().min(1),
   deposit: z.string().min(1),
   agreementState: z.string().min(1),
+  market: z.string().optional(),
   startDate: z.string().min(1),
   endDate: z.string().min(1),
   importSource: z.enum(["csv", "manual", "api"]).default("manual"),
@@ -194,6 +195,7 @@ export const adminRouter = router({
         weeklyRate: z.string().optional(),
         deposit: z.string().optional(),
         agreementState: z.string().optional(),
+        market: z.string().optional(),
         startDate: z.string().optional(),
         endDate: z.string().optional(),
       }))

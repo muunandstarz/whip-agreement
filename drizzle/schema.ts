@@ -52,6 +52,7 @@ export const members = mysqlTable("members", {
   weeklyRate: varchar("weeklyRate", { length: 20 }).notNull(),
   deposit: varchar("deposit", { length: 20 }).notNull(),
   agreementState: varchar("agreementState", { length: 10 }).notNull(),
+  market: varchar("market", { length: 64 }),
   startDate: varchar("startDate", { length: 20 }).notNull(),
   endDate: varchar("endDate", { length: 20 }).notNull(),
 

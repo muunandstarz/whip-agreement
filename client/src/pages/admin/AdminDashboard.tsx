@@ -218,7 +218,6 @@ const MEMBER_FIELDS: { key: string; label: string; type?: string }[] = [
   { key: "vin", label: "VIN" },
   { key: "weeklyRate", label: "Weekly Rate" },
   { key: "deposit", label: "Deposit" },
-  { key: "agreementState", label: "Agreement State" },
   { key: "startDate", label: "Start Date", type: "date" },
   { key: "endDate", label: "End Date", type: "date" },
 ];
@@ -232,6 +231,9 @@ function EditMemberDrawer({ member, onClose, onSaved }: { member: MemberRecord; 
       const v = member[key];
       f[key] = v != null ? String(v) : "";
     }
+    // also include market and agreementState (not in MEMBER_FIELDS loop)
+    f.market = member.market != null ? String(member.market) : "";
+    f.agreementState = member.agreementState != null ? String(member.agreementState) : "";
     return f;
   });
 
@@ -285,6 +287,35 @@ function EditMemberDrawer({ member, onClose, onSaved }: { member: MemberRecord; 
                 {key === "reservationId" && <p className="text-xs text-gray-400 mt-0.5">Auto-computed from Customer ID, VIN &amp; Start Date</p>}
               </div>
             ))}
+            {/* Market dropdown — sets market + auto-fills agreementState */}
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-medium text-gray-600 mb-1">Market</label>
+              <select
+                value={form.market ?? ""}
+                onChange={e => {
+                  const mkt = MARKETS.find(m => m.name === e.target.value);
+                  handleFieldChange("market", e.target.value);
+                  if (mkt) handleFieldChange("agreementState", mkt.state);
+                }}
+                required
+                className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
+              >
+                <option value="">Select a market…</option>
+                {MARKETS.map(m => (
+                  <option key={m.name} value={m.name}>{m.name} ({m.state})</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Agreement State</label>
+              <input
+                type="text"
+                value={form.agreementState ?? ""}
+                readOnly
+                className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-gray-50 text-gray-500 cursor-default"
+              />
+              <p className="text-xs text-gray-400 mt-0.5">Auto-filled from Market</p>
+            </div>
           </div>
           <div className="flex gap-2 pt-2">
             <button
@@ -309,7 +340,7 @@ function EditMemberDrawer({ member, onClose, onSaved }: { member: MemberRecord; 
 const MEMBER_CSV_HEADERS = [
   "name", "dob", "phone", "email", "driverLicense", "licenseState",
   "address", "cityStateZip", "customerId", "reservationId", "vehicle",
-  "vin", "weeklyRate", "deposit", "agreementState", "startDate", "endDate",
+  "vin", "weeklyRate", "deposit", "startDate", "endDate",
 ];
 
 function MembersTab() {
@@ -333,7 +364,7 @@ function MembersTab() {
   const [form, setForm] = useState<Record<string, string>>({
     name: "", dob: "", phone: "", email: "", driverLicense: "", licenseState: "",
     address: "", cityStateZip: "", customerId: "", reservationId: "", vehicle: "",
-    vin: "", weeklyRate: "", deposit: "", agreementState: "", startDate: "", endDate: "",
+    vin: "", weeklyRate: "", deposit: "", market: "", agreementState: "", startDate: "", endDate: "",
   });
 
   const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -389,7 +420,7 @@ function MembersTab() {
       await createMember.mutateAsync(form as Parameters<typeof createMember.mutateAsync>[0]);
       toast.success("Member created");
       setShowManual(false);
-      setForm({ name: "", dob: "", phone: "", email: "", driverLicense: "", licenseState: "", address: "", cityStateZip: "", customerId: "", reservationId: "", vehicle: "", vin: "", weeklyRate: "", deposit: "", agreementState: "", startDate: "", endDate: "" });
+      setForm({ name: "", dob: "", phone: "", email: "", driverLicense: "", licenseState: "", address: "", cityStateZip: "", customerId: "", reservationId: "", vehicle: "", vin: "", weeklyRate: "", deposit: "", market: "", agreementState: "", startDate: "", endDate: "" });
       refetch();
     } catch (err) {
       toast.error("Failed: " + (err instanceof Error ? err.message : String(err)));
@@ -466,6 +497,35 @@ function MembersTab() {
                 />
               </div>
             ))}
+            {/* Market dropdown */}
+            <div className="sm:col-span-2 md:col-span-2">
+              <label className="block text-xs font-medium text-gray-600 mb-1">Market</label>
+              <select
+                value={form.market ?? ""}
+                onChange={e => {
+                  const mkt = MARKETS.find(m => m.name === e.target.value);
+                  handleFormFieldChange("market", e.target.value);
+                  if (mkt) handleFormFieldChange("agreementState", mkt.state);
+                }}
+                required
+                className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF6A00]"
+              >
+                <option value="">Select a market…</option>
+                {MARKETS.map(m => (
+                  <option key={m.name} value={m.name}>{m.name} ({m.state})</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Agreement State</label>
+              <input
+                type="text"
+                value={form.agreementState ?? ""}
+                readOnly
+                className="w-full border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-gray-50 text-gray-500 cursor-default"
+              />
+              <p className="text-xs text-gray-400 mt-0.5">Auto-filled from Market</p>
+            </div>
           </div>
           <div className="flex gap-2 mt-4">
             <button type="submit" disabled={createMember.isPending} className="bg-[#FF6A00] text-white text-sm px-4 py-2 rounded-lg hover:bg-[#e55f00] disabled:opacity-50">
