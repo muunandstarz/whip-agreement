@@ -141,7 +141,7 @@ const SHARED_CSS = `
   .agr-sig-line {
     display: block;
     border-bottom: 0.75pt solid #000;
-    min-height: 40pt;
+    min-height: 24pt;
     padding-bottom: 2pt;
   }
   .agr-sig-label {
@@ -219,7 +219,7 @@ export function buildPrintHTML(
 ): string {
   const today = fields.dateSigned || new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   const sigImg = sigDataURL
-    ? `<img src="${sigDataURL}" style="height:52pt;max-width:100%;object-fit:contain;object-position:left bottom;">`
+    ? `<img src="${sigDataURL}" style="height:28pt;max-width:100%;object-fit:contain;object-position:left bottom;display:block;">`
     : '';
 
   const mainPages = buildMainPages(fields, stateData, sigImg, today);
@@ -249,7 +249,7 @@ export function buildViewerHTML(
 ): string {
   const today = fields.dateSigned || new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   const sigImg = sigDataURL
-    ? `<img src="${sigDataURL}" style="height:52pt;max-width:100%;object-fit:contain;object-position:left bottom;">`
+    ? `<img src="${sigDataURL}" style="height:28pt;max-width:100%;object-fit:contain;object-position:left bottom;display:block;">`
     : '';
   const mainPages = buildMainPages(fields, stateData, sigImg, today);
   const addonPages = buildAddonPages(fields, stateData, sigDataURL, pipElection, today);
@@ -541,30 +541,29 @@ function buildMainPages(fields: Fields, sd: StateData, sigImg: string, today: st
       <li>I further acknowledge and agree to the dispute-resolution and arbitration provisions of the Agreement.</li>
     </ul>
 
-    <!-- Signature row -->
-    <div class="agr-sig-grid" style="margin-top:16pt;">
+        <!-- Signature block -->
+    <div class="agr-sig-grid" style="margin-top:16pt;align-items:end;">
       <div class="agr-sig-field">
         <span class="agr-sig-label">Member Printed Name</span>
-        <span class="agr-sig-line" style="min-height:16pt;">${fields.printedName || fields.memberName || ''}</span>
+        <span class="agr-sig-line" style="min-height:24pt;">${fields.printedName || fields.memberName || ''}</span>
       </div>
       <div class="agr-sig-field">
         <span class="agr-sig-label">Signature</span>
-        <span class="agr-sig-line">${sigImg}</span>
+        <span class="agr-sig-line" style="min-height:24pt;">${sigImg}</span>
       </div>
       <div class="agr-sig-field">
         <span class="agr-sig-label">Customer ID</span>
-        <span class="agr-sig-line" style="min-height:16pt;">${fields.customerId || ''}</span>
+        <span class="agr-sig-line" style="min-height:24pt;">${fields.customerId || ''}</span>
       </div>
     </div>
-
-    <div class="agr-sig-grid" style="margin-top:8pt;">
+    <div class="agr-sig-grid" style="margin-top:10pt;align-items:end;">
       <div class="agr-sig-field">
         <span class="agr-sig-label">Date Signed</span>
-        <span class="agr-sig-line" style="min-height:16pt;">${today}</span>
+        <span class="agr-sig-line" style="min-height:24pt;">${today}</span>
       </div>
       <div class="agr-sig-field">
         <span class="agr-sig-label">Rental ID</span>
-        <span class="agr-sig-line" style="min-height:16pt;">${fields.reservationId || ''}</span>
+        <span class="agr-sig-line" style="min-height:24pt;">${fields.reservationId || ''}</span>
       </div>
       <div class="agr-sig-field"></div>
     </div>

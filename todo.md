@@ -220,3 +220,8 @@
 - [x] Rebuild Massachusetts form to exactly match Massachusetts_Member_Agreement.pdf
 - [x] Rebuild All Other States form to exactly match All_Other_States_Member_Agreement.pdf
 - [x] Verify PDF print output matches each official document exactly (63 vitest assertions pass)
+
+## Confirm Info Step (Member Agreement Flow)
+- [ ] Add "Confirm Your Info" step after identity verification gate — member sees pre-filled phone/email/address and can edit before proceeding
+- [ ] Save updated phone/email/address back to the members DB record when member confirms
+- [ ] Updated values flow into the agreement fields (printed on the PDF)

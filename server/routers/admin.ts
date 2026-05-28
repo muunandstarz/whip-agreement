@@ -857,15 +857,14 @@ export const adminRouter = router({
           addonsSigned: input.addonsSigned ?? [],
         });
 
-        // Update member contact fields if provided
+        // Update member contact fields if provided (use correct column names)
         if (input.memberPhone || input.memberEmail || input.memberAddress || input.memberCityStateZip) {
-          await updateMember(agreement.memberId, {
-            memberPhone: input.memberPhone,
-            memberEmail: input.memberEmail,
-            memberAddress: input.memberAddress,
-            memberCityStateZip: input.memberCityStateZip,
-            memberFieldsUpdatedAt: new Date(),
-          });
+          const contactUpdate: Partial<{ phone: string; email: string; address: string; cityStateZip: string }> = {};
+          if (input.memberPhone) contactUpdate.phone = input.memberPhone;
+          if (input.memberEmail) contactUpdate.email = input.memberEmail;
+          if (input.memberAddress) contactUpdate.address = input.memberAddress;
+          if (input.memberCityStateZip) contactUpdate.cityStateZip = input.memberCityStateZip;
+          await updateMember(agreement.memberId, contactUpdate);
         }
 
         await logEvent({ agreementId: agreement.id, memberId: agreement.memberId, eventType: "signed", ipAddress: input.ipAddress, userAgent: input.userAgent });
