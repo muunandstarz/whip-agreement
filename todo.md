@@ -206,3 +206,17 @@
 - [x] Detail drawer: expandable list of all documents when multiple exist
 - [x] 21 tests passing, 0 TypeScript errors
 - [ ] Fix blank agreement form page (short-link redirect lands on blank page after redirect)
+
+## PDF Form Replacement (Exact Match Required)
+- [x] Extract exact content from all 9 PDFs: MD, FL, GA, PA, IL, TX, VA, MA, All Other States
+- [x] Audit current form components and state routing logic
+- [x] Rebuild Maryland form to exactly match Maryland_Member_Agreement_Package.pdf
+- [x] Rebuild Florida form to exactly match Florida_correct.pdf
+- [x] Rebuild Georgia form to exactly match Georgia_Member_Agreement_Package.pdf
+- [x] Rebuild Pennsylvania form to exactly match Pennsylvania_Member_Agreement_Package.pdf
+- [x] Rebuild Illinois form to exactly match Illinois_Member_Agreement.pdf
+- [x] Rebuild Texas form to exactly match Texas_Member_Agreement.pdf
+- [x] Rebuild Virginia form to exactly match Virginia_Member_Agreement.pdf
+- [x] Rebuild Massachusetts form to exactly match Massachusetts_Member_Agreement.pdf
+- [x] Rebuild All Other States form to exactly match All_Other_States_Member_Agreement.pdf
+- [x] Verify PDF print output matches each official document exactly (63 vitest assertions pass)
