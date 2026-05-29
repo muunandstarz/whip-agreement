@@ -62,7 +62,12 @@ async function startServer() {
         .set({ clicks: (link.clicks ?? 0) + 1 })
         .where(eq(shortLinks.id, link.id))
         .catch(() => {});
-      return res.redirect(302, link.targetUrl);
+      // Use HTML redirect for better mobile browser compatibility
+      // Raw 302 can render as blank/text on some Android browsers
+      const safeUrl = link.targetUrl.replace(/"/g, '&quot;');
+      return res.status(200).type('html').send(
+        `<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="refresh" content="0;url=${safeUrl}"><title>Redirecting...</title></head><body><script>window.location.replace(${JSON.stringify(link.targetUrl)});<\/script><p>Redirecting... <a href="${safeUrl}">Click here if not redirected</a></p></body></html>`
+      );
     } catch (err) {
       console.error("[ShortLink] Redirect error:", err);
       return res.status(500).send("Internal error");

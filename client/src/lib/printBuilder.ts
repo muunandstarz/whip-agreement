@@ -695,9 +695,9 @@ function buildMdPipPages(
       Personal Injury Protection (PIP) Coverage
     </div>
 
-    <div style="display:grid; grid-template-columns:1fr 1fr; column-gap:24pt; align-items:start;">
+    <div style="display:block;">
 
-      <!-- LEFT COLUMN -->
+      <!-- SECTION 1 -->
       <div>
         <p style="margin-bottom:10pt;">
           <strong><u>Notice Concerning the Waiver of<br>
@@ -734,7 +734,7 @@ function buildMdPipPages(
         <strong><u>$2,400</u></strong> (<strong><em>annually - Charged at $50/week</em></strong>).</p>
       </div>
 
-      <!-- RIGHT COLUMN -->
+      <!-- SECTION 2 -->
       <div>
         <p style="margin-bottom:8pt;">You may only waive PIP coverage for:</p>
 
@@ -769,16 +769,16 @@ function buildMdPipPages(
         write your insurance coverage.</p>
       </div>
 
-    </div><!-- /two-col page 1 -->
+    </div><!-- /single-col page 1 -->
 
   </div><!-- /pip page 1 -->
 
   <!-- MD PIP PAGE 2 — WAIVER -->
   <div class="pip-page pip-page-last" style="padding: 0.75in 0.8in;">
 
-    <div style="display:grid; grid-template-columns:1fr 1fr; column-gap:24pt; align-items:start;">
+    <div style="display:block;">
 
-      <!-- LEFT COLUMN — Waiver Body -->
+      <!-- WAIVER BODY -->
       <div style="padding-top:44pt;">
         <p style="font-size:10pt; font-weight:bold; line-height:1.38; margin-bottom:14pt;">
           <u>Waiver of Personal Injury Protection<br>
@@ -816,8 +816,8 @@ function buildMdPipPages(
         information and hereby: <strong><em>(check one of the following)</em></strong></p>
       </div>
 
-      <!-- RIGHT COLUMN — Checkboxes + Signature -->
-      <div style="padding-top:44pt;">
+      <!-- CHECKBOXES + SIGNATURE -->
+      <div style="padding-top:16pt;">
 
         <!-- OPTION 1: Request Full PIP -->
         <div style="margin-bottom:16pt;">
@@ -890,7 +890,7 @@ function buildMdPipPages(
 
       </div><!-- /right col -->
 
-    </div><!-- /two-col page 2 -->
+    </div><!-- /single-col page 2 -->
 
   </div><!-- /pip page 2 -->
   `;
