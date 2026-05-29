@@ -360,6 +360,19 @@ function MembersTab() {
 
   const bulkImport = trpc.admin.members.bulkImport.useMutation();
   const createMember = trpc.admin.members.create.useMutation();
+  const deleteMember = trpc.admin.members.delete.useMutation();
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+
+  const handleDelete = async (id: number) => {
+    try {
+      await deleteMember.mutateAsync({ id });
+      toast.success("Member deleted");
+      setConfirmDeleteId(null);
+      refetch();
+    } catch (err) {
+      toast.error("Delete failed: " + (err instanceof Error ? err.message : String(err)));
+    }
+  };
 
   const [form, setForm] = useState<Record<string, string>>({
     name: "", dob: "", phone: "", email: "", driverLicense: "", licenseState: "",
@@ -588,12 +601,38 @@ function MembersTab() {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <button
-                      onClick={() => setEditMember(member as unknown as MemberRecord)}
-                      className="text-xs text-[#FF6A00] hover:underline"
-                    >
-                      Edit
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setEditMember(member as unknown as MemberRecord)}
+                        className="text-xs text-[#FF6A00] hover:underline"
+                      >
+                        Edit
+                      </button>
+                      {confirmDeleteId === member.id ? (
+                        <span className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleDelete(member.id)}
+                            disabled={deleteMember.isPending}
+                            className="text-xs text-white bg-red-600 hover:bg-red-700 px-2 py-0.5 rounded disabled:opacity-50"
+                          >
+                            {deleteMember.isPending ? "..." : "Confirm"}
+                          </button>
+                          <button
+                            onClick={() => setConfirmDeleteId(null)}
+                            className="text-xs text-gray-500 hover:text-gray-700"
+                          >
+                            Cancel
+                          </button>
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmDeleteId(member.id)}
+                          className="text-xs text-red-500 hover:text-red-700 hover:underline"
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
                 );

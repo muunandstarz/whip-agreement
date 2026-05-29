@@ -28,6 +28,7 @@ import {
   markEmailCodeUsed,
   updateAgreement,
   updateMember,
+  deleteMember,
 } from "../db";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { storagePut } from "../storage";
@@ -205,6 +206,16 @@ export const adminRouter = router({
         const member = await getMemberById(id);
         if (!member) throw new TRPCError({ code: "NOT_FOUND", message: "Member not found" });
         await updateMember(id, fields);
+        return { ok: true };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        requireManagerOrAbove(ctx.user.role);
+        const member = await getMemberById(input.id);
+        if (!member) throw new TRPCError({ code: "NOT_FOUND", message: "Member not found" });
+        await deleteMember(input.id);
         return { ok: true };
       }),
   }),

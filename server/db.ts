@@ -390,3 +390,16 @@ export async function getAgreementsByMemberIds(memberIds: number[]): Promise<Agr
   if (!db) return [];
   return db.select().from(agreements).where(inArray(agreements.memberId, memberIds));
 }
+
+export async function deleteMember(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  // Delete related records first (cascade order)
+  const memberAgreements = await db.select({ id: agreements.id }).from(agreements).where(eq(agreements.memberId, id));
+  for (const ag of memberAgreements) {
+    await db.delete(agreementEvents).where(eq(agreementEvents.agreementId, ag.id));
+    await db.delete(documents).where(eq(documents.agreementId, ag.id));
+  }
+  await db.delete(agreements).where(eq(agreements.memberId, id));
+  await db.delete(members).where(eq(members.id, id));
+}
