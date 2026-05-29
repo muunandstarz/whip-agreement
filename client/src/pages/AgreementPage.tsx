@@ -146,11 +146,13 @@ export default function AgreementPage({
   initialPrefilled,
   tokenMode,
   agreementToken,
+  startAtPortal,
 }: {
   initialFields?: Partial<MemberFields>;
   initialPrefilled?: Set<string>;
   tokenMode?: boolean;
   agreementToken?: string;
+  startAtPortal?: boolean;
 } = {}) {
   const { theme, toggleTheme } = useTheme();
   // mode=agreement hides the portal — shows only the agreement flow + done screen
@@ -232,7 +234,9 @@ export default function AgreementPage({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const [stepIdx, setStepIdx] = useState(0);
+  // When re-entering a completed agreement, jump straight to the portal
+  const completeStepIdx = STEPS.length - 1; // 'complete' is always the last step
+  const [stepIdx, setStepIdx] = useState(startAtPortal ? completeStepIdx : 0);
   const [animKey, setAnimKey] = useState(0);
 
   const [tosRead, setTosRead] = useState(false);
@@ -252,7 +256,7 @@ export default function AgreementPage({
   const [pipElection, setPipElection] = useState<PipElection>(null);
   const [emailSent, setEmailSent] = useState(false);
   const [completeSent, setCompleteSent] = useState(false);
-  const [showDoneScreen, setShowDoneScreen] = useState(true); // shown first when step=complete
+  const [showDoneScreen, setShowDoneScreen] = useState(!startAtPortal); // skip done screen if re-entering completed agreement
 
   const completeAgreementMutation = trpc.admin.verify.complete.useMutation({
     onSuccess: () => { setCompleteSent(true); },

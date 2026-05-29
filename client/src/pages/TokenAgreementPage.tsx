@@ -23,7 +23,7 @@ function VerificationGate({
 }: {
   token: string;
   memberName?: string;
-  onVerified: (memberData: Record<string, string>) => void;
+  onVerified: (memberData: Record<string, string>, alreadyCompleted?: boolean) => void;
 }) {
   const [method, setMethod] = useState<"dob" | "dl_last4">("dob");
   const [value, setValue] = useState("");
@@ -46,7 +46,7 @@ function VerificationGate({
         userAgent: navigator.userAgent,
       });
       if (result.verified && result.member) {
-        onVerified(result.member as Record<string, string>);
+        onVerified(result.member as unknown as Record<string, string>, result.alreadyCompleted ?? false);
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Verification failed";
@@ -193,6 +193,7 @@ export default function TokenAgreementPage() {
 
   const [verified, setVerified] = useState(false);
   const [memberData, setMemberData] = useState<Record<string, string> | null>(null);
+  const [alreadyCompleted, setAlreadyCompleted] = useState(false);
   const [tracked, setTracked] = useState(false);
 
   const { data, isLoading, error } = trpc.admin.verify.getAgreementByToken.useQuery(
@@ -222,8 +223,9 @@ export default function TokenAgreementPage() {
       <VerificationGate
         token={token}
         memberName={data.memberName}
-        onVerified={(md) => {
+        onVerified={(md, completed) => {
           setMemberData(md);
+          setAlreadyCompleted(completed ?? false);
           setVerified(true);
         }}
       />
@@ -272,6 +274,7 @@ export default function TokenAgreementPage() {
       initialPrefilled={initialPrefilled}
       tokenMode={true}
       agreementToken={token}
+      startAtPortal={alreadyCompleted}
     />
   );
 }

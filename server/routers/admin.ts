@@ -771,7 +771,56 @@ export const adminRouter = router({
           await updateAgreement(agreement.id, { status: "expired" });
           throw new TRPCError({ code: "FORBIDDEN", message: "This agreement link has expired" });
         }
-        if (agreement.status === "completed") throw new TRPCError({ code: "FORBIDDEN", message: "This agreement has already been completed" });
+        // Completed agreements: allow re-verification to access portal/documents
+        if (agreement.status === "completed") {
+          const member = await getMemberById(agreement.memberId);
+          if (!member) throw new TRPCError({ code: "NOT_FOUND" });
+          let verified = false;
+          if (input.method === "dob") {
+            verified = member.dob === input.value;
+          } else if (input.method === "dl_last4") {
+            verified = member.driverLicense.slice(-4) === input.value;
+          } else if (input.method === "email_code") {
+            const codeRecord = await getActiveEmailCode(agreement.id, member.email);
+            if (!codeRecord) throw new TRPCError({ code: "BAD_REQUEST", message: "No active code found. Please request a new code." });
+            if (codeRecord.attempts >= 5) throw new TRPCError({ code: "FORBIDDEN", message: "Too many attempts. Please request a new code." });
+            if (codeRecord.code === input.value) {
+              await markEmailCodeUsed(codeRecord.id);
+              verified = true;
+            } else {
+              await incrementEmailCodeAttempts(codeRecord.id);
+            }
+          }
+          if (!verified) throw new TRPCError({ code: "FORBIDDEN", message: "Verification failed. Please check your information and try again." });
+          // Return member data with alreadyCompleted flag so frontend goes straight to portal
+          const docs = await getDocumentsByAgreement(agreement.id);
+          return {
+            verified: true,
+            alreadyCompleted: true,
+            member: {
+              name: member.name,
+              dob: member.dob,
+              phone: member.phone,
+              email: member.email,
+              driverLicense: member.driverLicense,
+              licenseState: member.licenseState,
+              address: member.address,
+              cityStateZip: member.cityStateZip,
+              customerId: member.customerId,
+              reservationId: member.reservationId,
+              vehicle: member.vehicle,
+              vin: member.vin,
+              market: member.market ?? undefined,
+            },
+            agreement: {
+              id: agreement.id,
+              status: agreement.status,
+              pipElected: agreement.pipElected,
+              signedAt: agreement.signedAt,
+            },
+            documents: docs.map(d => ({ id: d.id, documentType: d.documentType, s3Key: d.s3Key, s3Url: d.s3Url, generatedAt: d.generatedAt })),
+          };
+        }
 
         const member = await getMemberById(agreement.memberId);
         if (!member) throw new TRPCError({ code: "NOT_FOUND" });
