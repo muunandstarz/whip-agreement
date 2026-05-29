@@ -235,8 +235,11 @@ export default function AgreementPage({
   }, []);
 
   // When re-entering a completed agreement, jump straight to the portal
-  const completeStepIdx = STEPS.length - 1; // 'complete' is always the last step
-  const [stepIdx, setStepIdx] = useState(startAtPortal ? completeStepIdx : 0);
+  // 'complete' is always the last element of STEPS.
+  // But effectiveSteps may be shorter if addons step is filtered out.
+  // We initialize to a sentinel value (-1) when startAtPortal=true and
+  // correct it in the effect below once effectiveSteps is available.
+  const [stepIdx, setStepIdx] = useState(startAtPortal ? -1 : 0);
   const [animKey, setAnimKey] = useState(0);
 
   const [tosRead, setTosRead] = useState(false);
@@ -279,6 +282,15 @@ export default function AgreementPage({
   const stateData: StateData = STATE_DATA[fields.agreementState] || STATE_DATA['OTHER'];
   const hasAddons = stateData.addons.length > 0;
   const effectiveSteps = STEPS.filter(s => s.id !== 'addons' || hasAddons);
+
+  // Correct the sentinel -1 index once effectiveSteps length is known
+  useEffect(() => {
+    if (startAtPortal && stepIdx === -1) {
+      setStepIdx(effectiveSteps.length - 1);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startAtPortal, effectiveSteps.length]);
+
   const currentStep = effectiveSteps[stepIdx];
 
   const goTo = useCallback((idx: number) => {
